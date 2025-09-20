@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8c46fb9dfdac9446950e8be8e0cbe42, type: 3}
+  m_Name: Base
+  m_EditorClassIdentifier: 
+  IdC: 1
+  Id: 0
+  objectInScene: {fileID: 2400048496107975462, guid: c14025d3883c9744c8935af215c52d7d, type: 3}
+  placementCost:
+  - resourceItem: {fileID: 11400000, guid: aefb4622cd5b83345936c4f0447a3fba, type: 2}
+    amount: 5
+  appearances:
+  - tier: {fileID: 11400000, guid: 3d6295756a0a6644fbba80237ab595b3, type: 2}
+    maxHealth: 500
+    damageModifiers:
+    - type: 0
+      multiplier: 2
+    upgradeCost:
+    - resourceItem: {fileID: 11400000, guid: 9950ca1e8c8e6d148a0068e87d39ed75, type: 2}
+      amount: 10
+    fullRepairCost:
+    - resourceItem: {fileID: 11400000, guid: aefb4622cd5b83345936c4f0447a3fba, type: 2}
+      amount: 100
+    mesh: {fileID: -1217297332545513385, guid: c14025d3883c9744c8935af215c52d7d, type: 3}
+    materials:
+    - {fileID: 2100000, guid: 5918ba05e5dab3e4a9da2c952f2307e5, type: 2}
+  - tier: {fileID: 11400000, guid: ff49ab9b3f897f24783b4a4b41e76a18, type: 2}
+    maxHealth: 1000
+    damageModifiers: []
+    upgradeCost: []
+    fullRepairCost: []
+    mesh: {fileID: -1217297332545513385, guid: c14025d3883c9744c8935af215c52d7d, type: 3}
+    materials:
+    - {fileID: 2100000, guid: 7c4ab5a42c474134fa571cd603da40cf, type: 2}
+  - tier: {fileID: 11400000, guid: 8278507084a0d4a47ba2062e4b20c2fa, type: 2}
+    maxHealth: 2000
+    damageModifiers: []
+    upgradeCost: []
+    fullRepairCost: []
+    mesh: {fileID: -1217297332545513385, guid: c14025d3883c9744c8935af215c52d7d, type: 3}
+    materials:
+    - {fileID: 2100000, guid: a88fe67e16625af40a2baa3d5f888040, type: 2}
