@@ -19,12 +19,14 @@ namespace TerrainSystem
         private Vector3Int chunkPosition;
         private int lodLevel; // Added LOD level property
         private bool isInitialized = false;
+        private int densityVersion = 0;
 
         public Vector3 WorldPosition { get; private set; }
         public VoxelData[,,] Voxels => voxelData;
         public Vector3Int ChunkPosition => chunkPosition;
         public int LODLevel => lodLevel; // Added public getter for LOD level
         public bool IsDirty { get; set; } = true;
+        public int DensityVersion => densityVersion;
         #endregion
 
         #region Unity Lifecycle
@@ -60,6 +62,7 @@ namespace TerrainSystem
             voxelData = new VoxelData[chunkSize.x + 1, chunkSize.y + 1, chunkSize.z + 1];
             isInitialized = true;
             IsDirty = true;
+            densityVersion = 0;
         }
         #endregion
 
@@ -84,6 +87,10 @@ namespace TerrainSystem
             {
                 voxelData[x, y, z] = value;
                 IsDirty = true;
+                unchecked
+                {
+                    densityVersion++;
+                }
                 return true;
             }
             return false;
@@ -111,8 +118,12 @@ namespace TerrainSystem
             }
 
             IsDirty = true;
+            unchecked
+            {
+                densityVersion++;
+            }
         }
-        
+
         // Overload for float array when using GPU buffers
         public void ApplyDensities(float[] densities)
         {
@@ -135,6 +146,10 @@ namespace TerrainSystem
             }
 
             IsDirty = true;
+            unchecked
+            {
+                densityVersion++;
+            }
         }
 
         public void CopyVoxelDataTo(NativeArray<float> destination)

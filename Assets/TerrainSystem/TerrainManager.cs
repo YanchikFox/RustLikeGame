@@ -92,10 +92,10 @@ namespace TerrainSystem
         private ComputeBuffer biomeLacunarityBuffer;
         private ComputeBuffer biomePersistenceBuffer;
 
-// Словарь для отслеживания асинхронных запросов к GPU
+// Г‘Г«Г®ГўГ Г°Гј Г¤Г«Гї Г®ГІГ±Г«ГҐГ¦ГЁГўГ Г­ГЁГї Г Г±ГЁГ­ГµГ°Г®Г­Г­Г»Гµ Г§Г ГЇГ°Г®Г±Г®Гў ГЄ GPU
         private readonly Dictionary<Vector3Int, AsyncGPUReadbackRequest> runningGpuGenRequests = 
             new Dictionary<Vector3Int, AsyncGPUReadbackRequest>();
-// Словарь для хранения буфера плотностей во время генерации
+// Г‘Г«Г®ГўГ Г°Гј Г¤Г«Гї ГµГ°Г Г­ГҐГ­ГЁГї ГЎГіГґГҐГ°Г  ГЇГ«Г®ГІГ­Г®Г±ГІГҐГ© ГўГ® ГўГ°ГҐГ¬Гї ГЈГҐГ­ГҐГ°Г Г¶ГЁГЁ
         private readonly Dictionary<Vector3Int, ComputeBuffer> densityBuffers = 
             new Dictionary<Vector3Int, ComputeBuffer>();
         private readonly Dictionary<Vector3Int, ChunkData> chunks = new Dictionary<Vector3Int, ChunkData>();
@@ -139,39 +139,39 @@ namespace TerrainSystem
 
 private void LateUpdate()
 {
-    CompleteGenerationJobs(); // Для старой системы на CPU
+    CompleteGenerationJobs(); // Г„Г«Гї Г±ГІГ Г°Г®Г© Г±ГЁГ±ГІГҐГ¬Г» Г­Г  CPU
 
-    // Новый безопасный способ обработки GPU запросов
+    // ГЌГ®ГўГ»Г© ГЎГҐГ§Г®ГЇГ Г±Г­Г»Г© Г±ГЇГ®Г±Г®ГЎ Г®ГЎГ°Г ГЎГ®ГІГЄГЁ GPU Г§Г ГЇГ°Г®Г±Г®Гў
     if (runningGpuGenRequests.Count > 0)
     {
-        // Создаем список для ключей завершенных запросов
+        // Г‘Г®Г§Г¤Г ГҐГ¬ Г±ГЇГЁГ±Г®ГЄ Г¤Г«Гї ГЄГ«ГѕГ·ГҐГ© Г§Г ГўГҐГ°ГёГҐГ­Г­Г»Гµ Г§Г ГЇГ°Г®Г±Г®Гў
         List<Vector3Int> completedRequests = null;
 
         foreach (var kvp in runningGpuGenRequests)
         {
             var request = kvp.Value;
-            // Проверяем, завершен ли запрос
+            // ГЏГ°Г®ГўГҐГ°ГїГҐГ¬, Г§Г ГўГҐГ°ГёГҐГ­ Г«ГЁ Г§Г ГЇГ°Г®Г±
             if (request.done)
             {
-                // Если да, обрабатываем его
+                // Г…Г±Г«ГЁ Г¤Г , Г®ГЎГ°Г ГЎГ ГІГ»ГўГ ГҐГ¬ ГҐГЈГ®
                 if (request.hasError)
                 {
                     Debug.LogError($"GPU readback error for chunk {kvp.Key}.");
                 }
                 else
                 {
-                    // Получаем данные
+                    // ГЏГ®Г«ГіГ·Г ГҐГ¬ Г¤Г Г­Г­Г»ГҐ
                     NativeArray<float> densities = request.GetData<float>();
                     if (chunks.TryGetValue(kvp.Key, out var chunkData))
                     {
-                        // Применяем данные к чанку
+                        // ГЏГ°ГЁГ¬ГҐГ­ГїГҐГ¬ Г¤Г Г­Г­Г»ГҐ ГЄ Г·Г Г­ГЄГі
                         chunkData.chunk.ApplyDensities(densities);
-                        // Ставим чанк в очередь на создание меша
+                        // Г‘ГІГ ГўГЁГ¬ Г·Г Г­ГЄ Гў Г®Г·ГҐГ°ГҐГ¤Гј Г­Г  Г±Г®Г§Г¤Г Г­ГЁГҐ Г¬ГҐГёГ 
                         QueueChunkForUpdate(kvp.Key);
                     }
                 }
                 
-                // Добавляем ключ в список на удаление
+                // Г„Г®ГЎГ ГўГ«ГїГҐГ¬ ГЄГ«ГѕГ· Гў Г±ГЇГЁГ±Г®ГЄ Г­Г  ГіГ¤Г Г«ГҐГ­ГЁГҐ
                 if (completedRequests == null)
                 {
                     completedRequests = new List<Vector3Int>();
@@ -180,7 +180,7 @@ private void LateUpdate()
             }
         }
 
-        // Удаляем все обработанные запросы из словаря ПОСЛЕ цикла
+        // Г“Г¤Г Г«ГїГҐГ¬ ГўГ±ГҐ Г®ГЎГ°Г ГЎГ®ГІГ Г­Г­Г»ГҐ Г§Г ГЇГ°Г®Г±Г» ГЁГ§ Г±Г«Г®ГўГ Г°Гї ГЏГЋГ‘Г‹Г… Г¶ГЁГЄГ«Г 
         if (completedRequests != null)
         {
             foreach (var pos in completedRequests)
@@ -217,7 +217,7 @@ private void LateUpdate()
         
         private void InitializeStaticGpuBuffers()
 {
-    // Извлекаем данные из массива биомов
+    // Г€Г§ГўГ«ГҐГЄГ ГҐГ¬ Г¤Г Г­Г­Г»ГҐ ГЁГ§ Г¬Г Г±Г±ГЁГўГ  ГЎГЁГ®Г¬Г®Гў
     var biomeThresholds = new float[biomes.Length];
     var biomeGroundLevels = new float[biomes.Length];
     var biomeHeightImpacts = new float[biomes.Length];
@@ -241,7 +241,7 @@ private void LateUpdate()
         biomePersistence[i] = biomes[i].persistence;
     }
 
-    // Создаем ComputeBuffer'ы
+    // Г‘Г®Г§Г¤Г ГҐГ¬ ComputeBuffer'Г»
     biomeThresholdsBuffer = new ComputeBuffer(biomes.Length, sizeof(float));
     biomeGroundLevelsBuffer = new ComputeBuffer(biomes.Length, sizeof(float));
     biomeHeightImpactsBuffer = new ComputeBuffer(biomes.Length, sizeof(float));
@@ -252,7 +252,7 @@ private void LateUpdate()
     biomeLacunarityBuffer = new ComputeBuffer(biomes.Length, sizeof(float));
     biomePersistenceBuffer = new ComputeBuffer(biomes.Length, sizeof(float));
 
-    // Загружаем данные в буферы
+    // Г‡Г ГЈГ°ГіГ¦Г ГҐГ¬ Г¤Г Г­Г­Г»ГҐ Гў ГЎГіГґГҐГ°Г»
     biomeThresholdsBuffer.SetData(biomeThresholds);
     biomeGroundLevelsBuffer.SetData(biomeGroundLevels);
     biomeHeightImpactsBuffer.SetData(biomeHeightImpacts);
@@ -600,33 +600,33 @@ private void ReleaseStaticGpuBuffers()
             };
         }
         
-// Замените существующий метод ScheduleGenerateVoxelDataGPU этим кодом
+// Г‡Г Г¬ГҐГ­ГЁГІГҐ Г±ГіГ№ГҐГ±ГІГўГіГѕГ№ГЁГ© Г¬ГҐГІГ®Г¤ ScheduleGenerateVoxelDataGPU ГЅГІГЁГ¬ ГЄГ®Г¤Г®Г¬
 private void ScheduleGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
 {
-    // Не запускаем новую генерацию, если она уже идет для этого чанка
+    // ГЌГҐ Г§Г ГЇГіГ±ГЄГ ГҐГ¬ Г­Г®ГўГіГѕ ГЈГҐГ­ГҐГ°Г Г¶ГЁГѕ, ГҐГ±Г«ГЁ Г®Г­Г  ГіГ¦ГҐ ГЁГ¤ГҐГІ Г¤Г«Гї ГЅГІГ®ГЈГ® Г·Г Г­ГЄГ 
     if (densityBuffers.ContainsKey(chunk.ChunkPosition) || runningGpuGenRequests.ContainsKey(chunk.ChunkPosition)) return;
 
-    // 1. Находим ядро (Kernel) в шейдере
+    // 1. ГЌГ ГµГ®Г¤ГЁГ¬ ГїГ¤Г°Г® (Kernel) Гў ГёГҐГ©Г¤ГҐГ°ГҐ
     int kernel = voxelTerrainShader.FindKernel("GenerateVoxelData");
 
-    // 2. Получаем размеры для этого LOD
+    // 2. ГЏГ®Г«ГіГ·Г ГҐГ¬ Г°Г Г§Г¬ГҐГ°Г» Г¤Г«Гї ГЅГІГ®ГЈГ® LOD
     Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
     int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
-    // 3. Берем буфер из пула
+    // 3. ГЃГҐГ°ГҐГ¬ ГЎГіГґГҐГ° ГЁГ§ ГЇГіГ«Г 
     ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
-    densityBuffers.Add(chunk.ChunkPosition, densityBuffer); // Сохраняем для будущего использования
+    densityBuffers.Add(chunk.ChunkPosition, densityBuffer); // Г‘Г®ГµГ°Г Г­ГїГҐГ¬ Г¤Г«Гї ГЎГіГ¤ГіГ№ГҐГЈГ® ГЁГ±ГЇГ®Г«ГјГ§Г®ГўГ Г­ГЁГї
 
-    // 4. Передаем все параметры в шейдер
+    // 4. ГЏГҐГ°ГҐГ¤Г ГҐГ¬ ГўГ±ГҐ ГЇГ Г°Г Г¬ГҐГІГ°Г» Гў ГёГҐГ©Г¤ГҐГ°
     voxelTerrainShader.SetBuffer(kernel, "_DensityValues", densityBuffer);
     
-    // Передаем параметры чанка
+    // ГЏГҐГ°ГҐГ¤Г ГҐГ¬ ГЇГ Г°Г Г¬ГҐГІГ°Г» Г·Г Г­ГЄГ 
     voxelTerrainShader.SetVector("_ChunkWorldOrigin", chunk.WorldPosition);
     voxelTerrainShader.SetInts("_ChunkSize", voxelDimensions.x, voxelDimensions.y, voxelDimensions.z);
-    voxelTerrainShader.SetFloat("_VoxelSize", voxelSize); // Базовый размер
-    voxelTerrainShader.SetInt("_LODLevel", lodLevel);     // Уровень LOD
+    voxelTerrainShader.SetFloat("_VoxelSize", voxelSize); // ГЃГ Г§Г®ГўГ»Г© Г°Г Г§Г¬ГҐГ°
+    voxelTerrainShader.SetInt("_LODLevel", lodLevel);     // Г“Г°Г®ГўГҐГ­Гј LOD
     
-    // Передаем параметры биомов (из статических буферов)
+    // ГЏГҐГ°ГҐГ¤Г ГҐГ¬ ГЇГ Г°Г Г¬ГҐГІГ°Г» ГЎГЁГ®Г¬Г®Гў (ГЁГ§ Г±ГІГ ГІГЁГ·ГҐГ±ГЄГЁГµ ГЎГіГґГҐГ°Г®Гў)
     voxelTerrainShader.SetFloat("_BiomeNoiseScale", biomeNoiseScale);
     voxelTerrainShader.SetInt("_BiomeCount", biomes.Length);
     voxelTerrainShader.SetBuffer(kernel, "_BiomeThresholds", biomeThresholdsBuffer);
@@ -639,25 +639,25 @@ private void ScheduleGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
     voxelTerrainShader.SetBuffer(kernel, "_BiomeLacunarity", biomeLacunarityBuffer);
     voxelTerrainShader.SetBuffer(kernel, "_BiomePersistence", biomePersistenceBuffer);
     
-    // Передаем параметры дополнительного шума
+    // ГЏГҐГ°ГҐГ¤Г ГҐГ¬ ГЇГ Г°Г Г¬ГҐГІГ°Г» Г¤Г®ГЇГ®Г«Г­ГЁГІГҐГ«ГјГ­Г®ГЈГ® ГёГіГ¬Г 
     voxelTerrainShader.SetFloat("_TemperatureNoiseScale", temperatureNoiseScale);
     voxelTerrainShader.SetFloat("_HumidityNoiseScale", humidityNoiseScale);
     voxelTerrainShader.SetFloat("_RiverNoiseScale", riverNoiseScale);
     voxelTerrainShader.SetFloat("_RiverThreshold", riverThreshold);
     voxelTerrainShader.SetFloat("_RiverDepth", riverDepth);
     
-    // 5. Вычисляем количество групп потоков и запускаем шейдер
+    // 5. Г‚Г»Г·ГЁГ±Г«ГїГҐГ¬ ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ® ГЈГ°ГіГЇГЇ ГЇГ®ГІГ®ГЄГ®Гў ГЁ Г§Г ГЇГіГ±ГЄГ ГҐГ¬ ГёГҐГ©Г¤ГҐГ°
     int threadGroupsX = Mathf.CeilToInt((voxelDimensions.x + 1) / 8.0f);
     int threadGroupsY = Mathf.CeilToInt((voxelDimensions.y + 1) / 8.0f);
     int threadGroupsZ = Mathf.CeilToInt((voxelDimensions.z + 1) / 8.0f);
     voxelTerrainShader.Dispatch(kernel, threadGroupsX, threadGroupsY, threadGroupsZ);
 
-    // 6. Запрашиваем данные обратно с GPU асинхронно
+    // 6. Г‡Г ГЇГ°Г ГёГЁГўГ ГҐГ¬ Г¤Г Г­Г­Г»ГҐ Г®ГЎГ°Г ГІГ­Г® Г± GPU Г Г±ГЁГ­ГµГ°Г®Г­Г­Г®
     var request = AsyncGPUReadback.Request(densityBuffer);
     runningGpuGenRequests.Add(chunk.ChunkPosition, request);
 }
 
-// --- Добавьте этот новый метод в TerrainManager.cs ---
+// --- Г„Г®ГЎГ ГўГјГІГҐ ГЅГІГ®ГІ Г­Г®ГўГ»Г© Г¬ГҐГІГ®Г¤ Гў TerrainManager.cs ---
 private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 {
     if (request.hasError)
@@ -666,7 +666,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
         return;
     }
 
-    // Находим, какому чанку принадлежат эти данные
+    // ГЌГ ГµГ®Г¤ГЁГ¬, ГЄГ ГЄГ®Г¬Гі Г·Г Г­ГЄГі ГЇГ°ГЁГ­Г Г¤Г«ГҐГ¦Г ГІ ГЅГІГЁ Г¤Г Г­Г­Г»ГҐ
     Vector3Int? chunkPos = null;
     foreach (var pair in runningGpuGenRequests)
     {
@@ -681,19 +681,19 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
     {
         Vector3Int pos = chunkPos.Value;
         
-        // Получаем данные
+        // ГЏГ®Г«ГіГ·Г ГҐГ¬ Г¤Г Г­Г­Г»ГҐ
         NativeArray<float> densities = request.GetData<float>();
         
         if (chunks.TryGetValue(pos, out var chunkData))
         {
-            // Применяем данные к чанку
+            // ГЏГ°ГЁГ¬ГҐГ­ГїГҐГ¬ Г¤Г Г­Г­Г»ГҐ ГЄ Г·Г Г­ГЄГі
             chunkData.chunk.ApplyDensities(densities);
             
-            // Ставим чанк в очередь на создание меша (пока что через CPU Job)
+            // Г‘ГІГ ГўГЁГ¬ Г·Г Г­ГЄ Гў Г®Г·ГҐГ°ГҐГ¤Гј Г­Г  Г±Г®Г§Г¤Г Г­ГЁГҐ Г¬ГҐГёГ  (ГЇГ®ГЄГ  Г·ГІГ® Г·ГҐГ°ГҐГ§ CPU Job)
             QueueChunkForUpdate(pos);
         }
         
-        // Освобождаем буфер плотностей обратно в пул
+        // ГЋГ±ГўГ®ГЎГ®Г¦Г¤Г ГҐГ¬ ГЎГіГґГҐГ° ГЇГ«Г®ГІГ­Г®Г±ГІГҐГ© Г®ГЎГ°Г ГІГ­Г® Гў ГЇГіГ«
         if (densityBuffers.TryGetValue(pos, out ComputeBuffer buffer))
         {
             ComputeBufferManager.Instance.ReleaseBuffer(buffer);
@@ -946,57 +946,69 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             ModifyTerrainInternal(worldPosition, radius, strength);
         }
 
-        private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float strength)
+        
+private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float strength)
         {
             Vector3Int min = WorldToVoxelCoordinates(worldPosition - Vector3.one * radius);
             Vector3Int max = WorldToVoxelCoordinates(worldPosition + Vector3.one * radius);
 
-            var modifiedChunks = new HashSet<Vector3Int>();
-
-            for (int x = min.x; x <= max.x; x++)
-            for (int y = min.y; y <= max.y; y++)
-            for (int z = min.z; z <= max.z; z++)
+            if (radius <= 0f)
             {
-                Vector3 voxelWorldPos = new Vector3(x, y, z) * voxelSize + Vector3.one * (voxelSize * 0.5f);
-                float sqrDist = (voxelWorldPos - worldPosition).sqrMagnitude;
-                if (sqrDist > radius * radius) continue;
+                return;
+            }
 
-                var (chunkPos, voxelPos) = WorldToVoxelPosition(voxelWorldPos);
-                if (chunks.TryGetValue(chunkPos, out var chunkData))
+            HashSet<Vector3Int> modifiedChunks;
+
+            if (voxelTerrainShader != null)
+            {
+                var candidateChunks = CollectChunksForGpu(min, max, worldPosition, radius);
+                modifiedChunks = new HashSet<Vector3Int>();
+
+                foreach (var chunkPos in candidateChunks)
                 {
-                    // Get the chunk's LOD level
-                    int lodLevel = chunkData.lodLevel;
-                    
-                    // For higher LOD levels, modifications affect a wider area
-                    float lodAdjustedStrength = strength;
-                    
-                    // Apply strength adjustment for LOD to maintain consistent modification size
-                    if (lodLevel > 0)
+                    if (!chunks.TryGetValue(chunkPos, out var chunkData) || chunkData.chunk == null)
                     {
-                        lodAdjustedStrength *= Mathf.Pow(2, lodLevel);
+                        continue;
                     }
-                    
-                    VoxelData currentVoxel = chunkData.chunk.GetVoxel(voxelPos.x, voxelPos.y, voxelPos.z);
-                    float modificationAmount = lodAdjustedStrength * (1f - Mathf.Sqrt(sqrDist) / radius);
-                    float newDensity = Mathf.Clamp(currentVoxel.density - modificationAmount, -1f, 1f);
 
-                    if (chunkData.chunk.SetVoxel(voxelPos.x, voxelPos.y, voxelPos.z, new VoxelData(newDensity)))
+                    bool applied = false;
+                    bool versionMismatch;
+                    int attempt = 0;
+
+                    do
+                    {
+                        attempt++;
+
+                        if (!chunks.TryGetValue(chunkPos, out chunkData) || chunkData.chunk == null)
+                        {
+                            versionMismatch = false;
+                            break;
+                        }
+
+                        float lodAdjustedStrength = GetLodAdjustedStrength(strength, chunkData.lodLevel);
+                        int expectedVersion = chunkData.chunk.DensityVersion;
+                        applied = DispatchModifyDensityGPU(chunkData.chunk, chunkData.lodLevel, worldPosition, radius, lodAdjustedStrength, expectedVersion, out versionMismatch);
+                    }
+                    while (!applied && versionMismatch && attempt < 3);
+
+                    if (!applied)
+                    {
+                        var whitelist = new HashSet<Vector3Int> { chunkPos };
+                        var cpuModified = ApplyCpuTerrainModification(min, max, worldPosition, radius, strength, whitelist);
+                        foreach (var modified in cpuModified)
+                        {
+                            modifiedChunks.Add(modified);
+                        }
+                    }
+                    else
                     {
                         modifiedChunks.Add(chunkPos);
                     }
                 }
             }
-
-            // If using GPU modification, dispatch the ModifyDensity kernel
-            if (voxelTerrainShader != null)
+            else
             {
-                foreach (var chunkPos in modifiedChunks)
-                {
-                    if (chunks.TryGetValue(chunkPos, out var chunkData))
-                    {
-                        DispatchModifyDensityGPU(chunkData.chunk, chunkData.lodLevel, worldPosition, radius, strength);
-                    }
-                }
+                modifiedChunks = ApplyCpuTerrainModification(min, max, worldPosition, radius, strength);
             }
 
             foreach (var chunkPos in modifiedChunks)
@@ -1009,51 +1021,150 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 }
             }
         }
-        
-        private void DispatchModifyDensityGPU(TerrainChunk chunk, int lodLevel, Vector3 modificationPosition, float radius, float strength)
+
+        private float GetLodAdjustedStrength(float baseStrength, int lodLevel)
         {
-            if (voxelTerrainShader == null) return;
-            
-            // Get kernel index
-            int kernelIndex = voxelTerrainShader.FindKernel("ModifyDensity");
-            
-            // Get the actual voxel dimensions for this LOD level
-            Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
-            
-            // Create or get buffer for densities from pool
-            int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
-            ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
-            
-            // Copy current densities to buffer
-            float[] densities = new float[voxelCount];
-            chunk.CopyVoxelDataTo(densities);
-            densityBuffer.SetData(densities);
-            
-            // Set shader parameters
-            voxelTerrainShader.SetBuffer(kernelIndex, "_ModifiedDensities", densityBuffer);
-            voxelTerrainShader.SetVector("_ChunkWorldOrigin", chunk.WorldPosition);
-            voxelTerrainShader.SetInts("_ChunkSize", voxelDimensions.x, voxelDimensions.y, voxelDimensions.z);
-            voxelTerrainShader.SetFloat("_VoxelSize", voxelSize); // Base voxel size
-            voxelTerrainShader.SetInt("_LODLevel", lodLevel);     // LOD level for adjustment in shader
-            voxelTerrainShader.SetVector("_ModificationPosition", modificationPosition);
-            voxelTerrainShader.SetFloat("_ModificationRadius", radius);
-            voxelTerrainShader.SetFloat("_ModificationStrength", strength);
-            
-            // Dispatch the shader
-            int threadGroupsX = Mathf.CeilToInt((voxelDimensions.x + 1) / 8.0f);
-            int threadGroupsY = Mathf.CeilToInt((voxelDimensions.y + 1) / 8.0f);
-            int threadGroupsZ = Mathf.CeilToInt((voxelDimensions.z + 1) / 8.0f);
-            voxelTerrainShader.Dispatch(kernelIndex, threadGroupsX, threadGroupsY, threadGroupsZ);
-            
-            // Get modified densities back
-            densityBuffer.GetData(densities);
-            
-            // Apply modified densities to chunk
-            chunk.ApplyDensities(densities);
-            
-            // Release the buffer back to the pool
-            ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
+            if (lodLevel <= 0)
+            {
+                return baseStrength;
+            }
+
+            return baseStrength * Mathf.Pow(2f, lodLevel);
         }
+
+        private HashSet<Vector3Int> CollectChunksForGpu(Vector3Int min, Vector3Int max, Vector3 worldPosition, float radius)
+        {
+            var chunksToModify = new HashSet<Vector3Int>();
+            float radiusSquared = radius * radius;
+
+            for (int x = min.x; x <= max.x; x++)
+            for (int y = min.y; y <= max.y; y++)
+            for (int z = min.z; z <= max.z; z++)
+            {
+                Vector3 voxelWorldPos = new Vector3(x, y, z) * voxelSize + Vector3.one * (voxelSize * 0.5f);
+                float sqrDist = (voxelWorldPos - worldPosition).sqrMagnitude;
+                if (sqrDist > radiusSquared) continue;
+
+                var (chunkPos, _) = WorldToVoxelPosition(voxelWorldPos);
+                if (chunks.ContainsKey(chunkPos))
+                {
+                    chunksToModify.Add(chunkPos);
+                }
+            }
+
+            return chunksToModify;
+        }
+
+        private HashSet<Vector3Int> ApplyCpuTerrainModification(Vector3Int min, Vector3Int max, Vector3 worldPosition, float radius, float strength, HashSet<Vector3Int> chunkWhitelist = null)
+        {
+            var modifiedChunks = new HashSet<Vector3Int>();
+
+            if (radius <= 0f)
+            {
+                return modifiedChunks;
+            }
+
+            float radiusSquared = radius * radius;
+
+            for (int x = min.x; x <= max.x; x++)
+            for (int y = min.y; y <= max.y; y++)
+            for (int z = min.z; z <= max.z; z++)
+            {
+                Vector3 voxelWorldPos = new Vector3(x, y, z) * voxelSize + Vector3.one * (voxelSize * 0.5f);
+                float sqrDist = (voxelWorldPos - worldPosition).sqrMagnitude;
+                if (sqrDist > radiusSquared) continue;
+
+                var (chunkPos, voxelPos) = WorldToVoxelPosition(voxelWorldPos);
+                if (!chunks.TryGetValue(chunkPos, out var chunkData))
+                {
+                    continue;
+                }
+
+                if (chunkWhitelist != null && !chunkWhitelist.Contains(chunkPos))
+                {
+                    continue;
+                }
+
+                float lodAdjustedStrength = GetLodAdjustedStrength(strength, chunkData.lodLevel);
+
+                VoxelData currentVoxel = chunkData.chunk.GetVoxel(voxelPos.x, voxelPos.y, voxelPos.z);
+                float modificationAmount = lodAdjustedStrength * (1f - Mathf.Sqrt(sqrDist) / radius);
+                float newDensity = Mathf.Clamp(currentVoxel.density - modificationAmount, -1f, 1f);
+
+                if (chunkData.chunk.SetVoxel(voxelPos.x, voxelPos.y, voxelPos.z, new VoxelData(newDensity)))
+                {
+                    modifiedChunks.Add(chunkPos);
+                }
+            }
+
+            return modifiedChunks;
+        }
+
+        private bool DispatchModifyDensityGPU(TerrainChunk chunk, int lodLevel, Vector3 modificationPosition, float radius, float lodAdjustedStrength, int expectedVersion, out bool versionMismatch)
+        {
+            versionMismatch = false;
+
+            if (voxelTerrainShader == null || chunk == null)
+            {
+                return false;
+            }
+
+            if (chunk.DensityVersion != expectedVersion)
+            {
+                versionMismatch = true;
+                return false;
+            }
+
+            int kernelIndex = voxelTerrainShader.FindKernel("ModifyDensity");
+            Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
+            int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
+
+            ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
+
+            try
+            {
+                float[] densities = new float[voxelCount];
+                chunk.CopyVoxelDataTo(densities);
+
+                if (chunk.DensityVersion != expectedVersion)
+                {
+                    versionMismatch = true;
+                    return false;
+                }
+
+                densityBuffer.SetData(densities);
+
+                voxelTerrainShader.SetBuffer(kernelIndex, "_ModifiedDensities", densityBuffer);
+                voxelTerrainShader.SetVector("_ChunkWorldOrigin", chunk.WorldPosition);
+                voxelTerrainShader.SetInts("_ChunkSize", voxelDimensions.x, voxelDimensions.y, voxelDimensions.z);
+                voxelTerrainShader.SetFloat("_VoxelSize", voxelSize);
+                voxelTerrainShader.SetInt("_LODLevel", lodLevel);
+                voxelTerrainShader.SetVector("_ModificationPosition", modificationPosition);
+                voxelTerrainShader.SetFloat("_ModificationRadius", radius);
+                voxelTerrainShader.SetFloat("_ModificationStrength", lodAdjustedStrength);
+
+                int threadGroupsX = Mathf.CeilToInt((voxelDimensions.x + 1) / 8.0f);
+                int threadGroupsY = Mathf.CeilToInt((voxelDimensions.y + 1) / 8.0f);
+                int threadGroupsZ = Mathf.CeilToInt((voxelDimensions.z + 1) / 8.0f);
+                voxelTerrainShader.Dispatch(kernelIndex, threadGroupsX, threadGroupsY, threadGroupsZ);
+
+                densityBuffer.GetData(densities);
+
+                if (chunk.DensityVersion != expectedVersion)
+                {
+                    versionMismatch = true;
+                    return false;
+                }
+
+                chunk.ApplyDensities(densities);
+                return true;
+            }
+            finally
+            {
+                ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
+            }
+        }
+
         #endregion
 
         #region Utility Methods
