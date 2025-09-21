@@ -72,8 +72,8 @@ namespace TerrainSystem
                 int vert3 = GetOrCreateVertex(x, y, z, edge3, ref edgeVertexIndices, ref cellDensities);
 
                 triangles.Add(vert1);
-                triangles.Add(vert3);
                 triangles.Add(vert2);
+                triangles.Add(vert3);
             }
         }
 
