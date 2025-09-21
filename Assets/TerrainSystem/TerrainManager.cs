@@ -69,7 +69,9 @@ namespace TerrainSystem
             public JobHandle handle;
             public NativeList<Vector3> vertices;
             public NativeList<int> triangles;
+            public NativeList<Vector3> normals;
             public NativeArray<float> densities;
+            public NativeArray<float> gradientDensities;
         }
 
         private struct VoxelGenJobHandleData
@@ -808,11 +810,17 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 
             chunk.CopyVoxelDataTo(densitiesForJob);
 
+            int gradientArraySize = (voxelDimensions.x + 3) * (voxelDimensions.y + 3) * (voxelDimensions.z + 3);
+            var gradientDensities = new NativeArray<float>(gradientArraySize, Allocator.Persistent);
+            FillGradientDensities(chunk, lodLevel, gradientDensities);
+
             var job = new MarchingCubesJob
             {
                 densities = densitiesForJob,
+                gradientDensities = gradientDensities,
                 vertices = new NativeList<Vector3>(Allocator.Persistent),
                 triangles = new NativeList<int>(Allocator.Persistent),
+                normals = new NativeList<Vector3>(Allocator.Persistent),
                 chunkSize = voxelDimensions,
                 surfaceLevel = meshGenerator.surfaceLevel,
                 voxelSize = adjustedVoxelSize, // Use LOD-adjusted voxel size
@@ -825,10 +833,84 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 handle = job.Schedule(),
                 vertices = job.vertices,
                 triangles = job.triangles,
-                densities = job.densities
+                normals = job.normals,
+                densities = job.densities,
+                gradientDensities = job.gradientDensities
             };
         }
-        
+
+        private void FillGradientDensities(TerrainChunk chunk, int lodLevel, NativeArray<float> destination)
+        {
+            Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
+            int index = 0;
+
+            for (int z = -1; z <= voxelDimensions.z + 1; z++)
+            {
+                for (int y = -1; y <= voxelDimensions.y + 1; y++)
+                {
+                    for (int x = -1; x <= voxelDimensions.x + 1; x++)
+                    {
+                        float density = SampleDensityWithNeighbors(chunk, lodLevel, new Vector3Int(x, y, z));
+                        destination[index++] = density;
+                    }
+                }
+            }
+        }
+
+        private float SampleDensityWithNeighbors(TerrainChunk chunk, int lodLevel, Vector3Int localCoord)
+        {
+            float voxelScale = GetVoxelSizeForLOD(lodLevel);
+            Vector3 worldPos = chunk.WorldPosition + new Vector3(localCoord.x, localCoord.y, localCoord.z) * voxelScale;
+
+            Vector3Int targetChunkPos = WorldToChunkPosition(worldPos);
+            if (chunks.TryGetValue(targetChunkPos, out var targetChunkData) && targetChunkData.chunk != null)
+            {
+                return SampleChunkDensityInterpolated(targetChunkData.chunk, targetChunkData.lodLevel, worldPos);
+            }
+
+            return SampleChunkDensityInterpolated(chunk, lodLevel, worldPos);
+        }
+
+        private float SampleChunkDensityInterpolated(TerrainChunk chunk, int lodLevel, Vector3 worldPos)
+        {
+            float voxelScale = GetVoxelSizeForLOD(lodLevel);
+            Vector3 localPos = (worldPos - chunk.WorldPosition) / voxelScale;
+            Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
+
+            float x = Mathf.Clamp(localPos.x, 0f, voxelDimensions.x);
+            float y = Mathf.Clamp(localPos.y, 0f, voxelDimensions.y);
+            float z = Mathf.Clamp(localPos.z, 0f, voxelDimensions.z);
+
+            int x0 = Mathf.FloorToInt(x);
+            int y0 = Mathf.FloorToInt(y);
+            int z0 = Mathf.FloorToInt(z);
+
+            int x1 = Mathf.Min(x0 + 1, voxelDimensions.x);
+            int y1 = Mathf.Min(y0 + 1, voxelDimensions.y);
+            int z1 = Mathf.Min(z0 + 1, voxelDimensions.z);
+
+            float tx = x - x0;
+            float ty = y - y0;
+            float tz = z - z0;
+
+            float c000 = chunk.GetVoxel(x0, y0, z0).density;
+            float c100 = chunk.GetVoxel(x1, y0, z0).density;
+            float c010 = chunk.GetVoxel(x0, y1, z0).density;
+            float c110 = chunk.GetVoxel(x1, y1, z0).density;
+            float c001 = chunk.GetVoxel(x0, y0, z1).density;
+            float c101 = chunk.GetVoxel(x1, y0, z1).density;
+            float c011 = chunk.GetVoxel(x0, y1, z1).density;
+            float c111 = chunk.GetVoxel(x1, y1, z1).density;
+
+            float c00 = Mathf.Lerp(c000, c100, tx);
+            float c10 = Mathf.Lerp(c010, c110, tx);
+            float c01 = Mathf.Lerp(c001, c101, tx);
+            float c11 = Mathf.Lerp(c011, c111, tx);
+            float c0 = Mathf.Lerp(c00, c10, ty);
+            float c1 = Mathf.Lerp(c01, c11, ty);
+            return Mathf.Lerp(c0, c1, tz);
+        }
+
         private void DispatchMarchingCubesGPU(TerrainChunk chunk, int lodLevel)
         {
             if (voxelTerrainShader == null) return;
@@ -951,14 +1033,16 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     jobEntry.Value.handle.Complete();
                     if (chunks.TryGetValue(jobEntry.Key, out var chunkData))
                     {
-                        Mesh mesh = meshGenerator.CreateMeshFromJob(jobEntry.Value.vertices, jobEntry.Value.triangles);
+                        Mesh mesh = meshGenerator.CreateMeshFromJob(jobEntry.Value.vertices, jobEntry.Value.triangles, jobEntry.Value.normals);
                         chunkData.chunk.ApplyMesh(mesh);
                         chunkData.chunk.IsDirty = false;
                     }
 
                     jobEntry.Value.vertices.Dispose();
                     jobEntry.Value.triangles.Dispose();
+                    jobEntry.Value.normals.Dispose();
                     if (jobEntry.Value.densities.IsCreated) jobEntry.Value.densities.Dispose();
+                    if (jobEntry.Value.gradientDensities.IsCreated) jobEntry.Value.gradientDensities.Dispose();
                     completedJobs.Add(jobEntry.Key);
                 }
             }

@@ -10,8 +10,10 @@ namespace TerrainSystem
     public struct MarchingCubesJob : IJob
     {
         [ReadOnly] public NativeArray<float> densities;
+        [ReadOnly] public NativeArray<float> gradientDensities;
         public NativeList<Vector3> vertices;
         public NativeList<int> triangles;
+        public NativeList<Vector3> normals;
         [ReadOnly] public NativeArray<int> triangleTable;
         [ReadOnly] public NativeArray<int> edgeConnections;
         [ReadOnly] public Vector3Int chunkSize;
@@ -22,6 +24,7 @@ namespace TerrainSystem
         {
             var edgeVertexIndices = new NativeArray<int>(12, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             var cellDensities = new NativeArray<float>(8, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var cellGradients = new NativeArray<Vector3>(8, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
             for (int x = 0; x < chunkSize.x; x++)
             {
@@ -29,13 +32,17 @@ namespace TerrainSystem
                 {
                     for (int z = 0; z < chunkSize.z; z++)
                     {
-                        ProcessCell(x, y, z, ref edgeVertexIndices, ref cellDensities);
+                        ProcessCell(x, y, z, ref edgeVertexIndices, ref cellDensities, ref cellGradients);
                     }
                 }
             }
+
+            cellGradients.Dispose();
+            cellDensities.Dispose();
+            edgeVertexIndices.Dispose();
         }
 
-        private void ProcessCell(int x, int y, int z, ref NativeArray<int> edgeVertexIndices, ref NativeArray<float> cellDensities)
+        private void ProcessCell(int x, int y, int z, ref NativeArray<int> edgeVertexIndices, ref NativeArray<float> cellDensities, ref NativeArray<Vector3> cellGradients)
         {
             int cubeIndex = 0;
 
@@ -44,6 +51,7 @@ namespace TerrainSystem
                 Vector3Int corner = new Vector3Int(x, y, z) + MarchingCubesMeshGenerator.cubeCorners[i];
                 float density = densities[GetDensityIndex(corner.x, corner.y, corner.z)];
                 cellDensities[i] = density;
+                cellGradients[i] = CalculateDensityGradient(corner.x, corner.y, corner.z);
                 if (density < surfaceLevel)
                 {
                     cubeIndex |= (1 << i);
@@ -67,9 +75,9 @@ namespace TerrainSystem
                 int edge2 = triangleTable[cubeIndex * 16 + i + 1];
                 int edge3 = triangleTable[cubeIndex * 16 + i + 2];
 
-                int vert1 = GetOrCreateVertex(x, y, z, edge1, ref edgeVertexIndices, ref cellDensities);
-                int vert2 = GetOrCreateVertex(x, y, z, edge2, ref edgeVertexIndices, ref cellDensities);
-                int vert3 = GetOrCreateVertex(x, y, z, edge3, ref edgeVertexIndices, ref cellDensities);
+                int vert1 = GetOrCreateVertex(x, y, z, edge1, ref edgeVertexIndices, ref cellDensities, ref cellGradients);
+                int vert2 = GetOrCreateVertex(x, y, z, edge2, ref edgeVertexIndices, ref cellDensities, ref cellGradients);
+                int vert3 = GetOrCreateVertex(x, y, z, edge3, ref edgeVertexIndices, ref cellDensities, ref cellGradients);
 
                 triangles.Add(vert1);
                 triangles.Add(vert2);
@@ -77,7 +85,7 @@ namespace TerrainSystem
             }
         }
 
-        private int GetOrCreateVertex(int x, int y, int z, int edgeIndex, ref NativeArray<int> edgeVertexIndices, ref NativeArray<float> cellDensities)
+        private int GetOrCreateVertex(int x, int y, int z, int edgeIndex, ref NativeArray<int> edgeVertexIndices, ref NativeArray<float> cellDensities, ref NativeArray<Vector3> cellGradients)
         {
             if (edgeVertexIndices[edgeIndex] != -1)
             {
@@ -99,20 +107,52 @@ namespace TerrainSystem
                 t = (surfaceLevel - density1) / (density2 - density1);
             }
             Vector3 vertexPosition = Vector3.Lerp(cornerPos1, cornerPos2, t) * voxelSize;
-            
+
+            Vector3 gradient1 = cellGradients[cornerIdx1];
+            Vector3 gradient2 = cellGradients[cornerIdx2];
+            Vector3 interpolatedGradient = Vector3.Lerp(gradient1, gradient2, t);
+            Vector3 normal = interpolatedGradient.sqrMagnitude > 1e-12f
+                ? interpolatedGradient.normalized
+                : Vector3.up;
+
             int newIndex = vertices.Length;
             vertices.Add(vertexPosition);
+            normals.Add(normal);
             edgeVertexIndices[edgeIndex] = newIndex;
 
             return newIndex;
         }
-        
+
+        private Vector3 CalculateDensityGradient(int x, int y, int z)
+        {
+            float dx = GetGradientDensity(x + 1, y, z) - GetGradientDensity(x - 1, y, z);
+            float dy = GetGradientDensity(x, y + 1, z) - GetGradientDensity(x, y - 1, z);
+            float dz = GetGradientDensity(x, y, z + 1) - GetGradientDensity(x, y, z - 1);
+
+            const float half = 0.5f;
+            return new Vector3(dx * half, dy * half, dz * half);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetDensityIndex(int x, int y, int z)
         {
             int width = chunkSize.x + 1;
             int height = chunkSize.y + 1;
             return x + y * width + z * width * height;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetGradientDensityIndex(int x, int y, int z)
+        {
+            int width = chunkSize.x + 3;
+            int height = chunkSize.y + 3;
+            return (x + 1) + (y + 1) * width + (z + 1) * width * height;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float GetGradientDensity(int x, int y, int z)
+        {
+            return gradientDensities[GetGradientDensityIndex(x, y, z)];
         }
     }
 
@@ -436,7 +476,7 @@ private static readonly int[] flatTriangleTable =
         /// Creates a Unity Mesh from the output of a MarchingCubesJob.
         /// This method must be called from the main thread after a job has completed.
         /// </summary>
-        public Mesh CreateMeshFromJob(NativeList<Vector3> vertices, NativeList<int> triangles)
+        public Mesh CreateMeshFromJob(NativeList<Vector3> vertices, NativeList<int> triangles, NativeList<Vector3> normals)
         {
             Mesh mesh = new Mesh();
             if (vertices.Length == 0) return mesh;
@@ -444,7 +484,7 @@ private static readonly int[] flatTriangleTable =
             mesh.indexFormat = vertices.Length > 65535
                 ? UnityEngine.Rendering.IndexFormat.UInt32
                 : UnityEngine.Rendering.IndexFormat.UInt16;
-            
+
             using (var verticesArray = vertices.ToArray(Allocator.Temp))
             {
                 mesh.SetVertices(verticesArray.ToArray());
@@ -454,7 +494,17 @@ private static readonly int[] flatTriangleTable =
                 mesh.SetTriangles(trianglesArray.ToArray(), 0, true);
             }
 
-            mesh.RecalculateNormals();
+            if (normals.IsCreated && normals.Length == vertices.Length)
+            {
+                using (var normalsArray = normals.ToArray(Allocator.Temp))
+                {
+                    mesh.SetNormals(normalsArray.ToArray());
+                }
+            }
+            else
+            {
+                mesh.RecalculateNormals();
+            }
             if (calculateTangents)
             {
                 mesh.RecalculateTangents();
