@@ -17,8 +17,9 @@ namespace TerrainSystem
         // which drastically increases memory usage and processing time.
         // Adjust loadDistance accordingly.
         [SerializeField] private float voxelSize = 1f;
-        // Track previous value to detect changes in the Inspector
+        // Track previous values to detect changes in the Inspector
         private float previousVoxelSize;
+        private Vector3 previousChunkWorldSize;
         
         [SerializeField] private Transform playerTransform;
         [SerializeField] private float loadDistance = 64f;
@@ -102,6 +103,8 @@ namespace TerrainSystem
         private readonly Queue<Vector3Int> dirtyChunkQueue = new Queue<Vector3Int>();
         private readonly Dictionary<Vector3Int, MeshJobHandleData> runningMeshJobs = new Dictionary<Vector3Int, MeshJobHandleData>();
         private readonly Dictionary<Vector3Int, VoxelGenJobHandleData> runningGenJobs = new Dictionary<Vector3Int, VoxelGenJobHandleData>();
+
+        private readonly Dictionary<int, Vector3> cachedChunkWorldSizesByLod = new Dictionary<int, Vector3>();
         
         // Shader property IDs
         private int shaderPropLODLevel;
@@ -124,15 +127,19 @@ namespace TerrainSystem
             // Cache shader property IDs
             shaderPropLODLevel = Shader.PropertyToID("_LODLevel");
             
-            // Store initial voxelSize value for change detection
+            // Store initial values for change detection
             previousVoxelSize = voxelSize;
-            
+            previousChunkWorldSize = chunkWorldSize;
+            InvalidateChunkWorldSizeCache();
+
             InitializeStaticGpuBuffers();
 
-            UpdateChunksAroundPlayer();        }
+            UpdateChunksAroundPlayer();
+        }
 
         private void Update()
         {
+            HandleGeometrySettingsChangeIfNeeded();
             UpdateChunksAroundPlayer();
             ProcessDirtyChunks();
         }
@@ -207,11 +214,9 @@ private void LateUpdate()
         // Detect changes in the Inspector during Play Mode
         private void OnValidate()
         {
-            // Only process in Play Mode and when value has actually changed
-            if (Application.isPlaying && previousVoxelSize != voxelSize && !isRegenerating)
+            if (Application.isPlaying)
             {
-                Debug.Log($"VoxelSize changed from {previousVoxelSize} to {voxelSize}. Regenerating world...");
-                RegenerateWorld();
+                HandleGeometrySettingsChangeIfNeeded();
             }
         }
         
@@ -292,13 +297,14 @@ private void ReleaseStaticGpuBuffers()
                 return;
             }
 
+            isRegenerating = true;
             StartCoroutine(RegenerateWorldCoroutine());
         }
 
         private System.Collections.IEnumerator RegenerateWorldCoroutine()
         {
-            isRegenerating = true;
-            
+            InvalidateChunkWorldSizeCache();
+
             // Step 1: Complete all running jobs and dispose resources
             CleanupAllJobs();
             
@@ -318,9 +324,10 @@ private void ReleaseStaticGpuBuffers()
             chunks.Clear();
             dirtyChunkQueue.Clear();
             
-            // Step 4: Store the current voxelSize value
+            // Step 4: Store the current settings values
             previousVoxelSize = voxelSize;
-            
+            previousChunkWorldSize = chunkWorldSize;
+
             // Step 5: Start regenerating the world
             Debug.Log("World regeneration: Starting new terrain generation...");
             UpdateChunksAroundPlayer();
@@ -373,9 +380,10 @@ private void ReleaseStaticGpuBuffers()
         {
             if (!useLOD)
                 return 0;
-                
+
             Vector3 chunkWorldPos = ChunkToWorldPosition(chunkPosition);
-            float distance = Vector3.Distance(playerTransform.position, chunkWorldPos + chunkWorldSize * 0.5f);
+            Vector3 baseChunkSize = GetActualChunkWorldSizeForLOD(0);
+            float distance = Vector3.Distance(playerTransform.position, chunkWorldPos + baseChunkSize * 0.5f);
             
             // Determine LOD level based on distance
             for (int i = 0; i < lodDistanceThresholds.Length; i++)
@@ -409,6 +417,23 @@ private void ReleaseStaticGpuBuffers()
                 Mathf.CeilToInt(chunkWorldSize.z / adjustedVoxelSize)
             );
         }
+
+        private Vector3 GetActualChunkWorldSizeForLOD(int lodLevel)
+        {
+            if (!cachedChunkWorldSizesByLod.TryGetValue(lodLevel, out Vector3 worldSize))
+            {
+                Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
+                float adjustedVoxelSize = GetVoxelSizeForLOD(lodLevel);
+                worldSize = new Vector3(
+                    voxelDimensions.x * adjustedVoxelSize,
+                    voxelDimensions.y * adjustedVoxelSize,
+                    voxelDimensions.z * adjustedVoxelSize
+                );
+                cachedChunkWorldSizesByLod[lodLevel] = worldSize;
+            }
+
+            return worldSize;
+        }
         #endregion
 
         #region Chunk Management
@@ -417,7 +442,9 @@ private void ReleaseStaticGpuBuffers()
             if (playerTransform == null || isRegenerating) return;
 
             Vector3Int playerChunkPos = WorldToChunkPosition(playerTransform.position);
-            int loadRadius = Mathf.CeilToInt(loadDistance / chunkWorldSize.x);
+            Vector3 baseChunkSize = GetActualChunkWorldSizeForLOD(0);
+            float chunkSizeX = Mathf.Approximately(baseChunkSize.x, 0f) ? 1f : baseChunkSize.x;
+            int loadRadius = Mathf.CeilToInt(loadDistance / chunkSizeX);
 
             // Step 1: Identify chunks to unload (too far from player)
             var chunksToUnload = new List<Vector3Int>();
@@ -1168,10 +1195,36 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
         #endregion
 
         #region Utility Methods
+        private void InvalidateChunkWorldSizeCache()
+        {
+            cachedChunkWorldSizesByLod.Clear();
+        }
+
+        private void HandleGeometrySettingsChangeIfNeeded()
+        {
+            bool voxelSizeChanged = !Mathf.Approximately(previousVoxelSize, voxelSize);
+            bool chunkWorldSizeChanged = (previousChunkWorldSize - chunkWorldSize).sqrMagnitude > 0.0001f;
+
+            if ((voxelSizeChanged || chunkWorldSizeChanged) && !isRegenerating)
+            {
+                string changeDescription;
+                if (voxelSizeChanged && chunkWorldSizeChanged)
+                    changeDescription = $"VoxelSize {previousVoxelSize}→{voxelSize} and chunkWorldSize {previousChunkWorldSize}→{chunkWorldSize}";
+                else if (voxelSizeChanged)
+                    changeDescription = $"VoxelSize {previousVoxelSize}→{voxelSize}";
+                else
+                    changeDescription = $"chunkWorldSize {previousChunkWorldSize}→{chunkWorldSize}";
+
+                Debug.Log($"Terrain settings changed ({changeDescription}). Regenerating world...");
+                InvalidateChunkWorldSizeCache();
+                RegenerateWorld();
+            }
+        }
+
         public void QueueChunkForUpdate(Vector3Int chunkPos)
         {
             if (isRegenerating) return;
-            
+
             if (chunks.ContainsKey(chunkPos)
                 && !dirtyChunkQueue.Contains(chunkPos)
                 && !runningMeshJobs.ContainsKey(chunkPos)
@@ -1181,17 +1234,32 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             }
         }
 
-        public Vector3Int WorldToChunkPosition(Vector3 worldPos) => new Vector3Int(
-            Mathf.FloorToInt(worldPos.x / chunkWorldSize.x),
-            Mathf.FloorToInt(worldPos.y / chunkWorldSize.y),
-            Mathf.FloorToInt(worldPos.z / chunkWorldSize.z)
-        );
+        public Vector3Int WorldToChunkPosition(Vector3 worldPos)
+        {
+            Vector3 baseChunkSize = GetActualChunkWorldSizeForLOD(0);
+            float sizeX = Mathf.Approximately(baseChunkSize.x, 0f) ? 1f : baseChunkSize.x;
+            float sizeY = Mathf.Approximately(baseChunkSize.y, 0f) ? 1f : baseChunkSize.y;
+            float sizeZ = Mathf.Approximately(baseChunkSize.z, 0f) ? 1f : baseChunkSize.z;
 
-        public Vector3 ChunkToWorldPosition(Vector3Int chunkPos) => new Vector3(
-            chunkPos.x * chunkWorldSize.x,
-            chunkPos.y * chunkWorldSize.y,
-            chunkPos.z * chunkWorldSize.z
-        );
+            return new Vector3Int(
+                Mathf.FloorToInt(worldPos.x / sizeX),
+                Mathf.FloorToInt(worldPos.y / sizeY),
+                Mathf.FloorToInt(worldPos.z / sizeZ)
+            );
+        }
+
+        public Vector3 ChunkToWorldPosition(Vector3Int chunkPos)
+        {
+            Vector3 baseChunkSize = GetActualChunkWorldSizeForLOD(0);
+            float sizeX = Mathf.Approximately(baseChunkSize.x, 0f) ? 0f : baseChunkSize.x;
+            float sizeY = Mathf.Approximately(baseChunkSize.y, 0f) ? 0f : baseChunkSize.y;
+            float sizeZ = Mathf.Approximately(baseChunkSize.z, 0f) ? 0f : baseChunkSize.z;
+            return new Vector3(
+                chunkPos.x * sizeX,
+                chunkPos.y * sizeY,
+                chunkPos.z * sizeZ
+            );
+        }
 
         public (Vector3Int chunkPos, Vector3Int voxelPos) WorldToVoxelPosition(Vector3 worldPos)
         {
@@ -1246,7 +1314,8 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                     
                     Gizmos.color = lodColor;
                     Vector3 worldPos = ChunkToWorldPosition(chunkPos);
-                    Gizmos.DrawWireCube(worldPos + chunkWorldSize * 0.5f, chunkWorldSize);
+                    Vector3 chunkSize = GetActualChunkWorldSizeForLOD(chunkData.lodLevel);
+                    Gizmos.DrawWireCube(worldPos + chunkSize * 0.5f, chunkSize);
                 }
                 
                 // Draw LOD distance thresholds
