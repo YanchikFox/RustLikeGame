@@ -212,7 +212,8 @@ float calculateDensity(float3 worldPos)
     float finalCaveImpact = baseCaveImpact * caveImpactModifier;
 
     float sum2D = fractalNoise(worldPos.xz, finalOctaves, baseHeightScale, finalLacunarity, finalPersistence);
-    float surfaceDensity = (finalGroundLevel - worldPos.y) - (sum2D * finalHeightImpact);
+    float surfaceHeight = finalGroundLevel + (sum2D * finalHeightImpact);
+    float surfaceDensity = worldPos.y - surfaceHeight;
     float finalDensity = surfaceDensity;
     
     if (surfaceDensity < 0)

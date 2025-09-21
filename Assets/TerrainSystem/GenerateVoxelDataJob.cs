@@ -160,9 +160,10 @@ namespace TerrainSystem
             // Normalize the 2D noise sum
             sum2D /= maxAmplitude2D;
             
-            // Calculate surface density using ONLY the 2D noise
-            float baseDensity = finalGroundLevel - worldPos.y;
-            float surfaceDensity = baseDensity - (sum2D * finalHeightImpact);
+            // Calculate surface density using ONLY the 2D noise.
+            // Below the surface we want negative values (solid), above positive (air).
+            float surfaceHeight = finalGroundLevel + (sum2D * finalHeightImpact);
+            float surfaceDensity = worldPos.y - surfaceHeight;
             float finalDensity = surfaceDensity; // Start with surface density
             
             // --- Step 5: Conditional cave carving (only underground) ---
