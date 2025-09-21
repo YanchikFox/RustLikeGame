@@ -64,9 +64,13 @@ namespace TerrainSystem
 
         #region Fields
         // Dictionary to store pools of buffers by size and stride
-        private readonly Dictionary<BufferKey, Queue<ComputeBuffer>> bufferPools = 
+        private readonly Dictionary<BufferKey, Queue<ComputeBuffer>> bufferPools =
             new Dictionary<BufferKey, Queue<ComputeBuffer>>();
-        
+
+        // Map active buffers to their original keys for precise reuse
+        private readonly Dictionary<ComputeBuffer, BufferKey> activeBufferKeys =
+            new Dictionary<ComputeBuffer, BufferKey>();
+
         // Track which buffers are currently in use
         private readonly HashSet<ComputeBuffer> activeBuffers = new HashSet<ComputeBuffer>();
 
@@ -110,7 +114,8 @@ namespace TerrainSystem
             
             // Mark as active
             activeBuffers.Add(buffer);
-            
+            activeBufferKeys[buffer] = key;
+
             return buffer;
         }
 
@@ -129,9 +134,15 @@ namespace TerrainSystem
                 return;
             }
             
-            // Find which pool this buffer belongs to
-            BufferKey key = new BufferKey(buffer.count, buffer.stride);
-            
+            if (!activeBufferKeys.TryGetValue(buffer, out BufferKey key))
+            {
+                Debug.LogWarning("ComputeBufferManager.ReleaseBuffer called with an unknown buffer. Releasing immediately.");
+                buffer.Release();
+                return;
+            }
+
+            activeBufferKeys.Remove(buffer);
+
             if (bufferPools.TryGetValue(key, out Queue<ComputeBuffer> pool))
             {
                 pool.Enqueue(buffer);
@@ -160,6 +171,7 @@ namespace TerrainSystem
                     buffer.Release();
             }
             activeBuffers.Clear();
+            activeBufferKeys.Clear();
             
             // Release all pooled buffers
             foreach (var pool in bufferPools.Values)
