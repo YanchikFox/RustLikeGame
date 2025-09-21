@@ -5,6 +5,8 @@ namespace TerrainSystem
 {
     /// <summary>
     /// Represents the data for a single voxel in the terrain.
+    /// Density follows the terrain generation convention: negative values indicate solid matter
+    /// and positive values indicate empty space/air.
     /// </summary>
     [Serializable]
     public struct VoxelData
