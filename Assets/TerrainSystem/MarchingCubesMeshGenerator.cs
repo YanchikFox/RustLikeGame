@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Runtime.CompilerServices;
 using Unity.Jobs;
 using Unity.Burst;
@@ -506,6 +507,47 @@ private static readonly int[] flatTriangleTable =
             {
                 mesh.RecalculateNormals();
             }
+            if (calculateTangents)
+            {
+                mesh.RecalculateTangents();
+            }
+
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        public Mesh CreateMeshFromArrays(Vector3[] vertices, int[] triangles, Vector3[] normals)
+        {
+            Mesh mesh = new Mesh();
+            if (vertices == null || vertices.Length == 0)
+            {
+                return mesh;
+            }
+
+            mesh.indexFormat = vertices.Length > 65535
+                ? UnityEngine.Rendering.IndexFormat.UInt32
+                : UnityEngine.Rendering.IndexFormat.UInt16;
+
+            mesh.SetVertices(vertices);
+
+            if (triangles != null && triangles.Length > 0)
+            {
+                mesh.SetTriangles(triangles, 0, true);
+            }
+            else
+            {
+                mesh.SetTriangles(Array.Empty<int>(), 0);
+            }
+
+            if (normals != null && normals.Length == vertices.Length)
+            {
+                mesh.SetNormals(normals);
+            }
+            else
+            {
+                mesh.RecalculateNormals();
+            }
+
             if (calculateTangents)
             {
                 mesh.RecalculateTangents();

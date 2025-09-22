@@ -32,6 +32,7 @@ float _RiverDepth;
 
 StructuredBuffer<float> _DensitiesForMC;
 AppendStructuredBuffer<float3> _VertexBuffer;
+AppendStructuredBuffer<float3> _NormalBuffer;
 StructuredBuffer<int> _TriangleTable;
 StructuredBuffer<int> _EdgeConnections;
 float _SurfaceLevel;
@@ -319,9 +320,25 @@ void MarchingCubes(uint3 id : SV_DispatchThreadID)
             cornerDensities[_EdgeConnections[edge3 * 2 + 1]]
         );
 
+        float3 edge1 = v2 - v1;
+        float3 edge2 = v3 - v1;
+        float3 normal = cross(edge1, edge2);
+        float lengthSq = dot(normal, normal);
+        if (lengthSq > 1e-12)
+        {
+            normal = normal * rsqrt(lengthSq);
+        }
+        else
+        {
+            normal = float3(0.0, 1.0, 0.0);
+        }
+
         _VertexBuffer.Append(v1);
+        _NormalBuffer.Append(normal);
         _VertexBuffer.Append(v2);
+        _NormalBuffer.Append(normal);
         _VertexBuffer.Append(v3);
+        _NormalBuffer.Append(normal);
 
         InterlockedAdd(_VertexCountBuffer[0], 3);
     }
