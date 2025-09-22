@@ -25,6 +25,8 @@ namespace TerrainSystem
         public VoxelData[,,] Voxels => voxelData;
         public Vector3Int ChunkPosition => chunkPosition;
         public int LODLevel => lodLevel; // Added public getter for LOD level
+        public Vector3Int VoxelDimensions => chunkSize;
+        public float VoxelSize => voxelSize;
         public bool IsDirty { get; set; } = true;
         public int DensityVersion => densityVersion;
         #endregion

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.Jobs;
 using Unity.Burst;
 using Unity.Collections;
+using System.Collections.Generic;
 
 namespace TerrainSystem
 {
@@ -512,6 +513,304 @@ private static readonly int[] flatTriangleTable =
 
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        /// <summary>
+        /// Builds or updates a transition mesh that stitches a high-detail chunk to a lower-detail neighbour.
+        /// Returns <c>true</c> if the mesh contains any generated geometry.
+        /// </summary>
+        public bool GenerateTransitionMesh(TerrainChunk highDetailChunk, TerrainChunk lowDetailChunk, Vector3Int direction, Mesh targetMesh)
+        {
+            if (highDetailChunk == null || lowDetailChunk == null || targetMesh == null)
+            {
+                return false;
+            }
+
+            Vector3Int clampedDir = new Vector3Int(
+                direction.x == 0 ? 0 : (direction.x > 0 ? 1 : -1),
+                direction.y == 0 ? 0 : (direction.y > 0 ? 1 : -1),
+                direction.z == 0 ? 0 : (direction.z > 0 ? 1 : -1));
+
+            if (clampedDir == Vector3Int.zero)
+            {
+                targetMesh.Clear();
+                return false;
+            }
+
+            int mainAxis;
+            int axisU;
+            int axisV;
+            DetermineAxes(clampedDir, out mainAxis, out axisU, out axisV);
+
+            Vector3Int highDims = highDetailChunk.VoxelDimensions;
+            Vector3Int lowDims = lowDetailChunk.VoxelDimensions;
+
+            int resU = GetComponent(highDims, axisU);
+            int resV = GetComponent(highDims, axisV);
+
+            if (resU <= 0 || resV <= 0)
+            {
+                targetMesh.Clear();
+                return false;
+            }
+
+            bool positiveDirection = GetComponent(clampedDir, mainAxis) > 0;
+
+            int boundaryIndexHigh = positiveDirection ? GetComponent(highDims, mainAxis) : 0;
+            int insideIndexHigh = positiveDirection
+                ? Mathf.Max(boundaryIndexHigh - 1, 0)
+                : Mathf.Clamp(1, 0, GetComponent(highDims, mainAxis));
+
+            int boundaryIndexLow = positiveDirection ? 0 : GetComponent(lowDims, mainAxis);
+            int insideIndexLow = positiveDirection
+                ? Mathf.Clamp(boundaryIndexLow + 1, 0, GetComponent(lowDims, mainAxis))
+                : Mathf.Max(boundaryIndexLow - 1, 0);
+
+            Vector3[,] highSurface = new Vector3[resU + 1, resV + 1];
+            Vector3[,] lowSurface = new Vector3[resU + 1, resV + 1];
+
+            for (int u = 0; u <= resU; u++)
+            {
+                for (int v = 0; v <= resV; v++)
+                {
+                    Vector3 insideCoordHigh = Vector3.zero;
+                    Vector3 boundaryCoordHigh = Vector3.zero;
+
+                    SetComponent(ref insideCoordHigh, axisU, Mathf.Clamp(u, 0, GetComponent(highDims, axisU)));
+                    SetComponent(ref insideCoordHigh, axisV, Mathf.Clamp(v, 0, GetComponent(highDims, axisV)));
+                    SetComponent(ref insideCoordHigh, mainAxis, insideIndexHigh);
+
+                    boundaryCoordHigh = insideCoordHigh;
+                    SetComponent(ref boundaryCoordHigh, mainAxis, boundaryIndexHigh);
+
+                    float densityInsideHigh = SampleDensityAtLocal(highDetailChunk, insideCoordHigh);
+                    float densityBoundaryHigh = SampleDensityAtLocal(highDetailChunk, boundaryCoordHigh);
+
+                    Vector3 worldInsideHigh = ToWorld(highDetailChunk, insideCoordHigh);
+                    Vector3 worldBoundaryHigh = ToWorld(highDetailChunk, boundaryCoordHigh);
+
+                    Vector3 highSurfaceWorld = InterpolateSurface(worldInsideHigh, densityInsideHigh, worldBoundaryHigh, densityBoundaryHigh);
+
+                    Vector3 neighborBoundaryCoord = (worldBoundaryHigh - lowDetailChunk.WorldPosition) / lowDetailChunk.VoxelSize;
+                    SetComponent(ref neighborBoundaryCoord, axisU, Mathf.Clamp(GetComponent(neighborBoundaryCoord, axisU), 0f, GetComponent(lowDims, axisU)));
+                    SetComponent(ref neighborBoundaryCoord, axisV, Mathf.Clamp(GetComponent(neighborBoundaryCoord, axisV), 0f, GetComponent(lowDims, axisV)));
+                    SetComponent(ref neighborBoundaryCoord, mainAxis, boundaryIndexLow);
+
+                    Vector3 neighborInsideCoord = neighborBoundaryCoord;
+                    SetComponent(ref neighborInsideCoord, mainAxis, insideIndexLow);
+
+                    float densityBoundaryLow = SampleDensityAtLocal(lowDetailChunk, neighborBoundaryCoord);
+                    float densityInsideLow = SampleDensityAtLocal(lowDetailChunk, neighborInsideCoord);
+
+                    Vector3 worldBoundaryLow = ToWorld(lowDetailChunk, neighborBoundaryCoord);
+                    Vector3 worldInsideLow = ToWorld(lowDetailChunk, neighborInsideCoord);
+
+                    Vector3 lowSurfaceWorld = InterpolateSurface(worldBoundaryLow, densityBoundaryLow, worldInsideLow, densityInsideLow);
+
+                    highSurface[u, v] = highSurfaceWorld - highDetailChunk.WorldPosition;
+                    lowSurface[u, v] = lowSurfaceWorld - highDetailChunk.WorldPosition;
+                }
+            }
+
+            var vertices = new List<Vector3>();
+            var triangles = new List<int>();
+            var normals = new List<Vector3>();
+            Vector3 normalHint = ((Vector3)clampedDir).normalized;
+
+            for (int u = 0; u < resU; u++)
+            {
+                for (int v = 0; v < resV; v++)
+                {
+                    Vector3 h00 = highSurface[u, v];
+                    Vector3 h10 = highSurface[u + 1, v];
+                    Vector3 h01 = highSurface[u, v + 1];
+                    Vector3 h11 = highSurface[u + 1, v + 1];
+
+                    Vector3 l00 = lowSurface[u, v];
+                    Vector3 l10 = lowSurface[u + 1, v];
+                    Vector3 l01 = lowSurface[u, v + 1];
+                    Vector3 l11 = lowSurface[u + 1, v + 1];
+
+                    AddQuad(h00, h10, l10, l00, normalHint, vertices, triangles, normals);
+                    AddQuad(h00, l00, l01, h01, normalHint, vertices, triangles, normals);
+                    AddQuad(h10, h11, l11, l10, normalHint, vertices, triangles, normals);
+                    AddQuad(h01, h11, l11, l01, normalHint, vertices, triangles, normals);
+                }
+            }
+
+            targetMesh.Clear();
+
+            if (vertices.Count == 0)
+            {
+                return false;
+            }
+
+            targetMesh.indexFormat = vertices.Count > 65535
+                ? UnityEngine.Rendering.IndexFormat.UInt32
+                : UnityEngine.Rendering.IndexFormat.UInt16;
+
+            targetMesh.SetVertices(vertices);
+            targetMesh.SetTriangles(triangles, 0, true);
+            targetMesh.SetNormals(normals);
+            targetMesh.RecalculateBounds();
+            return true;
+        }
+
+        private static void DetermineAxes(Vector3Int direction, out int mainAxis, out int axisU, out int axisV)
+        {
+            if (Mathf.Abs(direction.x) > 0)
+            {
+                mainAxis = 0;
+                axisU = 1;
+                axisV = 2;
+            }
+            else if (Mathf.Abs(direction.y) > 0)
+            {
+                mainAxis = 1;
+                axisU = 0;
+                axisV = 2;
+            }
+            else
+            {
+                mainAxis = 2;
+                axisU = 0;
+                axisV = 1;
+            }
+        }
+
+        private float SampleDensityAtLocal(TerrainChunk chunk, Vector3 localCoord)
+        {
+            if (chunk == null)
+            {
+                return 0f;
+            }
+
+            Vector3Int dims = chunk.VoxelDimensions;
+
+            float x = Mathf.Clamp(localCoord.x, 0f, dims.x);
+            float y = Mathf.Clamp(localCoord.y, 0f, dims.y);
+            float z = Mathf.Clamp(localCoord.z, 0f, dims.z);
+
+            int x0 = Mathf.FloorToInt(x);
+            int y0 = Mathf.FloorToInt(y);
+            int z0 = Mathf.FloorToInt(z);
+
+            int x1 = Mathf.Min(x0 + 1, dims.x);
+            int y1 = Mathf.Min(y0 + 1, dims.y);
+            int z1 = Mathf.Min(z0 + 1, dims.z);
+
+            float tx = x - x0;
+            float ty = y - y0;
+            float tz = z - z0;
+
+            float c000 = chunk.GetVoxel(x0, y0, z0).density;
+            float c100 = chunk.GetVoxel(x1, y0, z0).density;
+            float c010 = chunk.GetVoxel(x0, y1, z0).density;
+            float c110 = chunk.GetVoxel(x1, y1, z0).density;
+            float c001 = chunk.GetVoxel(x0, y0, z1).density;
+            float c101 = chunk.GetVoxel(x1, y0, z1).density;
+            float c011 = chunk.GetVoxel(x0, y1, z1).density;
+            float c111 = chunk.GetVoxel(x1, y1, z1).density;
+
+            float c00 = Mathf.Lerp(c000, c100, tx);
+            float c10 = Mathf.Lerp(c010, c110, tx);
+            float c01 = Mathf.Lerp(c001, c101, tx);
+            float c11 = Mathf.Lerp(c011, c111, tx);
+
+            float c0 = Mathf.Lerp(c00, c10, ty);
+            float c1 = Mathf.Lerp(c01, c11, ty);
+
+            return Mathf.Lerp(c0, c1, tz);
+        }
+
+        private Vector3 InterpolateSurface(Vector3 start, float densityStart, Vector3 end, float densityEnd)
+        {
+            float denominator = densityEnd - densityStart;
+            float t = Mathf.Abs(denominator) > 1e-5f
+                ? (surfaceLevel - densityStart) / denominator
+                : 0.5f;
+            t = Mathf.Clamp01(t);
+            return Vector3.Lerp(start, end, t);
+        }
+
+        private static Vector3 ToWorld(TerrainChunk chunk, Vector3 localCoord)
+        {
+            float vSize = chunk.VoxelSize;
+            return chunk.WorldPosition + new Vector3(localCoord.x * vSize, localCoord.y * vSize, localCoord.z * vSize);
+        }
+
+        private static void AddQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normalHint,
+            List<Vector3> vertices, List<int> triangles, List<Vector3> normals)
+        {
+            Vector3 normal = Vector3.Cross(b - a, c - a);
+            if (normal.sqrMagnitude < 1e-12f)
+            {
+                return;
+            }
+
+            normal.Normalize();
+            if (Vector3.Dot(normal, normalHint) < 0f)
+            {
+                Vector3 tempB = b;
+                b = d;
+                d = tempB;
+                normal = -normal;
+            }
+
+            int startIndex = vertices.Count;
+            vertices.Add(a);
+            vertices.Add(b);
+            vertices.Add(c);
+            vertices.Add(d);
+
+            normals.Add(normal);
+            normals.Add(normal);
+            normals.Add(normal);
+            normals.Add(normal);
+
+            triangles.Add(startIndex);
+            triangles.Add(startIndex + 1);
+            triangles.Add(startIndex + 2);
+
+            triangles.Add(startIndex);
+            triangles.Add(startIndex + 2);
+            triangles.Add(startIndex + 3);
+        }
+
+        private static int GetComponent(Vector3Int value, int axis)
+        {
+            switch (axis)
+            {
+                case 0: return value.x;
+                case 1: return value.y;
+                default: return value.z;
+            }
+        }
+
+        private static float GetComponent(Vector3 value, int axis)
+        {
+            switch (axis)
+            {
+                case 0: return value.x;
+                case 1: return value.y;
+                default: return value.z;
+            }
+        }
+
+        private static void SetComponent(ref Vector3 vector, int axis, float newValue)
+        {
+            switch (axis)
+            {
+                case 0:
+                    vector.x = newValue;
+                    break;
+                case 1:
+                    vector.y = newValue;
+                    break;
+                default:
+                    vector.z = newValue;
+                    break;
+            }
         }
 
         #endregion
