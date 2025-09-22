@@ -162,6 +162,19 @@ namespace TerrainSystem
         private bool gpuBuffersInitialized;
         private bool needsGpuBufferInitRetry;
 
+        private NativeArray<float> cachedBiomeThresholds;
+        private NativeArray<float> cachedBiomeGroundLevels;
+        private NativeArray<float> cachedBiomeHeightImpacts;
+        private NativeArray<float> cachedBiomeHeightScales;
+        private NativeArray<float> cachedBiomeCaveImpacts;
+        private NativeArray<float> cachedBiomeCaveScales;
+        private NativeArray<int> cachedBiomeOctaves;
+        private NativeArray<float> cachedBiomeLacunarity;
+        private NativeArray<float> cachedBiomePersistence;
+        private int cachedBiomeCount;
+        private bool biomeNativeCacheDirty = true;
+        private BiomeSettings[] biomeCacheSnapshot = Array.Empty<BiomeSettings>();
+
         private TerrainProcessingMode runtimeProcessingMode = TerrainProcessingMode.CPU;
         private bool hasLoggedModeFallback;
 
@@ -385,6 +398,7 @@ private void LateUpdate()
         {
             CleanupAllJobs();
             ReleaseStaticGpuBuffers();
+            DisposeBiomeNativeCaches();
 
             while (chunkPool.Count > 0)
             {
@@ -418,6 +432,8 @@ private void LateUpdate()
             {
                 HandleGeometrySettingsChangeIfNeeded();
             }
+
+            MarkBiomeCacheDirty();
         }
         
         private void InitializeStaticGpuBuffers()
@@ -554,6 +570,160 @@ private void LateUpdate()
             return DefaultBiomeSettingsArray;
         }
 
+        private void MarkBiomeCacheDirty()
+        {
+            biomeNativeCacheDirty = true;
+        }
+
+        private BiomeSettings[] EnsureBiomeNativeCaches(bool logWarningIfFallback)
+        {
+            BiomeSettings[] activeBiomes = GetActiveBiomes(logWarningIfFallback);
+            if (ShouldRebuildBiomeNativeCache(activeBiomes))
+            {
+                RebuildBiomeNativeCaches(activeBiomes);
+            }
+
+            return activeBiomes;
+        }
+
+        private bool ShouldRebuildBiomeNativeCache(BiomeSettings[] activeBiomes)
+        {
+            if (biomeNativeCacheDirty)
+            {
+                return true;
+            }
+
+            if (cachedBiomeCount != activeBiomes.Length)
+            {
+                return true;
+            }
+
+            if (biomeCacheSnapshot.Length != activeBiomes.Length)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < activeBiomes.Length; i++)
+            {
+                if (!BiomeSettingsApproximatelyEqual(activeBiomes[i], biomeCacheSnapshot[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void RebuildBiomeNativeCaches(BiomeSettings[] activeBiomes)
+        {
+            CompleteAllGenerationJobsImmediate();
+            DisposeBiomeNativeCaches();
+
+            cachedBiomeCount = activeBiomes.Length;
+            if (cachedBiomeCount == 0)
+            {
+                biomeCacheSnapshot = Array.Empty<BiomeSettings>();
+                biomeNativeCacheDirty = false;
+                return;
+            }
+
+            cachedBiomeThresholds = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeGroundLevels = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeHeightImpacts = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeHeightScales = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeCaveImpacts = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeCaveScales = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeOctaves = new NativeArray<int>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeLacunarity = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomePersistence = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+
+            for (int i = 0; i < cachedBiomeCount; i++)
+            {
+                BiomeSettings biome = activeBiomes[i];
+                cachedBiomeThresholds[i] = biome.startThreshold;
+                cachedBiomeGroundLevels[i] = biome.worldGroundLevel;
+                cachedBiomeHeightImpacts[i] = biome.heightImpact;
+                cachedBiomeHeightScales[i] = biome.heightNoiseScale;
+                cachedBiomeCaveImpacts[i] = biome.caveImpact;
+                cachedBiomeCaveScales[i] = biome.caveNoiseScale;
+                cachedBiomeOctaves[i] = biome.octaves;
+                cachedBiomeLacunarity[i] = biome.lacunarity;
+                cachedBiomePersistence[i] = biome.persistence;
+            }
+
+            biomeCacheSnapshot = new BiomeSettings[cachedBiomeCount];
+            Array.Copy(activeBiomes, biomeCacheSnapshot, cachedBiomeCount);
+            biomeNativeCacheDirty = false;
+        }
+
+        private static bool BiomeSettingsApproximatelyEqual(BiomeSettings lhs, BiomeSettings rhs)
+        {
+            if (!string.Equals(lhs.name, rhs.name, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!Mathf.Approximately(lhs.startThreshold, rhs.startThreshold)) return false;
+            if (lhs.octaves != rhs.octaves) return false;
+            if (!Mathf.Approximately(lhs.lacunarity, rhs.lacunarity)) return false;
+            if (!Mathf.Approximately(lhs.persistence, rhs.persistence)) return false;
+            if (!Mathf.Approximately(lhs.worldGroundLevel, rhs.worldGroundLevel)) return false;
+            if (!Mathf.Approximately(lhs.heightImpact, rhs.heightImpact)) return false;
+            if (!Mathf.Approximately(lhs.heightNoiseScale, rhs.heightNoiseScale)) return false;
+            if (!Mathf.Approximately(lhs.caveImpact, rhs.caveImpact)) return false;
+            if (!Mathf.Approximately(lhs.caveNoiseScale, rhs.caveNoiseScale)) return false;
+
+            return true;
+        }
+
+        private void CompleteAllGenerationJobsImmediate()
+        {
+            if (runningGenJobs.Count == 0)
+            {
+                return;
+            }
+
+            var pendingJobs = new List<KeyValuePair<Vector3Int, VoxelGenJobHandleData>>(runningGenJobs);
+            runningGenJobs.Clear();
+
+            foreach (var kvp in pendingJobs)
+            {
+                var pos = kvp.Key;
+                var data = kvp.Value;
+                data.handle.Complete();
+
+                if (chunks.TryGetValue(pos, out var chunkData))
+                {
+                    chunkData.chunk.ApplyDensities(data.densities);
+                    if (!isRegenerating)
+                    {
+                        QueueChunkForUpdate(pos);
+                    }
+                }
+
+                if (data.densities.IsCreated)
+                {
+                    data.densities.Dispose();
+                }
+            }
+        }
+
+        private void DisposeBiomeNativeCaches()
+        {
+            if (cachedBiomeThresholds.IsCreated) cachedBiomeThresholds.Dispose();
+            if (cachedBiomeGroundLevels.IsCreated) cachedBiomeGroundLevels.Dispose();
+            if (cachedBiomeHeightImpacts.IsCreated) cachedBiomeHeightImpacts.Dispose();
+            if (cachedBiomeHeightScales.IsCreated) cachedBiomeHeightScales.Dispose();
+            if (cachedBiomeCaveImpacts.IsCreated) cachedBiomeCaveImpacts.Dispose();
+            if (cachedBiomeCaveScales.IsCreated) cachedBiomeCaveScales.Dispose();
+            if (cachedBiomeOctaves.IsCreated) cachedBiomeOctaves.Dispose();
+            if (cachedBiomeLacunarity.IsCreated) cachedBiomeLacunarity.Dispose();
+            if (cachedBiomePersistence.IsCreated) cachedBiomePersistence.Dispose();
+
+            cachedBiomeCount = 0;
+            biomeCacheSnapshot = Array.Empty<BiomeSettings>();
+        }
+
         #endregion
 
         #region World Regeneration
@@ -569,6 +739,7 @@ private void LateUpdate()
                 return;
             }
 
+            MarkBiomeCacheDirty();
             isRegenerating = true;
             StartCoroutine(RegenerateWorldCoroutine());
         }
@@ -1277,38 +1448,15 @@ private void LateUpdate()
             int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
             var densities = new NativeArray<float>(voxelCount, Allocator.Persistent);
 
-            BiomeSettings[] activeBiomes = GetActiveBiomes(true);
-            int activeBiomeCount = activeBiomes.Length;
-
-            // Create NativeArrays for biome data
-            var biomeThresholds = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
-            var biomeGroundLevels = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
-            var biomeHeightImpacts = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
-            var biomeHeightScales = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
-            var biomeCaveImpacts = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
-            var biomeCaveScales = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
-
-            // Biome-specific noise parameters
-            var biomeOctaves = new NativeArray<int>(activeBiomeCount, Allocator.TempJob);
-            var biomeLacunarity = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
-            var biomePersistence = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
-
-            // Fill the biome data arrays
-            for (int i = 0; i < activeBiomeCount; i++)
+            EnsureBiomeNativeCaches(true);
+            int activeBiomeCount = cachedBiomeCount;
+            if (activeBiomeCount == 0)
             {
-                BiomeSettings biome = activeBiomes[i];
-                biomeThresholds[i] = biome.startThreshold;
-                biomeGroundLevels[i] = biome.worldGroundLevel;
-                biomeHeightImpacts[i] = biome.heightImpact;
-                biomeHeightScales[i] = biome.heightNoiseScale;
-                biomeCaveImpacts[i] = biome.caveImpact;
-                biomeCaveScales[i] = biome.caveNoiseScale;
-
-                biomeOctaves[i] = biome.octaves;
-                biomeLacunarity[i] = biome.lacunarity;
-                biomePersistence[i] = biome.persistence;
+                Debug.LogWarning("No biome data available for voxel generation.", this);
+                densities.Dispose();
+                return;
             }
-            
+
             // Get the LOD-adjusted voxel size
             float adjustedVoxelSize = GetVoxelSizeForLOD(lodLevel);
 
@@ -1318,21 +1466,21 @@ private void LateUpdate()
                 chunkSize = new int3(voxelDimensions.x, voxelDimensions.y, voxelDimensions.z),
                 chunkWorldOrigin = (float3)chunk.WorldPosition,
                 voxelSize = adjustedVoxelSize, // Use LOD-adjusted voxel size
-                
+
                 biomeNoiseScale = biomeNoiseScale,
                 biomeBlendRange = biomeBlendRange,
                 biomeCount = activeBiomeCount,
-                biomeThresholds = biomeThresholds,
-                biomeGroundLevels = biomeGroundLevels,
-                biomeHeightImpacts = biomeHeightImpacts,
-                biomeHeightScales = biomeHeightScales,
-                biomeCaveImpacts = biomeCaveImpacts,
-                biomeCaveScales = biomeCaveScales,
-                
-                biomeOctaves = biomeOctaves,
-                biomeLacunarity = biomeLacunarity,
-                biomePersistence = biomePersistence,
-                
+                biomeThresholds = cachedBiomeThresholds,
+                biomeGroundLevels = cachedBiomeGroundLevels,
+                biomeHeightImpacts = cachedBiomeHeightImpacts,
+                biomeHeightScales = cachedBiomeHeightScales,
+                biomeCaveImpacts = cachedBiomeCaveImpacts,
+                biomeCaveScales = cachedBiomeCaveScales,
+
+                biomeOctaves = cachedBiomeOctaves,
+                biomeLacunarity = cachedBiomeLacunarity,
+                biomePersistence = cachedBiomePersistence,
+
                 temperatureNoiseScale = temperatureNoiseScale,
                 humidityNoiseScale = humidityNoiseScale,
                 riverNoiseScale = riverNoiseScale,
@@ -1341,33 +1489,6 @@ private void LateUpdate()
             };
 
             var handle = job.Schedule();
-            
-            // Add dependencies for proper disposal
-            handle = JobHandle.CombineDependencies(
-                handle, 
-                biomeThresholds.Dispose(handle),
-                biomeGroundLevels.Dispose(handle)
-            );
-            handle = JobHandle.CombineDependencies(
-                handle, 
-                biomeHeightImpacts.Dispose(handle),
-                biomeHeightScales.Dispose(handle)
-            );
-            handle = JobHandle.CombineDependencies(
-                handle, 
-                biomeCaveImpacts.Dispose(handle),
-                biomeCaveScales.Dispose(handle)
-            );
-            
-            handle = JobHandle.CombineDependencies(
-                handle, 
-                biomeOctaves.Dispose(handle),
-                biomeLacunarity.Dispose(handle)
-            );
-            handle = JobHandle.CombineDependencies(
-                handle,
-                biomePersistence.Dispose(handle)
-            );
 
             runningGenJobs[chunk.ChunkPosition] = new VoxelGenJobHandleData
             {
