@@ -198,6 +198,24 @@ namespace TerrainSystem
         private ComputeBuffer biomeOctavesBuffer;
         private ComputeBuffer biomeLacunarityBuffer;
         private ComputeBuffer biomePersistenceBuffer;
+        private ComputeBuffer biomeHeightWarpEnabledBuffer;
+        private ComputeBuffer biomeHeightWarpStrengthsBuffer;
+        private ComputeBuffer biomeHeightWarpScalesBuffer;
+        private ComputeBuffer biomeCaveWarpEnabledBuffer;
+        private ComputeBuffer biomeCaveWarpStrengthsBuffer;
+        private ComputeBuffer biomeCaveWarpScalesBuffer;
+        private ComputeBuffer biomeExtraHeightLayerEnabledBuffer;
+        private ComputeBuffer biomeExtraHeightOctavesBuffer;
+        private ComputeBuffer biomeExtraHeightScalesBuffer;
+        private ComputeBuffer biomeExtraHeightLacunarityBuffer;
+        private ComputeBuffer biomeExtraHeightPersistenceBuffer;
+        private ComputeBuffer biomeExtraHeightImpactBuffer;
+        private ComputeBuffer biomeExtraCaveLayerEnabledBuffer;
+        private ComputeBuffer biomeExtraCaveOctavesBuffer;
+        private ComputeBuffer biomeExtraCaveScalesBuffer;
+        private ComputeBuffer biomeExtraCaveLacunarityBuffer;
+        private ComputeBuffer biomeExtraCavePersistenceBuffer;
+        private ComputeBuffer biomeExtraCaveImpactBuffer;
         private ComputeBuffer triangleTableBuffer;
         private ComputeBuffer edgeConnectionsBuffer;
         private bool gpuBuffersInitialized;
@@ -215,6 +233,24 @@ namespace TerrainSystem
         private NativeArray<int> cachedBiomeOctaves;
         private NativeArray<float> cachedBiomeLacunarity;
         private NativeArray<float> cachedBiomePersistence;
+        private NativeArray<int> cachedBiomeHeightWarpEnabled;
+        private NativeArray<float> cachedBiomeHeightWarpStrengths;
+        private NativeArray<float> cachedBiomeHeightWarpScales;
+        private NativeArray<int> cachedBiomeCaveWarpEnabled;
+        private NativeArray<float> cachedBiomeCaveWarpStrengths;
+        private NativeArray<float> cachedBiomeCaveWarpScales;
+        private NativeArray<int> cachedBiomeExtraHeightLayerEnabled;
+        private NativeArray<int> cachedBiomeExtraHeightOctaves;
+        private NativeArray<float> cachedBiomeExtraHeightScales;
+        private NativeArray<float> cachedBiomeExtraHeightLacunarity;
+        private NativeArray<float> cachedBiomeExtraHeightPersistence;
+        private NativeArray<float> cachedBiomeExtraHeightImpact;
+        private NativeArray<int> cachedBiomeExtraCaveLayerEnabled;
+        private NativeArray<int> cachedBiomeExtraCaveOctaves;
+        private NativeArray<float> cachedBiomeExtraCaveScales;
+        private NativeArray<float> cachedBiomeExtraCaveLacunarity;
+        private NativeArray<float> cachedBiomeExtraCavePersistence;
+        private NativeArray<float> cachedBiomeExtraCaveImpact;
         private int cachedBiomeCount;
         private bool biomeNativeCacheDirty = true;
         private BiomeSettings[] biomeCacheSnapshot = Array.Empty<BiomeSettings>();
@@ -551,6 +587,24 @@ namespace TerrainSystem
                 var biomeOctaves = new int[biomeCount];
                 var biomeLacunarity = new float[biomeCount];
                 var biomePersistence = new float[biomeCount];
+                var biomeHeightWarpEnabled = new int[biomeCount];
+                var biomeHeightWarpStrengths = new float[biomeCount];
+                var biomeHeightWarpScales = new float[biomeCount];
+                var biomeCaveWarpEnabled = new int[biomeCount];
+                var biomeCaveWarpStrengths = new float[biomeCount];
+                var biomeCaveWarpScales = new float[biomeCount];
+                var biomeExtraHeightLayerEnabled = new int[biomeCount];
+                var biomeExtraHeightOctaves = new int[biomeCount];
+                var biomeExtraHeightScales = new float[biomeCount];
+                var biomeExtraHeightLacunarity = new float[biomeCount];
+                var biomeExtraHeightPersistence = new float[biomeCount];
+                var biomeExtraHeightImpact = new float[biomeCount];
+                var biomeExtraCaveLayerEnabled = new int[biomeCount];
+                var biomeExtraCaveOctaves = new int[biomeCount];
+                var biomeExtraCaveScales = new float[biomeCount];
+                var biomeExtraCaveLacunarity = new float[biomeCount];
+                var biomeExtraCavePersistence = new float[biomeCount];
+                var biomeExtraCaveImpact = new float[biomeCount];
 
                 for (int i = 0; i < biomeCount; i++)
                 {
@@ -564,6 +618,24 @@ namespace TerrainSystem
                     biomeOctaves[i] = biome.octaves;
                     biomeLacunarity[i] = biome.lacunarity;
                     biomePersistence[i] = biome.persistence;
+                    biomeHeightWarpEnabled[i] = biome.enableHeightDomainWarp ? 1 : 0;
+                    biomeHeightWarpStrengths[i] = biome.heightWarpStrength;
+                    biomeHeightWarpScales[i] = biome.heightWarpScale;
+                    biomeCaveWarpEnabled[i] = biome.enableCaveDomainWarp ? 1 : 0;
+                    biomeCaveWarpStrengths[i] = biome.caveWarpStrength;
+                    biomeCaveWarpScales[i] = biome.caveWarpScale;
+                    biomeExtraHeightLayerEnabled[i] = biome.enableAdditionalHeightLayer ? 1 : 0;
+                    biomeExtraHeightOctaves[i] = biome.additionalHeightOctaves;
+                    biomeExtraHeightScales[i] = biome.additionalHeightScale;
+                    biomeExtraHeightLacunarity[i] = biome.additionalHeightLacunarity;
+                    biomeExtraHeightPersistence[i] = biome.additionalHeightPersistence;
+                    biomeExtraHeightImpact[i] = biome.additionalHeightImpact;
+                    biomeExtraCaveLayerEnabled[i] = biome.enableAdditionalCaveLayer ? 1 : 0;
+                    biomeExtraCaveOctaves[i] = biome.additionalCaveOctaves;
+                    biomeExtraCaveScales[i] = biome.additionalCaveScale;
+                    biomeExtraCaveLacunarity[i] = biome.additionalCaveLacunarity;
+                    biomeExtraCavePersistence[i] = biome.additionalCavePersistence;
+                    biomeExtraCaveImpact[i] = biome.additionalCaveImpact;
                 }
 
                 biomeThresholdsBuffer = new ComputeBuffer(biomeCount, sizeof(float));
@@ -575,6 +647,24 @@ namespace TerrainSystem
                 biomeOctavesBuffer = new ComputeBuffer(biomeCount, sizeof(int));
                 biomeLacunarityBuffer = new ComputeBuffer(biomeCount, sizeof(float));
                 biomePersistenceBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeHeightWarpEnabledBuffer = new ComputeBuffer(biomeCount, sizeof(int));
+                biomeHeightWarpStrengthsBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeHeightWarpScalesBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeCaveWarpEnabledBuffer = new ComputeBuffer(biomeCount, sizeof(int));
+                biomeCaveWarpStrengthsBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeCaveWarpScalesBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeExtraHeightLayerEnabledBuffer = new ComputeBuffer(biomeCount, sizeof(int));
+                biomeExtraHeightOctavesBuffer = new ComputeBuffer(biomeCount, sizeof(int));
+                biomeExtraHeightScalesBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeExtraHeightLacunarityBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeExtraHeightPersistenceBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeExtraHeightImpactBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeExtraCaveLayerEnabledBuffer = new ComputeBuffer(biomeCount, sizeof(int));
+                biomeExtraCaveOctavesBuffer = new ComputeBuffer(biomeCount, sizeof(int));
+                biomeExtraCaveScalesBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeExtraCaveLacunarityBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeExtraCavePersistenceBuffer = new ComputeBuffer(biomeCount, sizeof(float));
+                biomeExtraCaveImpactBuffer = new ComputeBuffer(biomeCount, sizeof(float));
 
                 biomeThresholdsBuffer.SetData(biomeThresholds);
                 biomeGroundLevelsBuffer.SetData(biomeGroundLevels);
@@ -585,6 +675,24 @@ namespace TerrainSystem
                 biomeOctavesBuffer.SetData(biomeOctaves);
                 biomeLacunarityBuffer.SetData(biomeLacunarity);
                 biomePersistenceBuffer.SetData(biomePersistence);
+                biomeHeightWarpEnabledBuffer.SetData(biomeHeightWarpEnabled);
+                biomeHeightWarpStrengthsBuffer.SetData(biomeHeightWarpStrengths);
+                biomeHeightWarpScalesBuffer.SetData(biomeHeightWarpScales);
+                biomeCaveWarpEnabledBuffer.SetData(biomeCaveWarpEnabled);
+                biomeCaveWarpStrengthsBuffer.SetData(biomeCaveWarpStrengths);
+                biomeCaveWarpScalesBuffer.SetData(biomeCaveWarpScales);
+                biomeExtraHeightLayerEnabledBuffer.SetData(biomeExtraHeightLayerEnabled);
+                biomeExtraHeightOctavesBuffer.SetData(biomeExtraHeightOctaves);
+                biomeExtraHeightScalesBuffer.SetData(biomeExtraHeightScales);
+                biomeExtraHeightLacunarityBuffer.SetData(biomeExtraHeightLacunarity);
+                biomeExtraHeightPersistenceBuffer.SetData(biomeExtraHeightPersistence);
+                biomeExtraHeightImpactBuffer.SetData(biomeExtraHeightImpact);
+                biomeExtraCaveLayerEnabledBuffer.SetData(biomeExtraCaveLayerEnabled);
+                biomeExtraCaveOctavesBuffer.SetData(biomeExtraCaveOctaves);
+                biomeExtraCaveScalesBuffer.SetData(biomeExtraCaveScales);
+                biomeExtraCaveLacunarityBuffer.SetData(biomeExtraCaveLacunarity);
+                biomeExtraCavePersistenceBuffer.SetData(biomeExtraCavePersistence);
+                biomeExtraCaveImpactBuffer.SetData(biomeExtraCaveImpact);
             }
 
             triangleTableBuffer = new ComputeBuffer(meshGenerator.NativeTriangleTable.Length, sizeof(int));
@@ -620,6 +728,42 @@ namespace TerrainSystem
             biomeLacunarityBuffer = null;
             biomePersistenceBuffer?.Release();
             biomePersistenceBuffer = null;
+            biomeHeightWarpEnabledBuffer?.Release();
+            biomeHeightWarpEnabledBuffer = null;
+            biomeHeightWarpStrengthsBuffer?.Release();
+            biomeHeightWarpStrengthsBuffer = null;
+            biomeHeightWarpScalesBuffer?.Release();
+            biomeHeightWarpScalesBuffer = null;
+            biomeCaveWarpEnabledBuffer?.Release();
+            biomeCaveWarpEnabledBuffer = null;
+            biomeCaveWarpStrengthsBuffer?.Release();
+            biomeCaveWarpStrengthsBuffer = null;
+            biomeCaveWarpScalesBuffer?.Release();
+            biomeCaveWarpScalesBuffer = null;
+            biomeExtraHeightLayerEnabledBuffer?.Release();
+            biomeExtraHeightLayerEnabledBuffer = null;
+            biomeExtraHeightOctavesBuffer?.Release();
+            biomeExtraHeightOctavesBuffer = null;
+            biomeExtraHeightScalesBuffer?.Release();
+            biomeExtraHeightScalesBuffer = null;
+            biomeExtraHeightLacunarityBuffer?.Release();
+            biomeExtraHeightLacunarityBuffer = null;
+            biomeExtraHeightPersistenceBuffer?.Release();
+            biomeExtraHeightPersistenceBuffer = null;
+            biomeExtraHeightImpactBuffer?.Release();
+            biomeExtraHeightImpactBuffer = null;
+            biomeExtraCaveLayerEnabledBuffer?.Release();
+            biomeExtraCaveLayerEnabledBuffer = null;
+            biomeExtraCaveOctavesBuffer?.Release();
+            biomeExtraCaveOctavesBuffer = null;
+            biomeExtraCaveScalesBuffer?.Release();
+            biomeExtraCaveScalesBuffer = null;
+            biomeExtraCaveLacunarityBuffer?.Release();
+            biomeExtraCaveLacunarityBuffer = null;
+            biomeExtraCavePersistenceBuffer?.Release();
+            biomeExtraCavePersistenceBuffer = null;
+            biomeExtraCaveImpactBuffer?.Release();
+            biomeExtraCaveImpactBuffer = null;
             triangleTableBuffer?.Release();
             triangleTableBuffer = null;
             edgeConnectionsBuffer?.Release();
@@ -738,6 +882,24 @@ namespace TerrainSystem
             cachedBiomeOctaves = new NativeArray<int>(cachedBiomeCount, Allocator.Persistent);
             cachedBiomeLacunarity = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
             cachedBiomePersistence = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeHeightWarpEnabled = new NativeArray<int>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeHeightWarpStrengths = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeHeightWarpScales = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeCaveWarpEnabled = new NativeArray<int>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeCaveWarpStrengths = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeCaveWarpScales = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraHeightLayerEnabled = new NativeArray<int>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraHeightOctaves = new NativeArray<int>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraHeightScales = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraHeightLacunarity = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraHeightPersistence = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraHeightImpact = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraCaveLayerEnabled = new NativeArray<int>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraCaveOctaves = new NativeArray<int>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraCaveScales = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraCaveLacunarity = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraCavePersistence = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
+            cachedBiomeExtraCaveImpact = new NativeArray<float>(cachedBiomeCount, Allocator.Persistent);
 
             for (int i = 0; i < cachedBiomeCount; i++)
             {
@@ -751,6 +913,24 @@ namespace TerrainSystem
                 cachedBiomeOctaves[i] = biome.octaves;
                 cachedBiomeLacunarity[i] = biome.lacunarity;
                 cachedBiomePersistence[i] = biome.persistence;
+                cachedBiomeHeightWarpEnabled[i] = biome.enableHeightDomainWarp ? 1 : 0;
+                cachedBiomeHeightWarpStrengths[i] = biome.heightWarpStrength;
+                cachedBiomeHeightWarpScales[i] = biome.heightWarpScale;
+                cachedBiomeCaveWarpEnabled[i] = biome.enableCaveDomainWarp ? 1 : 0;
+                cachedBiomeCaveWarpStrengths[i] = biome.caveWarpStrength;
+                cachedBiomeCaveWarpScales[i] = biome.caveWarpScale;
+                cachedBiomeExtraHeightLayerEnabled[i] = biome.enableAdditionalHeightLayer ? 1 : 0;
+                cachedBiomeExtraHeightOctaves[i] = biome.additionalHeightOctaves;
+                cachedBiomeExtraHeightScales[i] = biome.additionalHeightScale;
+                cachedBiomeExtraHeightLacunarity[i] = biome.additionalHeightLacunarity;
+                cachedBiomeExtraHeightPersistence[i] = biome.additionalHeightPersistence;
+                cachedBiomeExtraHeightImpact[i] = biome.additionalHeightImpact;
+                cachedBiomeExtraCaveLayerEnabled[i] = biome.enableAdditionalCaveLayer ? 1 : 0;
+                cachedBiomeExtraCaveOctaves[i] = biome.additionalCaveOctaves;
+                cachedBiomeExtraCaveScales[i] = biome.additionalCaveScale;
+                cachedBiomeExtraCaveLacunarity[i] = biome.additionalCaveLacunarity;
+                cachedBiomeExtraCavePersistence[i] = biome.additionalCavePersistence;
+                cachedBiomeExtraCaveImpact[i] = biome.additionalCaveImpact;
             }
 
             biomeCacheSnapshot = new BiomeSettings[cachedBiomeCount];
@@ -774,6 +954,24 @@ namespace TerrainSystem
             if (!Mathf.Approximately(lhs.heightNoiseScale, rhs.heightNoiseScale)) return false;
             if (!Mathf.Approximately(lhs.caveImpact, rhs.caveImpact)) return false;
             if (!Mathf.Approximately(lhs.caveNoiseScale, rhs.caveNoiseScale)) return false;
+            if (lhs.enableHeightDomainWarp != rhs.enableHeightDomainWarp) return false;
+            if (!Mathf.Approximately(lhs.heightWarpStrength, rhs.heightWarpStrength)) return false;
+            if (!Mathf.Approximately(lhs.heightWarpScale, rhs.heightWarpScale)) return false;
+            if (lhs.enableCaveDomainWarp != rhs.enableCaveDomainWarp) return false;
+            if (!Mathf.Approximately(lhs.caveWarpStrength, rhs.caveWarpStrength)) return false;
+            if (!Mathf.Approximately(lhs.caveWarpScale, rhs.caveWarpScale)) return false;
+            if (lhs.enableAdditionalHeightLayer != rhs.enableAdditionalHeightLayer) return false;
+            if (lhs.additionalHeightOctaves != rhs.additionalHeightOctaves) return false;
+            if (!Mathf.Approximately(lhs.additionalHeightScale, rhs.additionalHeightScale)) return false;
+            if (!Mathf.Approximately(lhs.additionalHeightLacunarity, rhs.additionalHeightLacunarity)) return false;
+            if (!Mathf.Approximately(lhs.additionalHeightPersistence, rhs.additionalHeightPersistence)) return false;
+            if (!Mathf.Approximately(lhs.additionalHeightImpact, rhs.additionalHeightImpact)) return false;
+            if (lhs.enableAdditionalCaveLayer != rhs.enableAdditionalCaveLayer) return false;
+            if (lhs.additionalCaveOctaves != rhs.additionalCaveOctaves) return false;
+            if (!Mathf.Approximately(lhs.additionalCaveScale, rhs.additionalCaveScale)) return false;
+            if (!Mathf.Approximately(lhs.additionalCaveLacunarity, rhs.additionalCaveLacunarity)) return false;
+            if (!Mathf.Approximately(lhs.additionalCavePersistence, rhs.additionalCavePersistence)) return false;
+            if (!Mathf.Approximately(lhs.additionalCaveImpact, rhs.additionalCaveImpact)) return false;
 
             return true;
         }
@@ -821,6 +1019,24 @@ namespace TerrainSystem
             if (cachedBiomeOctaves.IsCreated) cachedBiomeOctaves.Dispose();
             if (cachedBiomeLacunarity.IsCreated) cachedBiomeLacunarity.Dispose();
             if (cachedBiomePersistence.IsCreated) cachedBiomePersistence.Dispose();
+            if (cachedBiomeHeightWarpEnabled.IsCreated) cachedBiomeHeightWarpEnabled.Dispose();
+            if (cachedBiomeHeightWarpStrengths.IsCreated) cachedBiomeHeightWarpStrengths.Dispose();
+            if (cachedBiomeHeightWarpScales.IsCreated) cachedBiomeHeightWarpScales.Dispose();
+            if (cachedBiomeCaveWarpEnabled.IsCreated) cachedBiomeCaveWarpEnabled.Dispose();
+            if (cachedBiomeCaveWarpStrengths.IsCreated) cachedBiomeCaveWarpStrengths.Dispose();
+            if (cachedBiomeCaveWarpScales.IsCreated) cachedBiomeCaveWarpScales.Dispose();
+            if (cachedBiomeExtraHeightLayerEnabled.IsCreated) cachedBiomeExtraHeightLayerEnabled.Dispose();
+            if (cachedBiomeExtraHeightOctaves.IsCreated) cachedBiomeExtraHeightOctaves.Dispose();
+            if (cachedBiomeExtraHeightScales.IsCreated) cachedBiomeExtraHeightScales.Dispose();
+            if (cachedBiomeExtraHeightLacunarity.IsCreated) cachedBiomeExtraHeightLacunarity.Dispose();
+            if (cachedBiomeExtraHeightPersistence.IsCreated) cachedBiomeExtraHeightPersistence.Dispose();
+            if (cachedBiomeExtraHeightImpact.IsCreated) cachedBiomeExtraHeightImpact.Dispose();
+            if (cachedBiomeExtraCaveLayerEnabled.IsCreated) cachedBiomeExtraCaveLayerEnabled.Dispose();
+            if (cachedBiomeExtraCaveOctaves.IsCreated) cachedBiomeExtraCaveOctaves.Dispose();
+            if (cachedBiomeExtraCaveScales.IsCreated) cachedBiomeExtraCaveScales.Dispose();
+            if (cachedBiomeExtraCaveLacunarity.IsCreated) cachedBiomeExtraCaveLacunarity.Dispose();
+            if (cachedBiomeExtraCavePersistence.IsCreated) cachedBiomeExtraCavePersistence.Dispose();
+            if (cachedBiomeExtraCaveImpact.IsCreated) cachedBiomeExtraCaveImpact.Dispose();
 
             cachedBiomeCount = 0;
             biomeCacheSnapshot = Array.Empty<BiomeSettings>();
@@ -1601,6 +1817,24 @@ namespace TerrainSystem
                 biomeOctaves = cachedBiomeOctaves,
                 biomeLacunarity = cachedBiomeLacunarity,
                 biomePersistence = cachedBiomePersistence,
+                biomeHeightWarpEnabled = cachedBiomeHeightWarpEnabled,
+                biomeHeightWarpStrengths = cachedBiomeHeightWarpStrengths,
+                biomeHeightWarpScales = cachedBiomeHeightWarpScales,
+                biomeCaveWarpEnabled = cachedBiomeCaveWarpEnabled,
+                biomeCaveWarpStrengths = cachedBiomeCaveWarpStrengths,
+                biomeCaveWarpScales = cachedBiomeCaveWarpScales,
+                biomeExtraHeightLayerEnabled = cachedBiomeExtraHeightLayerEnabled,
+                biomeExtraHeightOctaves = cachedBiomeExtraHeightOctaves,
+                biomeExtraHeightScales = cachedBiomeExtraHeightScales,
+                biomeExtraHeightLacunarity = cachedBiomeExtraHeightLacunarity,
+                biomeExtraHeightPersistence = cachedBiomeExtraHeightPersistence,
+                biomeExtraHeightImpact = cachedBiomeExtraHeightImpact,
+                biomeExtraCaveLayerEnabled = cachedBiomeExtraCaveLayerEnabled,
+                biomeExtraCaveOctaves = cachedBiomeExtraCaveOctaves,
+                biomeExtraCaveScales = cachedBiomeExtraCaveScales,
+                biomeExtraCaveLacunarity = cachedBiomeExtraCaveLacunarity,
+                biomeExtraCavePersistence = cachedBiomeExtraCavePersistence,
+                biomeExtraCaveImpact = cachedBiomeExtraCaveImpact,
 
                 temperatureNoiseScale = temperatureNoiseScale,
                 humidityNoiseScale = humidityNoiseScale,
@@ -1655,18 +1889,36 @@ namespace TerrainSystem
             int biomeCount = activeBiomes.Length;
             voxelTerrainShader.SetFloat("_BiomeNoiseScale", biomeNoiseScale);
             voxelTerrainShader.SetInt("_BiomeCount", biomeCount);
-            if (biomeCount > 0)
-            {
-                voxelTerrainShader.SetBuffer(kernel, "_BiomeThresholds", biomeThresholdsBuffer);
-                voxelTerrainShader.SetBuffer(kernel, "_BiomeGroundLevels", biomeGroundLevelsBuffer);
-                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightImpacts", biomeHeightImpactsBuffer);
-                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightScales", biomeHeightScalesBuffer);
-                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveImpacts", biomeCaveImpactsBuffer);
-                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveScales", biomeCaveScalesBuffer);
-                voxelTerrainShader.SetBuffer(kernel, "_BiomeOctaves", biomeOctavesBuffer);
-                voxelTerrainShader.SetBuffer(kernel, "_BiomeLacunarity", biomeLacunarityBuffer);
-                voxelTerrainShader.SetBuffer(kernel, "_BiomePersistence", biomePersistenceBuffer);
-            }
+                if (biomeCount > 0)
+                {
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeThresholds", biomeThresholdsBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeGroundLevels", biomeGroundLevelsBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightImpacts", biomeHeightImpactsBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightScales", biomeHeightScalesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveImpacts", biomeCaveImpactsBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveScales", biomeCaveScalesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeOctaves", biomeOctavesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeLacunarity", biomeLacunarityBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomePersistence", biomePersistenceBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpEnabled", biomeHeightWarpEnabledBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpStrengths", biomeHeightWarpStrengthsBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpScales", biomeHeightWarpScalesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpEnabled", biomeCaveWarpEnabledBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpStrengths", biomeCaveWarpStrengthsBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpScales", biomeCaveWarpScalesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightLayerEnabled", biomeExtraHeightLayerEnabledBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightOctaves", biomeExtraHeightOctavesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightScales", biomeExtraHeightScalesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightLacunarity", biomeExtraHeightLacunarityBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightPersistence", biomeExtraHeightPersistenceBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightImpact", biomeExtraHeightImpactBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveLayerEnabled", biomeExtraCaveLayerEnabledBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveOctaves", biomeExtraCaveOctavesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveScales", biomeExtraCaveScalesBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveLacunarity", biomeExtraCaveLacunarityBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCavePersistence", biomeExtraCavePersistenceBuffer);
+                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveImpact", biomeExtraCaveImpactBuffer);
+                }
 
             voxelTerrainShader.SetFloat("_TemperatureNoiseScale", temperatureNoiseScale);
             voxelTerrainShader.SetFloat("_HumidityNoiseScale", humidityNoiseScale);
@@ -2891,5 +3143,23 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
         public float heightNoiseScale;
         public float caveImpact;
         public float caveNoiseScale;
+        public bool enableHeightDomainWarp;
+        public float heightWarpStrength;
+        public float heightWarpScale;
+        public bool enableCaveDomainWarp;
+        public float caveWarpStrength;
+        public float caveWarpScale;
+        public bool enableAdditionalHeightLayer;
+        public int additionalHeightOctaves;
+        public float additionalHeightScale;
+        public float additionalHeightLacunarity;
+        public float additionalHeightPersistence;
+        public float additionalHeightImpact;
+        public bool enableAdditionalCaveLayer;
+        public int additionalCaveOctaves;
+        public float additionalCaveScale;
+        public float additionalCaveLacunarity;
+        public float additionalCavePersistence;
+        public float additionalCaveImpact;
     }
 }
