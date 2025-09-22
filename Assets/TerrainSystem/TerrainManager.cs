@@ -1898,7 +1898,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 int kernelIndex = voxelTerrainShader.FindKernel("MarchingCubes");
 
                 Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
-                int cellCount = voxelDimensions.x * voxelDimensions.y * voxelDimensions.z;
+                long cubeCount = (long)voxelDimensions.x * voxelDimensions.y * voxelDimensions.z; // actual cubes evaluated by marching cubes
                 int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
                 densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
@@ -1907,20 +1907,31 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 chunk.CopyVoxelDataTo(densities);
                 densityBuffer.SetData(densities);
 
-                const int maxVerticesPerCell = 15; // Marching cubes worst case is 5 triangles per cell => 15 unique vertices
-                int safeCellCount = Mathf.Max(0, cellCount);
-                long maxVertexCountLong = (long)safeCellCount * maxVerticesPerCell;
-                int maxVertexCount;
-                if (maxVertexCountLong > int.MaxValue)
+                const int maxVerticesPerCube = 15; // Marching cubes can emit at most 5 triangles (15 vertices) per cube at the surface
+                const int maxAppendBufferCapacity = int.MaxValue - (int.MaxValue % 3); // cap so index buffer stays within int range and triangle multiple
+                long safeCubeCount = Math.Max(0L, cubeCount);
+                long requestedVertexCapacity;
+                if (safeCubeCount > 0 && safeCubeCount > long.MaxValue / maxVerticesPerCube)
                 {
-                    maxVertexCount = int.MaxValue - (int.MaxValue % 3);
+                    requestedVertexCapacity = long.MaxValue;
                 }
                 else
                 {
-                    maxVertexCount = (int)maxVertexCountLong;
+                    requestedVertexCapacity = safeCubeCount * maxVerticesPerCube;
                 }
-                vertexBuffer = ComputeBufferManager.Instance.GetBuffer(maxVertexCount, 3 * sizeof(float), ComputeBufferType.Append);
-                normalBuffer = ComputeBufferManager.Instance.GetBuffer(maxVertexCount, 3 * sizeof(float), ComputeBufferType.Append);
+                int appendCapacity;
+                if (requestedVertexCapacity > maxAppendBufferCapacity)
+                {
+                    appendCapacity = maxAppendBufferCapacity;
+                    Debug.LogWarning($"Requested marching cubes vertex capacity ({requestedVertexCapacity}) exceeds append buffer limit. Clamping to {appendCapacity}.", this);
+                }
+                else
+                {
+                    appendCapacity = (int)requestedVertexCapacity;
+                }
+
+                vertexBuffer = ComputeBufferManager.Instance.GetBuffer(appendCapacity, 3 * sizeof(float), ComputeBufferType.Append);
+                normalBuffer = ComputeBufferManager.Instance.GetBuffer(appendCapacity, 3 * sizeof(float), ComputeBufferType.Append);
                 counterBuffer = ComputeBufferManager.Instance.GetBuffer(1, sizeof(uint));
 
                 uint[] zeros = { 0 };
