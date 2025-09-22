@@ -1762,6 +1762,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 int kernelIndex = voxelTerrainShader.FindKernel("MarchingCubes");
 
                 Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
+                int cellCount = voxelDimensions.x * voxelDimensions.y * voxelDimensions.z;
                 int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
                 densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
@@ -1770,7 +1771,17 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 chunk.CopyVoxelDataTo(densities);
                 densityBuffer.SetData(densities);
 
-                int maxVertexCount = voxelCount * 3;
+                int safeCellCount = Mathf.Max(0, cellCount);
+                long maxVertexCountLong = (long)safeCellCount * 15L;
+                int maxVertexCount;
+                if (maxVertexCountLong > int.MaxValue)
+                {
+                    maxVertexCount = int.MaxValue - (int.MaxValue % 3);
+                }
+                else
+                {
+                    maxVertexCount = (int)maxVertexCountLong;
+                }
                 vertexBuffer = ComputeBufferManager.Instance.GetBuffer(maxVertexCount, 3 * sizeof(float), ComputeBufferType.Append);
                 normalBuffer = ComputeBufferManager.Instance.GetBuffer(maxVertexCount, 3 * sizeof(float), ComputeBufferType.Append);
                 counterBuffer = ComputeBufferManager.Instance.GetBuffer(1, sizeof(uint));
