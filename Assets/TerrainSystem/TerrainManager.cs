@@ -886,13 +886,28 @@ private void LateUpdate()
                 runningGenJobs.Remove(chunkPos);
             }
 
-            if (runningGpuGenRequests.ContainsKey(chunkPos))
+            if (runningGpuGenRequests.TryGetValue(chunkPos, out var gpuRequest))
             {
-                runningGpuGenRequests.Remove(chunkPos);
-            }
+                if (!gpuRequest.done)
+                {
+                    gpuRequest.WaitForCompletion();
+                }
 
-            if (densityBuffers.TryGetValue(chunkPos, out var buffer))
+                runningGpuGenRequests.Remove(chunkPos);
+
+                if (densityBuffers.TryGetValue(chunkPos, out var buffer))
+                {
+                    ComputeBufferManager.Instance.ReleaseBuffer(buffer);
+                    densityBuffers.Remove(chunkPos);
+                }
+                else
+                {
+                    Debug.LogWarning($"[TerrainManager] Cancelled GPU generation for chunk {chunkPos}, but no density buffer was registered.");
+                }
+            }
+            else if (densityBuffers.TryGetValue(chunkPos, out var buffer))
             {
+                Debug.LogWarning($"[TerrainManager] CancelChunkProcessing found a density buffer for chunk {chunkPos} without a matching GPU request. Releasing buffer defensively.");
                 ComputeBufferManager.Instance.ReleaseBuffer(buffer);
                 densityBuffers.Remove(chunkPos);
             }
