@@ -24,6 +24,12 @@ namespace TerrainSystem
                 return _instance;
             }
         }
+
+        public static bool TryGetInstance(out ComputeBufferManager manager)
+        {
+            manager = _instance;
+            return manager != null;
+        }
         #endregion
 
         #region Buffer Key Structure
@@ -60,6 +66,67 @@ namespace TerrainSystem
                 return HashCode.Combine(Count, Stride, (int)BufferType);
             }
         }
+        #endregion
+
+        #region Structured Buffer Cache
+        public enum StructuredBufferRole
+        {
+            Vertex,
+            Normal,
+            Counter
+        }
+
+        private readonly struct PersistentBufferKey : IEquatable<PersistentBufferKey>
+        {
+            public readonly Vector3Int Resolution;
+            public readonly StructuredBufferRole Role;
+
+            public PersistentBufferKey(Vector3Int resolution, StructuredBufferRole role)
+            {
+                Resolution = resolution;
+                Role = role;
+            }
+
+            public bool Equals(PersistentBufferKey other)
+            {
+                return Resolution == other.Resolution && Role == other.Role;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is PersistentBufferKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + Resolution.GetHashCode();
+                    hash = hash * 31 + Role.GetHashCode();
+                    return hash;
+                }
+            }
+        }
+
+        private sealed class PersistentBufferInfo
+        {
+            public ComputeBuffer Buffer;
+            public int Capacity;
+            public int Stride;
+
+            public PersistentBufferInfo(ComputeBuffer buffer, int capacity, int stride)
+            {
+                Buffer = buffer;
+                Capacity = capacity;
+                Stride = stride;
+            }
+        }
+
+        private readonly Dictionary<PersistentBufferKey, PersistentBufferInfo> persistentStructuredBuffers =
+            new Dictionary<PersistentBufferKey, PersistentBufferInfo>();
+
+        private static readonly uint[] CounterResetData = new uint[1];
         #endregion
 
         #region Fields
@@ -183,10 +250,84 @@ namespace TerrainSystem
                         buffer.Release();
                 }
             }
-            
+
             bufferPools.Clear();
+            ReleaseStructuredBuffers();
             TotalBuffersCreated = 0;
             PooledBufferCount = 0;
+        }
+        #endregion
+
+        #region Structured Buffer Methods
+        public ComputeBuffer GetStructuredBuffer(Vector3Int resolution, int requiredCount, int stride, StructuredBufferRole role)
+        {
+            if (requiredCount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(requiredCount), "Structured buffers must have at least one element.");
+            }
+
+            if (stride <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(stride), "Structured buffer stride must be positive.");
+            }
+
+            PersistentBufferKey key = new PersistentBufferKey(resolution, role);
+
+            if (persistentStructuredBuffers.TryGetValue(key, out PersistentBufferInfo info))
+            {
+                bool needsResize = info.Buffer == null || info.Capacity < requiredCount || info.Stride != stride;
+
+                if (needsResize)
+                {
+                    info.Buffer?.Release();
+                    info.Buffer = new ComputeBuffer(requiredCount, stride, ComputeBufferType.Structured);
+                    info.Capacity = requiredCount;
+                    info.Stride = stride;
+                    TotalBuffersCreated++;
+                }
+
+                return info.Buffer;
+            }
+
+            ComputeBuffer buffer = new ComputeBuffer(requiredCount, stride, ComputeBufferType.Structured);
+            persistentStructuredBuffers[key] = new PersistentBufferInfo(buffer, requiredCount, stride);
+            TotalBuffersCreated++;
+            return buffer;
+        }
+
+        public ComputeBuffer GetStructuredVertexBuffer(Vector3Int resolution, int requiredCount)
+        {
+            return GetStructuredBuffer(resolution, requiredCount, 3 * sizeof(float), StructuredBufferRole.Vertex);
+        }
+
+        public ComputeBuffer GetStructuredNormalBuffer(Vector3Int resolution, int requiredCount)
+        {
+            return GetStructuredBuffer(resolution, requiredCount, 3 * sizeof(float), StructuredBufferRole.Normal);
+        }
+
+        public ComputeBuffer GetStructuredCounterBuffer(Vector3Int resolution)
+        {
+            return GetStructuredBuffer(resolution, 1, sizeof(uint), StructuredBufferRole.Counter);
+        }
+
+        public void ResetCounterBuffer(ComputeBuffer counterBuffer)
+        {
+            if (counterBuffer == null)
+            {
+                return;
+            }
+
+            counterBuffer.SetData(CounterResetData, 0, 0, 1);
+        }
+
+        public void ReleaseStructuredBuffers()
+        {
+            foreach (var entry in persistentStructuredBuffers.Values)
+            {
+                entry.Buffer?.Release();
+            }
+
+            persistentStructuredBuffers.Clear();
         }
         #endregion
 
