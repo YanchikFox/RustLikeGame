@@ -196,6 +196,25 @@ namespace TerrainSystem
 
         private readonly Dictionary<TransitionKey, TransitionMeshData> transitionMeshes = new Dictionary<TransitionKey, TransitionMeshData>();
 
+        private static readonly BiomeSettings[] DefaultBiomeSettingsArray =
+        {
+            new BiomeSettings
+            {
+                name = "Default",
+                startThreshold = -1f,
+                octaves = 4,
+                lacunarity = 2f,
+                persistence = 0.5f,
+                worldGroundLevel = 20f,
+                heightImpact = 15f,
+                heightNoiseScale = 0.05f,
+                caveImpact = 0.3f,
+                caveNoiseScale = 0.08f
+            }
+        };
+
+        private bool hasLoggedDefaultBiomeFallback;
+
         // Shader property IDs
         private int shaderPropLODLevel;
 
@@ -394,7 +413,8 @@ private void LateUpdate()
                 return;
             }
 
-            int biomeCount = biomes != null ? biomes.Length : 0;
+            BiomeSettings[] activeBiomes = GetActiveBiomes(true);
+            int biomeCount = activeBiomes.Length;
             if (biomeCount > 0)
             {
                 var biomeThresholds = new float[biomeCount];
@@ -409,15 +429,16 @@ private void LateUpdate()
 
                 for (int i = 0; i < biomeCount; i++)
                 {
-                    biomeThresholds[i] = biomes[i].startThreshold;
-                    biomeGroundLevels[i] = biomes[i].worldGroundLevel;
-                    biomeHeightImpacts[i] = biomes[i].heightImpact;
-                    biomeHeightScales[i] = biomes[i].heightNoiseScale;
-                    biomeCaveImpacts[i] = biomes[i].caveImpact;
-                    biomeCaveScales[i] = biomes[i].caveNoiseScale;
-                    biomeOctaves[i] = biomes[i].octaves;
-                    biomeLacunarity[i] = biomes[i].lacunarity;
-                    biomePersistence[i] = biomes[i].persistence;
+                    BiomeSettings biome = activeBiomes[i];
+                    biomeThresholds[i] = biome.startThreshold;
+                    biomeGroundLevels[i] = biome.worldGroundLevel;
+                    biomeHeightImpacts[i] = biome.heightImpact;
+                    biomeHeightScales[i] = biome.heightNoiseScale;
+                    biomeCaveImpacts[i] = biome.caveImpact;
+                    biomeCaveScales[i] = biome.caveNoiseScale;
+                    biomeOctaves[i] = biome.octaves;
+                    biomeLacunarity[i] = biome.lacunarity;
+                    biomePersistence[i] = biome.persistence;
                 }
 
                 biomeThresholdsBuffer = new ComputeBuffer(biomeCount, sizeof(float));
@@ -480,6 +501,25 @@ private void LateUpdate()
             edgeConnectionsBuffer = null;
 
             gpuBuffersInitialized = false;
+        }
+
+        private BiomeSettings[] GetActiveBiomes(bool logWarningIfFallback)
+        {
+            if (biomes != null && biomes.Length > 0)
+            {
+                hasLoggedDefaultBiomeFallback = false;
+                return biomes;
+            }
+
+            if (logWarningIfFallback && !hasLoggedDefaultBiomeFallback)
+            {
+                Debug.LogWarning(
+                    "TerrainManager has no biomes configured. Using a default biome profile for terrain generation.",
+                    this);
+                hasLoggedDefaultBiomeFallback = true;
+            }
+
+            return DefaultBiomeSettingsArray;
         }
 
         #endregion
@@ -738,7 +778,7 @@ private void LateUpdate()
             {
                 chunk = chunk,
                 lodLevel = lodLevel
-            });
+            };
 
             // Schedule voxel data generation in background or on GPU
             if (ShouldUseGpuForVoxelGeneration)
@@ -1190,32 +1230,36 @@ private void LateUpdate()
             int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
             var densities = new NativeArray<float>(voxelCount, Allocator.Persistent);
 
+            BiomeSettings[] activeBiomes = GetActiveBiomes(true);
+            int activeBiomeCount = activeBiomes.Length;
+
             // Create NativeArrays for biome data
-            var biomeThresholds = new NativeArray<float>(biomes.Length, Allocator.TempJob);
-            var biomeGroundLevels = new NativeArray<float>(biomes.Length, Allocator.TempJob);
-            var biomeHeightImpacts = new NativeArray<float>(biomes.Length, Allocator.TempJob);
-            var biomeHeightScales = new NativeArray<float>(biomes.Length, Allocator.TempJob);
-            var biomeCaveImpacts = new NativeArray<float>(biomes.Length, Allocator.TempJob);
-            var biomeCaveScales = new NativeArray<float>(biomes.Length, Allocator.TempJob);
-            
+            var biomeThresholds = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
+            var biomeGroundLevels = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
+            var biomeHeightImpacts = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
+            var biomeHeightScales = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
+            var biomeCaveImpacts = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
+            var biomeCaveScales = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
+
             // Biome-specific noise parameters
-            var biomeOctaves = new NativeArray<int>(biomes.Length, Allocator.TempJob);
-            var biomeLacunarity = new NativeArray<float>(biomes.Length, Allocator.TempJob);
-            var biomePersistence = new NativeArray<float>(biomes.Length, Allocator.TempJob);
+            var biomeOctaves = new NativeArray<int>(activeBiomeCount, Allocator.TempJob);
+            var biomeLacunarity = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
+            var biomePersistence = new NativeArray<float>(activeBiomeCount, Allocator.TempJob);
 
             // Fill the biome data arrays
-            for (int i = 0; i < biomes.Length; i++)
+            for (int i = 0; i < activeBiomeCount; i++)
             {
-                biomeThresholds[i] = biomes[i].startThreshold;
-                biomeGroundLevels[i] = biomes[i].worldGroundLevel;
-                biomeHeightImpacts[i] = biomes[i].heightImpact;
-                biomeHeightScales[i] = biomes[i].heightNoiseScale;
-                biomeCaveImpacts[i] = biomes[i].caveImpact;
-                biomeCaveScales[i] = biomes[i].caveNoiseScale;
-                
-                biomeOctaves[i] = biomes[i].octaves;
-                biomeLacunarity[i] = biomes[i].lacunarity;
-                biomePersistence[i] = biomes[i].persistence;
+                BiomeSettings biome = activeBiomes[i];
+                biomeThresholds[i] = biome.startThreshold;
+                biomeGroundLevels[i] = biome.worldGroundLevel;
+                biomeHeightImpacts[i] = biome.heightImpact;
+                biomeHeightScales[i] = biome.heightNoiseScale;
+                biomeCaveImpacts[i] = biome.caveImpact;
+                biomeCaveScales[i] = biome.caveNoiseScale;
+
+                biomeOctaves[i] = biome.octaves;
+                biomeLacunarity[i] = biome.lacunarity;
+                biomePersistence[i] = biome.persistence;
             }
             
             // Get the LOD-adjusted voxel size
@@ -1230,7 +1274,7 @@ private void LateUpdate()
                 
                 biomeNoiseScale = biomeNoiseScale,
                 biomeBlendRange = biomeBlendRange,
-                biomeCount = biomes.Length,
+                biomeCount = activeBiomeCount,
                 biomeThresholds = biomeThresholds,
                 biomeGroundLevels = biomeGroundLevels,
                 biomeHeightImpacts = biomeHeightImpacts,
@@ -1318,7 +1362,8 @@ private void ScheduleGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
     voxelTerrainShader.SetInt("_LODLevel", lodLevel);     // Óðîâåíü LOD
     
     // Ïåðåäàåì ïàðàìåòðû áèîìîâ (èç ñòàòè÷åñêèõ áóôåðîâ)
-    int biomeCount = biomes != null ? biomes.Length : 0;
+    BiomeSettings[] activeBiomes = GetActiveBiomes(false);
+    int biomeCount = activeBiomes.Length;
     voxelTerrainShader.SetFloat("_BiomeNoiseScale", biomeNoiseScale);
     voxelTerrainShader.SetInt("_BiomeCount", biomeCount);
     if (biomeCount > 0)
