@@ -57,7 +57,7 @@ namespace TerrainSystem
         [Header("Biome Settings")]
         [SerializeField] private float biomeNoiseScale = 0.001f;
         [SerializeField] private float biomeBlendRange = 0.05f; // How smooth the transition is
-        [SerializeField] private BiomeSettings[] biomes;
+        [SerializeField] private List<BiomeDefinition> biomeDefinitions = new List<BiomeDefinition>();
 
         [Header("Advanced Biome Noise")]
         [SerializeField] private float temperatureNoiseScale = 0.002f;
@@ -202,6 +202,9 @@ namespace TerrainSystem
         private ComputeBuffer edgeConnectionsBuffer;
         private bool gpuBuffersInitialized;
         private bool needsGpuBufferInitRetry;
+
+        private readonly List<BiomeDefinition> activeBiomeDefinitions = new List<BiomeDefinition>();
+        private BiomeSettings[] runtimeBiomeSettings = Array.Empty<BiomeSettings>();
 
         private NativeArray<float> cachedBiomeThresholds;
         private NativeArray<float> cachedBiomeGroundLevels;
@@ -627,10 +630,35 @@ namespace TerrainSystem
 
         private BiomeSettings[] GetActiveBiomes(bool logWarningIfFallback)
         {
-            if (biomes != null && biomes.Length > 0)
+            activeBiomeDefinitions.Clear();
+
+            if (biomeDefinitions != null)
             {
+                for (int i = 0; i < biomeDefinitions.Count; i++)
+                {
+                    BiomeDefinition definition = biomeDefinitions[i];
+                    if (definition != null)
+                    {
+                        activeBiomeDefinitions.Add(definition);
+                    }
+                }
+            }
+
+            int definitionCount = activeBiomeDefinitions.Count;
+            if (definitionCount > 0)
+            {
+                if (runtimeBiomeSettings.Length != definitionCount)
+                {
+                    runtimeBiomeSettings = new BiomeSettings[definitionCount];
+                }
+
+                for (int i = 0; i < definitionCount; i++)
+                {
+                    runtimeBiomeSettings[i] = activeBiomeDefinitions[i].ToSettings();
+                }
+
                 hasLoggedDefaultBiomeFallback = false;
-                return biomes;
+                return runtimeBiomeSettings;
             }
 
             if (logWarningIfFallback && !hasLoggedDefaultBiomeFallback)
