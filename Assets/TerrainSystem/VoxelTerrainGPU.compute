@@ -26,9 +26,19 @@ StructuredBuffer<float> _BiomePersistence;
 StructuredBuffer<int>   _BiomeHeightWarpEnabled;
 StructuredBuffer<float> _BiomeHeightWarpStrengths;
 StructuredBuffer<float> _BiomeHeightWarpScales;
+StructuredBuffer<int>   _BiomeHeightWarpRidged;
+StructuredBuffer<int>   _BiomeSecondaryHeightWarpEnabled;
+StructuredBuffer<float> _BiomeSecondaryHeightWarpStrengths;
+StructuredBuffer<float> _BiomeSecondaryHeightWarpScales;
+StructuredBuffer<int>   _BiomeSecondaryHeightWarpRidged;
 StructuredBuffer<int>   _BiomeCaveWarpEnabled;
 StructuredBuffer<float> _BiomeCaveWarpStrengths;
 StructuredBuffer<float> _BiomeCaveWarpScales;
+StructuredBuffer<int>   _BiomeCaveWarpRidged;
+StructuredBuffer<int>   _BiomeSecondaryCaveWarpEnabled;
+StructuredBuffer<float> _BiomeSecondaryCaveWarpStrengths;
+StructuredBuffer<float> _BiomeSecondaryCaveWarpScales;
+StructuredBuffer<int>   _BiomeSecondaryCaveWarpRidged;
 StructuredBuffer<int>   _BiomeExtraHeightLayerEnabled;
 StructuredBuffer<int>   _BiomeExtraHeightOctaves;
 StructuredBuffer<float> _BiomeExtraHeightScales;
@@ -41,6 +51,22 @@ StructuredBuffer<float> _BiomeExtraCaveScales;
 StructuredBuffer<float> _BiomeExtraCaveLacunarity;
 StructuredBuffer<float> _BiomeExtraCavePersistence;
 StructuredBuffer<float> _BiomeExtraCaveImpact;
+StructuredBuffer<int>   _BiomeCliffLayerEnabled;
+StructuredBuffer<float> _BiomeCliffScales;
+StructuredBuffer<float> _BiomeCliffImpacts;
+StructuredBuffer<float> _BiomeCliffThresholds;
+StructuredBuffer<float> _BiomeCliffSharpness;
+StructuredBuffer<int>   _BiomePlateauLayerEnabled;
+StructuredBuffer<float> _BiomePlateauScales;
+StructuredBuffer<float> _BiomePlateauStepHeights;
+StructuredBuffer<float> _BiomePlateauStrengths;
+StructuredBuffer<float> _BiomePlateauThresholds;
+StructuredBuffer<float> _BiomePlateauSharpness;
+StructuredBuffer<int>   _BiomeSurfaceCaveMaskEnabled;
+StructuredBuffer<float> _BiomeSurfaceCaveMaskScales;
+StructuredBuffer<float> _BiomeSurfaceCaveMaskThresholds;
+StructuredBuffer<float> _BiomeSurfaceCaveMaskStrengths;
+StructuredBuffer<float> _BiomeSurfaceCaveMaskFalloffs;
 
 float _TemperatureNoiseScale;
 float _HumidityNoiseScale;
@@ -152,6 +178,21 @@ float snoise(float3 v)
                                     dot(p2,x2), dot(p3,x3) ) );
 }
 
+static const float2 HEIGHT_WARP_OFFSET = float2(37.21, 17.31);
+static const float2 SECONDARY_HEIGHT_WARP_OFFSET_A = float2(81.53, 23.11);
+static const float2 SECONDARY_HEIGHT_WARP_OFFSET_B = float2(12.37, 64.29);
+static const float3 CAVE_WARP_OFFSET_A = float3(19.13, 7.73, 3.37);
+static const float3 CAVE_WARP_OFFSET_B = float3(5.21, 9.18, 12.89);
+static const float3 SECONDARY_CAVE_WARP_OFFSET_A = float3(41.12, 3.91, 27.45);
+static const float3 SECONDARY_CAVE_WARP_OFFSET_B = float3(13.87, 52.63, 8.14);
+static const float3 SECONDARY_CAVE_WARP_OFFSET_C = float3(71.22, 34.55, 19.08);
+
+float applyRidged(float value)
+{
+    float ridged = 1.0 - abs(value);
+    return ridged * 2.0 - 1.0;
+}
+
 float fractalNoise(float3 pos, int octaves, float freq, float lacunarity, float persistence)
 {
     if (octaves <= 0)
@@ -260,9 +301,19 @@ float calculateDensity(float3 worldPos)
     float heightWarpToggle = lerp((float)_BiomeHeightWarpEnabled[currentBiomeIndex], (float)_BiomeHeightWarpEnabled[nextBiomeIndex], blendFactor);
     float heightWarpStrength = lerp(_BiomeHeightWarpStrengths[currentBiomeIndex], _BiomeHeightWarpStrengths[nextBiomeIndex], blendFactor);
     float heightWarpScale = lerp(_BiomeHeightWarpScales[currentBiomeIndex], _BiomeHeightWarpScales[nextBiomeIndex], blendFactor);
+    float heightWarpRidgedToggle = lerp((float)_BiomeHeightWarpRidged[currentBiomeIndex], (float)_BiomeHeightWarpRidged[nextBiomeIndex], blendFactor);
+    float secondaryHeightWarpToggle = lerp((float)_BiomeSecondaryHeightWarpEnabled[currentBiomeIndex], (float)_BiomeSecondaryHeightWarpEnabled[nextBiomeIndex], blendFactor);
+    float secondaryHeightWarpStrength = lerp(_BiomeSecondaryHeightWarpStrengths[currentBiomeIndex], _BiomeSecondaryHeightWarpStrengths[nextBiomeIndex], blendFactor);
+    float secondaryHeightWarpScale = lerp(_BiomeSecondaryHeightWarpScales[currentBiomeIndex], _BiomeSecondaryHeightWarpScales[nextBiomeIndex], blendFactor);
+    float secondaryHeightWarpRidgedToggle = lerp((float)_BiomeSecondaryHeightWarpRidged[currentBiomeIndex], (float)_BiomeSecondaryHeightWarpRidged[nextBiomeIndex], blendFactor);
     float caveWarpToggle = lerp((float)_BiomeCaveWarpEnabled[currentBiomeIndex], (float)_BiomeCaveWarpEnabled[nextBiomeIndex], blendFactor);
     float caveWarpStrength = lerp(_BiomeCaveWarpStrengths[currentBiomeIndex], _BiomeCaveWarpStrengths[nextBiomeIndex], blendFactor);
     float caveWarpScale = lerp(_BiomeCaveWarpScales[currentBiomeIndex], _BiomeCaveWarpScales[nextBiomeIndex], blendFactor);
+    float caveWarpRidgedToggle = lerp((float)_BiomeCaveWarpRidged[currentBiomeIndex], (float)_BiomeCaveWarpRidged[nextBiomeIndex], blendFactor);
+    float secondaryCaveWarpToggle = lerp((float)_BiomeSecondaryCaveWarpEnabled[currentBiomeIndex], (float)_BiomeSecondaryCaveWarpEnabled[nextBiomeIndex], blendFactor);
+    float secondaryCaveWarpStrength = lerp(_BiomeSecondaryCaveWarpStrengths[currentBiomeIndex], _BiomeSecondaryCaveWarpStrengths[nextBiomeIndex], blendFactor);
+    float secondaryCaveWarpScale = lerp(_BiomeSecondaryCaveWarpScales[currentBiomeIndex], _BiomeSecondaryCaveWarpScales[nextBiomeIndex], blendFactor);
+    float secondaryCaveWarpRidgedToggle = lerp((float)_BiomeSecondaryCaveWarpRidged[currentBiomeIndex], (float)_BiomeSecondaryCaveWarpRidged[nextBiomeIndex], blendFactor);
     float extraHeightToggle = lerp((float)_BiomeExtraHeightLayerEnabled[currentBiomeIndex], (float)_BiomeExtraHeightLayerEnabled[nextBiomeIndex], blendFactor);
     int extraHeightOctaves = (int)round(lerp(_BiomeExtraHeightOctaves[currentBiomeIndex], _BiomeExtraHeightOctaves[nextBiomeIndex], blendFactor));
     float extraHeightScale = lerp(_BiomeExtraHeightScales[currentBiomeIndex], _BiomeExtraHeightScales[nextBiomeIndex], blendFactor);
@@ -275,6 +326,22 @@ float calculateDensity(float3 worldPos)
     float extraCaveLacunarity = lerp(_BiomeExtraCaveLacunarity[currentBiomeIndex], _BiomeExtraCaveLacunarity[nextBiomeIndex], blendFactor);
     float extraCavePersistence = lerp(_BiomeExtraCavePersistence[currentBiomeIndex], _BiomeExtraCavePersistence[nextBiomeIndex], blendFactor);
     float extraCaveImpact = lerp(_BiomeExtraCaveImpact[currentBiomeIndex], _BiomeExtraCaveImpact[nextBiomeIndex], blendFactor);
+    float cliffToggle = lerp((float)_BiomeCliffLayerEnabled[currentBiomeIndex], (float)_BiomeCliffLayerEnabled[nextBiomeIndex], blendFactor);
+    float cliffScale = lerp(_BiomeCliffScales[currentBiomeIndex], _BiomeCliffScales[nextBiomeIndex], blendFactor);
+    float cliffImpact = lerp(_BiomeCliffImpacts[currentBiomeIndex], _BiomeCliffImpacts[nextBiomeIndex], blendFactor);
+    float cliffThreshold = lerp(_BiomeCliffThresholds[currentBiomeIndex], _BiomeCliffThresholds[nextBiomeIndex], blendFactor);
+    float cliffSharpness = lerp(_BiomeCliffSharpness[currentBiomeIndex], _BiomeCliffSharpness[nextBiomeIndex], blendFactor);
+    float plateauToggle = lerp((float)_BiomePlateauLayerEnabled[currentBiomeIndex], (float)_BiomePlateauLayerEnabled[nextBiomeIndex], blendFactor);
+    float plateauScale = lerp(_BiomePlateauScales[currentBiomeIndex], _BiomePlateauScales[nextBiomeIndex], blendFactor);
+    float plateauStepHeight = lerp(_BiomePlateauStepHeights[currentBiomeIndex], _BiomePlateauStepHeights[nextBiomeIndex], blendFactor);
+    float plateauStrength = lerp(_BiomePlateauStrengths[currentBiomeIndex], _BiomePlateauStrengths[nextBiomeIndex], blendFactor);
+    float plateauThreshold = lerp(_BiomePlateauThresholds[currentBiomeIndex], _BiomePlateauThresholds[nextBiomeIndex], blendFactor);
+    float plateauSharpness = lerp(_BiomePlateauSharpness[currentBiomeIndex], _BiomePlateauSharpness[nextBiomeIndex], blendFactor);
+    float surfaceCaveMaskToggle = lerp((float)_BiomeSurfaceCaveMaskEnabled[currentBiomeIndex], (float)_BiomeSurfaceCaveMaskEnabled[nextBiomeIndex], blendFactor);
+    float surfaceCaveMaskScale = lerp(_BiomeSurfaceCaveMaskScales[currentBiomeIndex], _BiomeSurfaceCaveMaskScales[nextBiomeIndex], blendFactor);
+    float surfaceCaveMaskThreshold = lerp(_BiomeSurfaceCaveMaskThresholds[currentBiomeIndex], _BiomeSurfaceCaveMaskThresholds[nextBiomeIndex], blendFactor);
+    float surfaceCaveMaskStrength = lerp(_BiomeSurfaceCaveMaskStrengths[currentBiomeIndex], _BiomeSurfaceCaveMaskStrengths[nextBiomeIndex], blendFactor);
+    float surfaceCaveMaskFalloff = lerp(_BiomeSurfaceCaveMaskFalloffs[currentBiomeIndex], _BiomeSurfaceCaveMaskFalloffs[nextBiomeIndex], blendFactor);
 
     float groundLevelModifier = 0.0;
     float heightImpactModifier = 1.0;
@@ -297,12 +364,33 @@ float calculateDensity(float3 worldPos)
 
     float2 heightSamplePos = worldPos.xz;
     bool useHeightWarp = (heightWarpToggle > 0.5) && abs(heightWarpStrength) > 0.0001 && abs(heightWarpScale) > 0.0001;
+    bool heightWarpUseRidged = heightWarpRidgedToggle > 0.5;
     if (useHeightWarp)
     {
         float2 warpInput = heightSamplePos * heightWarpScale;
         float warpX = snoise(warpInput);
-        float warpZ = snoise(warpInput + float2(37.21, 17.31));
+        float warpZ = snoise(warpInput + HEIGHT_WARP_OFFSET);
+        if (heightWarpUseRidged)
+        {
+            warpX = applyRidged(warpX);
+            warpZ = applyRidged(warpZ);
+        }
         heightSamplePos += float2(warpX, warpZ) * heightWarpStrength;
+    }
+
+    bool useSecondaryHeightWarp = (secondaryHeightWarpToggle > 0.5) && abs(secondaryHeightWarpStrength) > 0.0001 && abs(secondaryHeightWarpScale) > 0.0001;
+    bool secondaryHeightWarpUseRidged = secondaryHeightWarpRidgedToggle > 0.5;
+    if (useSecondaryHeightWarp)
+    {
+        float2 warpInput = heightSamplePos * secondaryHeightWarpScale;
+        float warpX = snoise(warpInput + SECONDARY_HEIGHT_WARP_OFFSET_A);
+        float warpZ = snoise(warpInput + SECONDARY_HEIGHT_WARP_OFFSET_B);
+        if (secondaryHeightWarpUseRidged)
+        {
+            warpX = applyRidged(warpX);
+            warpZ = applyRidged(warpZ);
+        }
+        heightSamplePos += float2(warpX, warpZ) * secondaryHeightWarpStrength;
     }
 
     float sum2D = fractalNoise(heightSamplePos, finalOctaves, baseHeightScale, finalLacunarity, finalPersistence);
@@ -315,19 +403,68 @@ float calculateDensity(float3 worldPos)
         heightContribution += extraHeightNoise * extraHeightImpact;
     }
 
+    bool useCliffLayer = (cliffToggle > 0.5) && abs(cliffImpact) > 0.0001 && abs(cliffScale) > 0.0001;
+    if (useCliffLayer)
+    {
+        float cliffNoise = snoise(heightSamplePos * cliffScale);
+        float ridgedCliff = 1.0 - abs(cliffNoise);
+        float denom = max(1.0 - cliffThreshold, 0.0001);
+        float normalized = saturate((ridgedCliff - cliffThreshold) / denom);
+        float sharpness = max(cliffSharpness, 0.0001);
+        float mask = pow(normalized, sharpness);
+        heightContribution -= mask * cliffImpact;
+    }
+
+    bool usePlateauLayer = (plateauToggle > 0.5) && plateauStepHeight > 0.0001 && abs(plateauScale) > 0.0001 && abs(plateauStrength) > 0.0001;
+    if (usePlateauLayer)
+    {
+        float plateauNoise = snoise(heightSamplePos * plateauScale);
+        float denom = max(1.0 - plateauThreshold, 0.0001);
+        float normalized = saturate((plateauNoise - plateauThreshold) / denom);
+        float sharpness = max(plateauSharpness, 0.0001);
+        float mask = pow(normalized, sharpness);
+        float plateauStrengthClamped = saturate(plateauStrength);
+        float target = round(heightContribution / plateauStepHeight) * plateauStepHeight;
+        heightContribution = lerp(heightContribution, target, mask * plateauStrengthClamped);
+    }
+
     float surfaceHeight = finalGroundLevel + heightContribution;
     float surfaceDensity = worldPos.y - surfaceHeight;
     float finalDensity = surfaceDensity;
 
     float3 caveSamplePos = worldPos;
     bool useCaveWarp = (caveWarpToggle > 0.5) && abs(caveWarpStrength) > 0.0001 && abs(caveWarpScale) > 0.0001;
+    bool caveWarpUseRidged = caveWarpRidgedToggle > 0.5;
     if (useCaveWarp)
     {
         float3 warpInput = caveSamplePos * caveWarpScale;
         float warpX = snoise(warpInput);
-        float warpY = snoise(warpInput + float3(19.13, 7.73, 3.37));
-        float warpZ = snoise(warpInput + float3(5.21, 9.18, 12.89));
+        float warpY = snoise(warpInput + CAVE_WARP_OFFSET_A);
+        float warpZ = snoise(warpInput + CAVE_WARP_OFFSET_B);
+        if (caveWarpUseRidged)
+        {
+            warpX = applyRidged(warpX);
+            warpY = applyRidged(warpY);
+            warpZ = applyRidged(warpZ);
+        }
         caveSamplePos += float3(warpX, warpY, warpZ) * caveWarpStrength;
+    }
+
+    bool useSecondaryCaveWarp = (secondaryCaveWarpToggle > 0.5) && abs(secondaryCaveWarpStrength) > 0.0001 && abs(secondaryCaveWarpScale) > 0.0001;
+    bool secondaryCaveWarpUseRidged = secondaryCaveWarpRidgedToggle > 0.5;
+    if (useSecondaryCaveWarp)
+    {
+        float3 warpInput = caveSamplePos * secondaryCaveWarpScale;
+        float warpX = snoise(warpInput + SECONDARY_CAVE_WARP_OFFSET_A);
+        float warpY = snoise(warpInput + SECONDARY_CAVE_WARP_OFFSET_B);
+        float warpZ = snoise(warpInput + SECONDARY_CAVE_WARP_OFFSET_C);
+        if (secondaryCaveWarpUseRidged)
+        {
+            warpX = applyRidged(warpX);
+            warpY = applyRidged(warpY);
+            warpZ = applyRidged(warpZ);
+        }
+        caveSamplePos += float3(warpX, warpY, warpZ) * secondaryCaveWarpStrength;
     }
 
     if (surfaceDensity < 0.0)
@@ -342,6 +479,16 @@ float calculateDensity(float3 worldPos)
             float extraCaveNoise = fractalNoise(caveSamplePos, extraCaveOctaves, extraCaveScale, extraCaveLacunarity, extraCavePersistence);
             finalDensity -= extraCaveNoise * extraCaveImpact * depthFactor;
         }
+    }
+
+    bool useSurfaceCaveMask = (surfaceCaveMaskToggle > 0.5) && abs(surfaceCaveMaskStrength) > 0.0001 && abs(surfaceCaveMaskScale) > 0.0001 && surfaceCaveMaskFalloff > 0.0001;
+    if (useSurfaceCaveMask)
+    {
+        float maskNoise = snoise(worldPos.xz * surfaceCaveMaskScale);
+        float denom = max(1.0 - surfaceCaveMaskThreshold, 0.0001);
+        float mask = saturate((maskNoise - surfaceCaveMaskThreshold) / denom);
+        float depthAttenuation = saturate(1.0 - abs(surfaceDensity) / surfaceCaveMaskFalloff);
+        finalDensity -= surfaceCaveMaskStrength * mask * depthAttenuation;
     }
 
     float riverNoiseValue = snoise(worldPos.xz * _RiverNoiseScale);
