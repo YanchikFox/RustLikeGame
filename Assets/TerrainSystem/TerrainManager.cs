@@ -2129,6 +2129,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             if (runningGenJobs.Count == 0 || isRegenerating) return;
 
             var completed = new List<Vector3Int>();
+            var chunksToQueue = new List<Vector3Int>();
             foreach (var kvp in runningGenJobs)
             {
                 Vector3Int pos = kvp.Key;
@@ -2147,7 +2148,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     chunkData.chunk.ApplyDensities(data.densities);
                     if (!isRegenerating)
                     {
-                        QueueChunkForUpdate(pos);
+                        chunksToQueue.Add(pos);
                     }
                 }
 
@@ -2156,6 +2157,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             }
 
             foreach (var pos in completed) runningGenJobs.Remove(pos);
+            foreach (var pos in chunksToQueue) QueueChunkForUpdate(pos);
         }
 
         private void CompleteRunningMeshJobs()
