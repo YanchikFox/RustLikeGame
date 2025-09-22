@@ -34,20 +34,12 @@ namespace TerrainSystem
         #region Unity Lifecycle
         private void Awake()
         {
-            meshFilter = GetComponent<MeshFilter>() ?? gameObject.AddComponent<MeshFilter>();
-            meshRenderer = GetComponent<MeshRenderer>() ?? gameObject.AddComponent<MeshRenderer>();
-            if (generateCollider)
-            {
-                meshCollider = GetComponent<MeshCollider>() ?? gameObject.AddComponent<MeshCollider>();
-            }
+            EnsureComponents();
         }
 
         private void OnDestroy()
         {
-            if (meshFilter != null && meshFilter.sharedMesh != null)
-            {
-                Destroy(meshFilter.sharedMesh);
-            }
+            ReleaseMeshResources();
         }
         #endregion
 
@@ -201,6 +193,42 @@ namespace TerrainSystem
                 meshCollider.sharedMesh = mesh;
             }
             IsDirty = false;
+        }
+        #endregion
+
+        #region Pooling Support
+        private void EnsureComponents()
+        {
+            meshFilter = GetComponent<MeshFilter>() ?? gameObject.AddComponent<MeshFilter>();
+            meshRenderer = GetComponent<MeshRenderer>() ?? gameObject.AddComponent<MeshRenderer>();
+            if (generateCollider)
+            {
+                meshCollider = GetComponent<MeshCollider>() ?? gameObject.AddComponent<MeshCollider>();
+            }
+        }
+
+        private void ReleaseMeshResources()
+        {
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                Destroy(meshFilter.sharedMesh);
+                meshFilter.sharedMesh = null;
+            }
+
+            if (generateCollider && meshCollider != null)
+            {
+                meshCollider.sharedMesh = null;
+            }
+        }
+
+        public void PrepareForReuse()
+        {
+            EnsureComponents();
+            ReleaseMeshResources();
+            voxelData = null;
+            isInitialized = false;
+            IsDirty = true;
+            densityVersion = 0;
         }
         #endregion
 

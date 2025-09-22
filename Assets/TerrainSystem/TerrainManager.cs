@@ -67,6 +67,23 @@ namespace TerrainSystem
         [SerializeField] private int maxChunksPerFrame = 4;
         [SerializeField] private int verticalLoadRadius = 1;
 
+        [Header("Culling Settings")]
+        [SerializeField] private Camera targetCamera;
+        [SerializeField] private bool enableFrustumCulling = true;
+        [SerializeField] private bool useOcclusionRayTest = false;
+        [SerializeField] private LayerMask occlusionLayerMask = Physics.DefaultRaycastLayers;
+        [SerializeField] private float occlusionRayPadding = 0.25f;
+
+        [Header("Adaptive Generation")]
+        [SerializeField] private bool adaptiveChunkBudget = true;
+        [SerializeField] private int minChunksPerFrame = 1;
+        [SerializeField] private int maxAdaptiveChunksPerFrame = 12;
+        [SerializeField] private float targetFrameRate = 60f;
+        [SerializeField] private float frameRateBuffer = 5f;
+        [SerializeField] private float adaptationInterval = 0.5f;
+        [Range(0.01f, 1f)]
+        [SerializeField] private float frameTimeSmoothing = 0.1f;
+
         [Header("Debug Settings")]
         [SerializeField] private bool isRegenerating = false;
         [SerializeField] private bool showLODLevels = false;
@@ -159,6 +176,13 @@ namespace TerrainSystem
         private readonly Dictionary<Vector3Int, VoxelGenJobHandleData> runningGenJobs = new Dictionary<Vector3Int, VoxelGenJobHandleData>();
 
         private readonly Dictionary<int, Vector3> cachedChunkWorldSizesByLod = new Dictionary<int, Vector3>();
+        private readonly Queue<TerrainChunk> chunkPool = new Queue<TerrainChunk>();
+        private Camera cachedCamera;
+        private readonly Plane[] cameraFrustumPlanes = new Plane[6];
+        private int lastFrustumCalculationFrame = -1;
+        private float smoothedFrameTime = -1f;
+        private float adaptiveBudgetTimer;
+        private int baseMaxChunksPerFrame;
 
         private static readonly Vector3Int[] NeighborDirections =
         {
@@ -232,7 +256,15 @@ namespace TerrainSystem
             {
                 playerTransform = Camera.main.transform;
             }
-            
+
+            cachedCamera = targetCamera != null ? targetCamera : Camera.main;
+
+            baseMaxChunksPerFrame = Mathf.Clamp(maxChunksPerFrame, minChunksPerFrame, maxAdaptiveChunksPerFrame);
+            maxChunksPerFrame = baseMaxChunksPerFrame;
+            smoothedFrameTime = Time.unscaledDeltaTime > 0f
+                ? Time.unscaledDeltaTime
+                : 1f / Mathf.Max(1f, targetFrameRate);
+
             // Cache shader property IDs
             shaderPropLODLevel = Shader.PropertyToID("_LODLevel");
 
@@ -251,6 +283,7 @@ namespace TerrainSystem
             RefreshRuntimeProcessingMode(false);
             HandleGeometrySettingsChangeIfNeeded();
             UpdateChunksAroundPlayer();
+            UpdateAdaptiveChunkBudget();
             ProcessDirtyChunks();
         }
 
@@ -319,11 +352,34 @@ private void LateUpdate()
         {
             CleanupAllJobs();
             ReleaseStaticGpuBuffers();
+
+            while (chunkPool.Count > 0)
+            {
+                TerrainChunk pooledChunk = chunkPool.Dequeue();
+                if (pooledChunk != null)
+                {
+                    Destroy(pooledChunk.gameObject);
+                }
+            }
         }
         
         // Detect changes in the Inspector during Play Mode
         private void OnValidate()
         {
+            minChunksPerFrame = Mathf.Max(0, minChunksPerFrame);
+            maxAdaptiveChunksPerFrame = Mathf.Max(minChunksPerFrame, maxAdaptiveChunksPerFrame);
+            maxChunksPerFrame = Mathf.Clamp(maxChunksPerFrame, minChunksPerFrame, maxAdaptiveChunksPerFrame);
+            frameRateBuffer = Mathf.Max(0f, frameRateBuffer);
+            targetFrameRate = Mathf.Max(1f, targetFrameRate);
+            adaptationInterval = Mathf.Max(0.05f, adaptationInterval);
+            frameTimeSmoothing = Mathf.Clamp(frameTimeSmoothing, 0.01f, 1f);
+            occlusionRayPadding = Mathf.Max(0f, occlusionRayPadding);
+
+            if (!Application.isPlaying)
+            {
+                baseMaxChunksPerFrame = maxChunksPerFrame;
+            }
+
             RefreshRuntimeProcessingMode(Application.isPlaying);
             if (Application.isPlaying)
             {
@@ -460,10 +516,11 @@ private void LateUpdate()
             {
                 if (chunkData.chunk != null)
                 {
-                    Destroy(chunkData.chunk.gameObject);
+                    CancelChunkProcessing(chunkData.chunk.ChunkPosition);
+                    ReturnChunkToPool(chunkData.chunk);
                 }
             }
-            
+
             // Step 3: Clear all internal state
             chunks.Clear();
             dirtyChunkQueue.Clear();
@@ -606,7 +663,8 @@ private void LateUpdate()
                 if (chunks.TryGetValue(pos, out var chunkData))
                 {
                     RemoveTransitionsForChunk(pos);
-                    Destroy(chunkData.chunk.gameObject);
+                    CancelChunkProcessing(pos);
+                    ReturnChunkToPool(chunkData.chunk);
                     chunks.Remove(pos);
                 }
             }
@@ -617,22 +675,32 @@ private void LateUpdate()
             for (int y = -verticalLoadRadius; y <= verticalLoadRadius; y++)
             {
                 Vector3Int chunkPos = playerChunkPos + new Vector3Int(x, y, z);
-                
+
                 // Calculate LOD level based on distance
                 int lodLevel = CalculateLODLevel(chunkPos);
-                
-                if (!chunks.ContainsKey(chunkPos))
+                bool chunkVisible = IsChunkVisible(chunkPos, lodLevel);
+
+                if (!chunks.TryGetValue(chunkPos, out var existingData))
                 {
-                    // Create new chunk
-                    CreateChunk(chunkPos, lodLevel);
+                    if (chunkVisible)
+                    {
+                        CreateChunk(chunkPos, lodLevel);
+                    }
+                    continue;
                 }
-                else if (chunks[chunkPos].lodLevel != lodLevel)
+
+                if (existingData.lodLevel != lodLevel)
                 {
-                    // LOD level has changed, recreate the chunk
-                    TerrainChunk oldChunk = chunks[chunkPos].chunk;
+                    if (!chunkVisible && enableFrustumCulling)
+                    {
+                        continue;
+                    }
+
+                    TerrainChunk oldChunk = existingData.chunk;
                     RemoveTransitionsForChunk(chunkPos);
-                    Destroy(oldChunk.gameObject);
+                    CancelChunkProcessing(chunkPos);
                     chunks.Remove(chunkPos);
+                    ReturnChunkToPool(oldChunk);
                     CreateChunk(chunkPos, lodLevel);
                 }
             }
@@ -649,23 +717,27 @@ private void LateUpdate()
 
         private void CreateChunk(Vector3Int position, int lodLevel)
         {
-            Vector3 worldPos = ChunkToWorldPosition(position);
-            GameObject chunkObject = Instantiate(chunkPrefab, worldPos, Quaternion.identity, transform);
+            if (enableFrustumCulling && !IsChunkVisible(position, lodLevel))
+            {
+                return;
+            }
 
-            // Name the chunk to include LOD level
+            Vector3 worldPos = ChunkToWorldPosition(position);
+            TerrainChunk chunk = GetChunkFromPool(worldPos);
+            GameObject chunkObject = chunk.gameObject;
             chunkObject.name = $"Chunk_{position.x}_{position.y}_{position.z}_LOD{lodLevel}";
-            
+
             // Get the actual voxel dimensions for this LOD level
             Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
             float adjustedVoxelSize = GetVoxelSizeForLOD(lodLevel);
-            
-            var chunk = chunkObject.GetComponent<TerrainChunk>();
+
             chunk.Initialize(position, voxelDimensions, adjustedVoxelSize, worldPos, lodLevel);
-            
+
             // Store chunk with LOD level
-            chunks.Add(position, new ChunkData { 
-                chunk = chunk, 
-                lodLevel = lodLevel 
+            chunks[position] = new ChunkData
+            {
+                chunk = chunk,
+                lodLevel = lodLevel
             });
 
             // Schedule voxel data generation in background or on GPU
@@ -680,6 +752,210 @@ private void LateUpdate()
 
             MarkTransitionsDirtyForChunk(position);
         }
+
+        private TerrainChunk GetChunkFromPool(Vector3 worldPosition)
+        {
+            TerrainChunk chunk = null;
+
+            while (chunkPool.Count > 0 && chunk == null)
+            {
+                chunk = chunkPool.Dequeue();
+            }
+
+            if (chunk == null)
+            {
+                GameObject chunkObject = Instantiate(chunkPrefab, worldPosition, Quaternion.identity, transform);
+                chunk = chunkObject.GetComponent<TerrainChunk>();
+            }
+
+            Transform chunkTransform = chunk.transform;
+            chunkTransform.SetParent(transform, false);
+            chunkTransform.SetPositionAndRotation(worldPosition, Quaternion.identity);
+            chunkTransform.localScale = Vector3.one;
+            chunk.gameObject.SetActive(true);
+
+            return chunk;
+        }
+
+        private void ReturnChunkToPool(TerrainChunk chunk)
+        {
+            if (chunk == null)
+            {
+                return;
+            }
+
+            chunk.PrepareForReuse();
+            Transform chunkTransform = chunk.transform;
+            chunkTransform.SetParent(transform, false);
+            chunkTransform.localPosition = Vector3.zero;
+            chunkTransform.localRotation = Quaternion.identity;
+            chunkTransform.localScale = Vector3.one;
+            chunk.gameObject.SetActive(false);
+            chunkPool.Enqueue(chunk);
+        }
+
+        private void CancelChunkProcessing(Vector3Int chunkPos)
+        {
+            if (runningMeshJobs.TryGetValue(chunkPos, out var meshJob))
+            {
+                meshJob.handle.Complete();
+                meshJob.vertices.Dispose();
+                meshJob.triangles.Dispose();
+                meshJob.normals.Dispose();
+                if (meshJob.densities.IsCreated) meshJob.densities.Dispose();
+                if (meshJob.gradientDensities.IsCreated) meshJob.gradientDensities.Dispose();
+                runningMeshJobs.Remove(chunkPos);
+            }
+
+            if (runningGenJobs.TryGetValue(chunkPos, out var genJob))
+            {
+                genJob.handle.Complete();
+                if (genJob.densities.IsCreated) genJob.densities.Dispose();
+                runningGenJobs.Remove(chunkPos);
+            }
+
+            if (runningGpuGenRequests.ContainsKey(chunkPos))
+            {
+                runningGpuGenRequests.Remove(chunkPos);
+            }
+
+            if (densityBuffers.TryGetValue(chunkPos, out var buffer))
+            {
+                ComputeBufferManager.Instance.ReleaseBuffer(buffer);
+                densityBuffers.Remove(chunkPos);
+            }
+
+            if (dirtyChunkQueue.Contains(chunkPos))
+            {
+                int count = dirtyChunkQueue.Count;
+                var filteredQueue = new Queue<Vector3Int>(count);
+                while (dirtyChunkQueue.Count > 0)
+                {
+                    Vector3Int dequeued = dirtyChunkQueue.Dequeue();
+                    if (dequeued != chunkPos)
+                    {
+                        filteredQueue.Enqueue(dequeued);
+                    }
+                }
+
+                while (filteredQueue.Count > 0)
+                {
+                    dirtyChunkQueue.Enqueue(filteredQueue.Dequeue());
+                }
+            }
+        }
+
+        #region Visibility Checks
+        private Camera GetActiveCamera()
+        {
+            if (targetCamera != null)
+            {
+                return targetCamera;
+            }
+
+            if (cachedCamera == null || !cachedCamera.isActiveAndEnabled)
+            {
+                cachedCamera = Camera.main;
+            }
+
+            return cachedCamera;
+        }
+
+        private void UpdateCameraFrustumData()
+        {
+            if (!enableFrustumCulling)
+            {
+                return;
+            }
+
+            Camera camera = GetActiveCamera();
+            if (camera == null)
+            {
+                return;
+            }
+
+            int currentFrame = Time.frameCount;
+            if (currentFrame == lastFrustumCalculationFrame)
+            {
+                return;
+            }
+
+            GeometryUtility.CalculateFrustumPlanes(camera, cameraFrustumPlanes);
+            lastFrustumCalculationFrame = currentFrame;
+        }
+
+        private bool IsChunkVisible(Vector3Int chunkPos, int lodLevel)
+        {
+            if (!enableFrustumCulling)
+            {
+                return true;
+            }
+
+            Camera camera = GetActiveCamera();
+            if (camera == null)
+            {
+                return true;
+            }
+
+            UpdateCameraFrustumData();
+
+            Vector3 worldSize = GetActualChunkWorldSizeForLOD(lodLevel);
+            Vector3 worldOrigin = ChunkToWorldPosition(chunkPos);
+            if (worldSize.sqrMagnitude <= 0f)
+            {
+                return true;
+            }
+
+            Bounds bounds = new Bounds(worldOrigin + worldSize * 0.5f, worldSize);
+
+            if (cameraFrustumPlanes == null || cameraFrustumPlanes.Length != 6)
+            {
+                return true;
+            }
+
+            if (!GeometryUtility.TestPlanesAABB(cameraFrustumPlanes, bounds))
+            {
+                return false;
+            }
+
+            if (!useOcclusionRayTest)
+            {
+                return true;
+            }
+
+            Vector3 cameraPosition = camera.transform.position;
+            Vector3 direction = bounds.center - cameraPosition;
+            float distance = direction.magnitude;
+
+            if (distance <= Mathf.Epsilon)
+            {
+                return true;
+            }
+
+            float maxDistance = Mathf.Max(0f, distance - occlusionRayPadding);
+            if (maxDistance <= 0f)
+            {
+                return true;
+            }
+
+            direction /= distance;
+
+            if (Physics.Raycast(cameraPosition, direction, out RaycastHit hit, maxDistance, occlusionLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                if (chunks.TryGetValue(chunkPos, out var chunkData) && chunkData.chunk != null && hit.collider != null)
+                {
+                    if (hit.collider.transform.IsChildOf(chunkData.chunk.transform))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+        #endregion
 
         #region Transition Mesh Management
 
@@ -1170,8 +1446,16 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
         {
             if (isRegenerating) return;
 
+            int chunkBudget = Mathf.Max(0, maxChunksPerFrame);
+            if (chunkBudget <= 0)
+            {
+                return;
+            }
+
             int processedCount = 0;
-            while (processedCount < maxChunksPerFrame && dirtyChunkQueue.Count > 0)
+            List<Vector3Int> skippedChunks = null;
+
+            while (processedCount < chunkBudget && dirtyChunkQueue.Count > 0)
             {
                 Vector3Int chunkPos = dirtyChunkQueue.Dequeue();
 
@@ -1179,27 +1463,92 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 if (runningGenJobs.ContainsKey(chunkPos))
                     continue;
 
-                if (chunks.TryGetValue(chunkPos, out var chunkData) && !runningMeshJobs.ContainsKey(chunkPos))
+                if (!chunks.TryGetValue(chunkPos, out var chunkData) || chunkData.chunk == null || runningMeshJobs.ContainsKey(chunkPos))
                 {
-                    if (chunkData.chunk == null)
-                    {
-                        continue;
-                    }
-
-                    bool processed = false;
-
-                    if (ShouldUseGpuForMeshGeneration)
-                    {
-                        processed = DispatchMarchingCubesGPU(chunkData.chunk, chunkData.lodLevel);
-                    }
-
-                    if (!processed)
-                    {
-                        ScheduleMarchingCubesJob(chunkData.chunk, chunkData.lodLevel);
-                    }
-
-                    processedCount++;
+                    continue;
                 }
+
+                if (enableFrustumCulling && !IsChunkVisible(chunkPos, chunkData.lodLevel))
+                {
+                    skippedChunks ??= new List<Vector3Int>();
+                    skippedChunks.Add(chunkPos);
+                    continue;
+                }
+
+                bool processed = false;
+
+                if (ShouldUseGpuForMeshGeneration)
+                {
+                    processed = DispatchMarchingCubesGPU(chunkData.chunk, chunkData.lodLevel);
+                }
+
+                if (!processed)
+                {
+                    ScheduleMarchingCubesJob(chunkData.chunk, chunkData.lodLevel);
+                }
+
+                processedCount++;
+            }
+
+            if (skippedChunks != null)
+            {
+                for (int i = 0; i < skippedChunks.Count; i++)
+                {
+                    dirtyChunkQueue.Enqueue(skippedChunks[i]);
+                }
+            }
+        }
+
+        private void UpdateAdaptiveChunkBudget()
+        {
+            int minBudget = Mathf.Max(0, minChunksPerFrame);
+            int maxBudget = Mathf.Max(minBudget, maxAdaptiveChunksPerFrame);
+
+            if (!adaptiveChunkBudget)
+            {
+                baseMaxChunksPerFrame = Mathf.Clamp(baseMaxChunksPerFrame, minBudget, maxBudget);
+                maxChunksPerFrame = baseMaxChunksPerFrame;
+                return;
+            }
+
+            maxChunksPerFrame = Mathf.Clamp(maxChunksPerFrame, minBudget, maxBudget);
+            baseMaxChunksPerFrame = Mathf.Clamp(baseMaxChunksPerFrame, minBudget, maxBudget);
+
+            float deltaTime = Time.unscaledDeltaTime;
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            float smoothingFactor = Mathf.Clamp01(frameTimeSmoothing);
+            if (smoothedFrameTime < 0f)
+            {
+                smoothedFrameTime = deltaTime;
+            }
+            else
+            {
+                smoothedFrameTime = Mathf.Lerp(smoothedFrameTime, deltaTime, smoothingFactor);
+            }
+
+            adaptiveBudgetTimer += deltaTime;
+            if (adaptiveBudgetTimer < Mathf.Max(0.05f, adaptationInterval))
+            {
+                return;
+            }
+
+            adaptiveBudgetTimer = 0f;
+
+            float fps = 1f / Mathf.Max(0.0001f, smoothedFrameTime);
+            float lowerThreshold = Mathf.Max(1f, targetFrameRate - frameRateBuffer);
+            float upperThreshold = targetFrameRate + frameRateBuffer;
+
+            if (fps < lowerThreshold && maxChunksPerFrame > minBudget)
+            {
+                maxChunksPerFrame = Mathf.Max(minBudget, maxChunksPerFrame - 1);
+            }
+            else if (fps > upperThreshold && maxChunksPerFrame < maxBudget)
+            {
+                maxChunksPerFrame = Mathf.Min(maxBudget, maxChunksPerFrame + 1);
             }
         }
 
