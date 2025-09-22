@@ -325,15 +325,9 @@ namespace TerrainSystem
             AnnounceLogFile();
             LogStructured("System", "TerrainManager enabled");
         }
-
         private void OnDisable()
         {
             LogStructured("System", "TerrainManager disabled");
-            CloseLogWriter();
-        }
-
-        private void OnDestroy()
-        {
             CloseLogWriter();
         }
 
@@ -447,8 +441,8 @@ namespace TerrainSystem
                     GpuGenerationRequestInfo requestInfo = EnsureGpuRequestInfo(chunkPos, chunkData.lodLevel, voxelDimensions, densities.Length);
 
                     DensitySummary summary = CalculateDensitySummary(densities);
-                    Vector3Int threadGroups = new Vector3Int(requestInfo.ThreadGroupsX, requestInfo.ThreadGroupsY, requestInfo.ThreadGroupsZ);
-                    LogDensitySummary("GpuReadback", "readbackComplete", "GPU", chunkPos, chunkData.lodLevel, voxelDimensions, summary, requestInfo.BufferCount, threadGroups);
+                    Vector3Int requestThreadGroups = new Vector3Int(requestInfo.ThreadGroupsX, requestInfo.ThreadGroupsY, requestInfo.ThreadGroupsZ);
+                    LogDensitySummary("GpuReadback", "readbackComplete", "GPU", chunkPos, chunkData.lodLevel, voxelDimensions, summary, requestInfo.BufferCount, requestThreadGroups);
 
                     chunkData.chunk.ApplyDensities(densities);
                     QueueChunkForUpdate(chunkPos);
@@ -475,6 +469,7 @@ namespace TerrainSystem
 
         private void OnDestroy()
         {
+            CloseLogWriter();
             CleanupAllJobs();
             ReleaseStaticGpuBuffers();
             DisposeBiomeNativeCaches();
@@ -2438,21 +2433,21 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
         private void LogStructured(string category, string message)
         {
             string formattedMessage = FormatLog(category, message);
-            TerrainLogger.Log(LogType.Log, formattedMessage, this);
+            TerrainLogger.Log(LogType.Log, (object)formattedMessage, (UnityEngine.Object)this);
             WriteLogToFile("INFO", formattedMessage);
         }
 
         private void LogWarning(string category, string message)
         {
             string formattedMessage = FormatLog(category, message);
-            TerrainLogger.Log(LogType.Warning, formattedMessage, this);
+            TerrainLogger.Log(LogType.Warning, (object)formattedMessage, (UnityEngine.Object)this);
             WriteLogToFile("WARN", formattedMessage);
         }
 
         private void LogError(string category, string message)
         {
             string formattedMessage = FormatLog(category, message);
-            TerrainLogger.Log(LogType.Error, formattedMessage, this);
+            TerrainLogger.Log(LogType.Error, (object)formattedMessage, (UnityEngine.Object)this);
             WriteLogToFile("ERROR", formattedMessage);
         }
 
