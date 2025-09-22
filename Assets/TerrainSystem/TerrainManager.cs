@@ -738,7 +738,7 @@ private void LateUpdate()
             {
                 chunk = chunk,
                 lodLevel = lodLevel
-            });
+            };
 
             // Schedule voxel data generation in background or on GPU
             if (ShouldUseGpuForVoxelGeneration)

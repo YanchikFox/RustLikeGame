@@ -320,9 +320,9 @@ void MarchingCubes(uint3 id : SV_DispatchThreadID)
             cornerDensities[_EdgeConnections[edge3 * 2 + 1]]
         );
 
-        float3 edge1 = v2 - v1;
-        float3 edge2 = v3 - v1;
-        float3 normal = cross(edge1, edge2);
+        float3 edgeDir1 = v2 - v1;
+        float3 edgeDir2 = v3 - v1;
+        float3 normal = cross(edgeDir1, edgeDir2);
         float lengthSq = dot(normal, normal);
         if (lengthSq > 1e-12)
         {
