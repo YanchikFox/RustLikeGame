@@ -302,6 +302,20 @@ float3 normalizeGradient(float3 gradient)
     return float3(0.0, 1.0, 0.0);
 }
 
+float sampleCornerDensity(int cornerIndex, int3 baseCoords)
+{
+    int3 corner = cubeCorners[cornerIndex];
+    int3 densityCoords = baseCoords + corner;
+    uint3 cornerPos = uint3(densityCoords.x, densityCoords.y, densityCoords.z);
+    return _DensitiesForMC[getDensityIndex(cornerPos, _ChunkSize)];
+}
+
+float3 sampleCornerGradient(int cornerIndex, int3 baseCoords)
+{
+    int3 corner = cubeCorners[cornerIndex];
+    return calculateDensityGradient(baseCoords + corner);
+}
+
 float3 vertexInterpolation(float3 posA, float3 posB, float valA, float valB, out float t)
 {
     if (abs(valA - valB) < 0.00001)
@@ -328,10 +342,8 @@ void MarchingCubes(uint3 id : SV_DispatchThreadID)
     for (int i = 0; i < 8; i++)
     {
         int3 corner = cubeCorners[i];
-        int3 densityCoords = baseCoords + corner;
-        uint3 cornerPos = uint3(densityCoords.x, densityCoords.y, densityCoords.z);
-        cornerDensities[i] = _DensitiesForMC[getDensityIndex(cornerPos, _ChunkSize)];
-        cornerGradients[i] = calculateDensityGradient(densityCoords);
+        cornerDensities[i] = sampleCornerDensity(i, baseCoords);
+        cornerGradients[i] = sampleCornerGradient(i, baseCoords);
         float3 cornerOffset = float3(corner.x, corner.y, corner.z);
         cornerPositions[i] = (cellBase + cornerOffset) * adjustedVoxelSize;
     }

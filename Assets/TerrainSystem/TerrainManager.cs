@@ -2042,13 +2042,11 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 
                 int gradientCount = (voxelDimensions.x + 3) * (voxelDimensions.y + 3) * (voxelDimensions.z + 3);
                 gradientDensityBuffer = ComputeBufferManager.Instance.GetBuffer(gradientCount, sizeof(float), ComputeBufferType.Structured);
-                float[] gradientDensities = new float[gradientCount];
                 using (var gradientNative = new NativeArray<float>(gradientCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
                 {
                     FillGradientDensities(chunk, lodLevel, gradientNative);
-                    gradientNative.CopyTo(gradientDensities);
+                    gradientDensityBuffer.SetData(gradientNative);
                 }
-                gradientDensityBuffer.SetData(gradientDensities);
 
                 const int maxVerticesPerCube = 15; // Marching cubes can emit at most 5 triangles (15 vertices) per cube at the surface
                 const int maxVertexBufferCapacity = int.MaxValue - (int.MaxValue % 3); // cap so index buffer stays within int range and triangle multiple
