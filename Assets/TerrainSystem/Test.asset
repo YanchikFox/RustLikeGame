@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a45fd28da4a48a9aaeee9ac7404b658, type: 3}
+  m_Name: Test
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainSystem.BiomeDefinition
+  displayName: New Biome
+  startThreshold: -1
+  octaves: 4
+  lacunarity: 2
+  persistence: 0.5
+  worldGroundLevel: 20
+  heightImpact: 15
+  heightNoiseScale: 0.05
+  caveImpact: 0.3
+  caveNoiseScale: 0.08
+  enableHeightDomainWarp: 0
+  heightWarpStrength: 0
+  heightWarpScale: 0.05
+  enableCaveDomainWarp: 0
+  caveWarpStrength: 0
+  caveWarpScale: 0.08
+  enableAdditionalHeightLayer: 0
+  additionalHeightOctaves: 0
+  additionalHeightScale: 0.1
+  additionalHeightLacunarity: 2
+  additionalHeightPersistence: 0.5
+  additionalHeightImpact: 0
+  enableAdditionalCaveLayer: 0
+  additionalCaveOctaves: 0
+  additionalCaveScale: 0.1
+  additionalCaveLacunarity: 2
+  additionalCavePersistence: 0.5
+  additionalCaveImpact: 0
