@@ -31,6 +31,7 @@ float _RiverThreshold;
 float _RiverDepth;
 
 StructuredBuffer<float> _DensitiesForMC;
+StructuredBuffer<float> _GradientDensities;
 RWStructuredBuffer<float3> _VertexBuffer;
 RWStructuredBuffer<float3> _NormalBuffer;
 StructuredBuffer<int> _TriangleTable;
@@ -260,15 +261,57 @@ static const int3 cubeCorners[8] = {
     int3(0, 1, 0), int3(1, 1, 0), int3(1, 1, 1), int3(0, 1, 1)
 };
 
-uint getDensityIndex(uint3 coords, int3 chunkSize) 
+static const int GRADIENT_PADDING = 3;
+static const int GRADIENT_OFFSET = 1;
+
+uint getDensityIndex(uint3 coords, int3 chunkSize)
 {
     return coords.x + coords.y * (chunkSize.x + 1) + coords.z * (chunkSize.x + 1) * (chunkSize.y + 1);
 }
 
-float3 vertexInterpolation(float3 posA, float3 posB, float valA, float valB) 
+uint getGradientDensityIndex(int3 coords, int3 chunkSize)
 {
-    if (abs(valA - valB) < 0.00001) return posA;
-    return posA + (posB - posA) * (_SurfaceLevel - valA) / (valB - valA);
+    int width = chunkSize.x + GRADIENT_PADDING;
+    int height = chunkSize.y + GRADIENT_PADDING;
+    int x = coords.x + GRADIENT_OFFSET;
+    int y = coords.y + GRADIENT_OFFSET;
+    int z = coords.z + GRADIENT_OFFSET;
+    return (uint)(x + y * width + z * width * height);
+}
+
+float getGradientDensity(int3 coords)
+{
+    return _GradientDensities[getGradientDensityIndex(coords, _ChunkSize)];
+}
+
+float3 calculateDensityGradient(int3 coords)
+{
+    float dx = getGradientDensity(coords + int3(1, 0, 0)) - getGradientDensity(coords - int3(1, 0, 0));
+    float dy = getGradientDensity(coords + int3(0, 1, 0)) - getGradientDensity(coords - int3(0, 1, 0));
+    float dz = getGradientDensity(coords + int3(0, 0, 1)) - getGradientDensity(coords - int3(0, 0, 1));
+    return float3(dx, dy, dz) * 0.5;
+}
+
+float3 normalizeGradient(float3 gradient)
+{
+    float lengthSq = dot(gradient, gradient);
+    if (lengthSq > 1e-12f)
+    {
+        return gradient * rsqrt(lengthSq);
+    }
+    return float3(0.0, 1.0, 0.0);
+}
+
+float3 vertexInterpolation(float3 posA, float3 posB, float valA, float valB, out float t)
+{
+    if (abs(valA - valB) < 0.00001)
+    {
+        t = 0.0;
+        return posA;
+    }
+
+    t = (_SurfaceLevel - valA) / (valB - valA);
+    return posA + (posB - posA) * t;
 }
 
 [numthreads(8,8,8)]
@@ -277,71 +320,82 @@ void MarchingCubes(uint3 id : SV_DispatchThreadID)
     if (id.x >= (uint)_ChunkSize.x || id.y >= (uint)_ChunkSize.y || id.z >= (uint)_ChunkSize.z) return;
 
     float cornerDensities[8];
-    for (int i = 0; i < 8; i++) 
+    float3 cornerGradients[8];
+    float3 cornerPositions[8];
+    int3 baseCoords = int3(id.x, id.y, id.z);
+    float3 cellBase = float3(id.x, id.y, id.z);
+    float adjustedVoxelSize = _VoxelSize * pow(2, _LODLevel);
+    for (int i = 0; i < 8; i++)
     {
-        uint3 cornerPos = id + cubeCorners[i];
+        int3 corner = cubeCorners[i];
+        int3 densityCoords = baseCoords + corner;
+        uint3 cornerPos = uint3(densityCoords.x, densityCoords.y, densityCoords.z);
         cornerDensities[i] = _DensitiesForMC[getDensityIndex(cornerPos, _ChunkSize)];
+        cornerGradients[i] = calculateDensityGradient(densityCoords);
+        float3 cornerOffset = float3(corner.x, corner.y, corner.z);
+        cornerPositions[i] = (cellBase + cornerOffset) * adjustedVoxelSize;
     }
-    
+
     int cubeIndex = 0;
-    for (int i = 0; i < 8; i++) 
+    for (int i = 0; i < 8; i++)
     {
         if (cornerDensities[i] < _SurfaceLevel) cubeIndex |= (1 << i);
     }
     
     if (cubeIndex == 0 || cubeIndex == 255) return;
     
-    float adjustedVoxelSize = _VoxelSize * pow(2, _LODLevel);
-
-    for (int i = 0; _TriangleTable[cubeIndex * 16 + i] != -1; i += 3) 
+    for (int i = 0; _TriangleTable[cubeIndex * 16 + i] != -1; i += 3)
     {
-        float3 v1, v2, v3;
-
         int edge1 = _TriangleTable[cubeIndex * 16 + i];
         int edge2 = _TriangleTable[cubeIndex * 16 + i + 1];
         int edge3 = _TriangleTable[cubeIndex * 16 + i + 2];
 
-        v1 = vertexInterpolation(
-            (id + cubeCorners[_EdgeConnections[edge1 * 2]]) * adjustedVoxelSize,
-            (id + cubeCorners[_EdgeConnections[edge1 * 2 + 1]]) * adjustedVoxelSize,
-            cornerDensities[_EdgeConnections[edge1 * 2]],
-            cornerDensities[_EdgeConnections[edge1 * 2 + 1]]
-        );
-        v2 = vertexInterpolation(
-            (id + cubeCorners[_EdgeConnections[edge2 * 2]]) * adjustedVoxelSize,
-            (id + cubeCorners[_EdgeConnections[edge2 * 2 + 1]]) * adjustedVoxelSize,
-            cornerDensities[_EdgeConnections[edge2 * 2]],
-            cornerDensities[_EdgeConnections[edge2 * 2 + 1]]
-        );
-        v3 = vertexInterpolation(
-            (id + cubeCorners[_EdgeConnections[edge3 * 2]]) * adjustedVoxelSize,
-            (id + cubeCorners[_EdgeConnections[edge3 * 2 + 1]]) * adjustedVoxelSize,
-            cornerDensities[_EdgeConnections[edge3 * 2]],
-            cornerDensities[_EdgeConnections[edge3 * 2 + 1]]
-        );
+        int cornerIdx1A = _EdgeConnections[edge1 * 2];
+        int cornerIdx1B = _EdgeConnections[edge1 * 2 + 1];
+        int cornerIdx2A = _EdgeConnections[edge2 * 2];
+        int cornerIdx2B = _EdgeConnections[edge2 * 2 + 1];
+        int cornerIdx3A = _EdgeConnections[edge3 * 2];
+        int cornerIdx3B = _EdgeConnections[edge3 * 2 + 1];
 
-        float3 edgeDir1 = v2 - v1;
-        float3 edgeDir2 = v3 - v1;
-        float3 normal = cross(edgeDir1, edgeDir2);
-        float lengthSq = dot(normal, normal);
-        if (lengthSq > 1e-12)
-        {
-            normal = normal * rsqrt(lengthSq);
-        }
-        else
-        {
-            normal = float3(0.0, 1.0, 0.0);
-        }
+        float t1;
+        float3 v1 = vertexInterpolation(
+            cornerPositions[cornerIdx1A],
+            cornerPositions[cornerIdx1B],
+            cornerDensities[cornerIdx1A],
+            cornerDensities[cornerIdx1B],
+            t1
+        );
+        float3 n1 = normalizeGradient(lerp(cornerGradients[cornerIdx1A], cornerGradients[cornerIdx1B], t1));
+
+        float t2;
+        float3 v2 = vertexInterpolation(
+            cornerPositions[cornerIdx2A],
+            cornerPositions[cornerIdx2B],
+            cornerDensities[cornerIdx2A],
+            cornerDensities[cornerIdx2B],
+            t2
+        );
+        float3 n2 = normalizeGradient(lerp(cornerGradients[cornerIdx2A], cornerGradients[cornerIdx2B], t2));
+
+        float t3;
+        float3 v3 = vertexInterpolation(
+            cornerPositions[cornerIdx3A],
+            cornerPositions[cornerIdx3B],
+            cornerDensities[cornerIdx3A],
+            cornerDensities[cornerIdx3B],
+            t3
+        );
+        float3 n3 = normalizeGradient(lerp(cornerGradients[cornerIdx3A], cornerGradients[cornerIdx3B], t3));
 
         uint baseIndex;
         InterlockedAdd(_VertexCountBuffer[0], 3, baseIndex);
 
         _VertexBuffer[baseIndex + 0] = v1;
-        _NormalBuffer[baseIndex + 0] = normal;
+        _NormalBuffer[baseIndex + 0] = n1;
         _VertexBuffer[baseIndex + 1] = v2;
-        _NormalBuffer[baseIndex + 1] = normal;
+        _NormalBuffer[baseIndex + 1] = n2;
         _VertexBuffer[baseIndex + 2] = v3;
-        _NormalBuffer[baseIndex + 2] = normal;
+        _NormalBuffer[baseIndex + 2] = n3;
     }
 }
 
