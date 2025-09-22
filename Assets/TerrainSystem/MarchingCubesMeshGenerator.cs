@@ -5,6 +5,7 @@ using Unity.Jobs;
 using Unity.Burst;
 using Unity.Collections;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
 
 namespace TerrainSystem
 {
@@ -500,29 +501,68 @@ private static readonly int[] flatTriangleTable =
         public Mesh CreateMeshFromJob(NativeList<Vector3> vertices, NativeList<int> triangles, NativeList<Vector3> normals)
         {
             Mesh mesh = new Mesh();
-            if (vertices.Length == 0) return mesh;
+            if (!vertices.IsCreated || vertices.Length == 0)
+            {
+                return mesh;
+            }
 
             mesh.indexFormat = vertices.Length > 65535
-                ? UnityEngine.Rendering.IndexFormat.UInt32
-                : UnityEngine.Rendering.IndexFormat.UInt16;
+                ? IndexFormat.UInt32
+                : IndexFormat.UInt16;
 
-            using (var verticesArray = vertices.ToArray(Allocator.Temp))
-            {
-                mesh.SetVertices(verticesArray.ToArray());
-            }
-            using (var trianglesArray = triangles.ToArray(Allocator.Temp))
-            {
-                mesh.SetTriangles(trianglesArray.ToArray(), 0, true);
-            }
+            bool hasNormals = normals.IsCreated && normals.Length == vertices.Length;
 
-            if (normals.IsCreated && normals.Length == vertices.Length)
+            Mesh.MeshDataArray meshDataArray = Mesh.AllocateWritableMeshData(1);
+            Mesh.MeshData meshData = meshDataArray[0];
+
+            if (hasNormals)
             {
-                using (var normalsArray = normals.ToArray(Allocator.Temp))
-                {
-                    mesh.SetNormals(normalsArray.ToArray());
-                }
+                meshData.SetVertexBufferParams(vertices.Length,
+                    new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, stream: 0),
+                    new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, stream: 1));
             }
             else
+            {
+                meshData.SetVertexBufferParams(vertices.Length,
+                    new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3));
+            }
+
+            meshData.SetIndexBufferParams(triangles.Length, mesh.indexFormat);
+
+            var vertexPositions = meshData.GetVertexData<Vector3>(0);
+            new NativeSlice<Vector3>(vertexPositions).CopyFrom(vertices.AsArray());
+
+            if (hasNormals)
+            {
+                var vertexNormals = meshData.GetVertexData<Vector3>(1);
+                new NativeSlice<Vector3>(vertexNormals).CopyFrom(normals.AsArray());
+            }
+
+            if (mesh.indexFormat == IndexFormat.UInt32)
+            {
+                var indexData = meshData.GetIndexData<int>();
+                new NativeSlice<int>(indexData).CopyFrom(triangles.AsArray());
+            }
+            else
+            {
+                var indexData = meshData.GetIndexData<ushort>();
+                var sourceTriangles = triangles.AsArray();
+                for (int i = 0; i < sourceTriangles.Length; i++)
+                {
+                    indexData[i] = (ushort)sourceTriangles[i];
+                }
+            }
+
+            meshData.subMeshCount = 1;
+            var subMeshDescriptor = new SubMeshDescriptor(0, triangles.Length)
+            {
+                vertexCount = vertices.Length
+            };
+            meshData.SetSubMesh(0, subMeshDescriptor, MeshUpdateFlags.DontRecalculateBounds);
+
+            Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
+
+            if (!hasNormals)
             {
                 mesh.RecalculateNormals();
             }
