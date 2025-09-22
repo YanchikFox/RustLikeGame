@@ -264,6 +264,8 @@ namespace TerrainSystem
 // Ñëîâàðü äëÿ õðàíåíèÿ áóôåðà ïëîòíîñòåé âî âðåìÿ ãåíåðàöèè
         private readonly Dictionary<Vector3Int, ComputeBuffer> densityBuffers =
             new Dictionary<Vector3Int, ComputeBuffer>();
+        private readonly Dictionary<Vector3Int, NativeArray<float>> densityUploadCache =
+            new Dictionary<Vector3Int, NativeArray<float>>();
         private readonly Dictionary<Vector3Int, GpuGenerationRequestInfo> gpuGenerationRequestsInfo =
             new Dictionary<Vector3Int, GpuGenerationRequestInfo>();
         private readonly Dictionary<Vector3Int, ChunkData> chunks = new Dictionary<Vector3Int, ChunkData>();
@@ -705,6 +707,8 @@ namespace TerrainSystem
 
         private void ReleaseStaticGpuBuffers()
         {
+            ClearResolutionDependentCaches();
+
             if (!gpuBuffersInitialized)
             {
                 return;
@@ -770,6 +774,55 @@ namespace TerrainSystem
             edgeConnectionsBuffer = null;
 
             gpuBuffersInitialized = false;
+        }
+
+        private NativeArray<float> GetDensityUploadArray(Vector3Int voxelDimensions)
+        {
+            int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
+
+            if (densityUploadCache.TryGetValue(voxelDimensions, out NativeArray<float> cachedArray))
+            {
+                bool needsResize = !cachedArray.IsCreated || cachedArray.Length != voxelCount;
+                if (needsResize)
+                {
+                    if (cachedArray.IsCreated)
+                    {
+                        cachedArray.Dispose();
+                    }
+
+                    cachedArray = new NativeArray<float>(voxelCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                    densityUploadCache[voxelDimensions] = cachedArray;
+                }
+
+                return cachedArray;
+            }
+
+            NativeArray<float> newArray = new NativeArray<float>(voxelCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            densityUploadCache[voxelDimensions] = newArray;
+            return newArray;
+        }
+
+        private void ClearDensityUploadCache()
+        {
+            foreach (var kvp in densityUploadCache)
+            {
+                if (kvp.Value.IsCreated)
+                {
+                    kvp.Value.Dispose();
+                }
+            }
+
+            densityUploadCache.Clear();
+        }
+
+        private void ClearResolutionDependentCaches()
+        {
+            ClearDensityUploadCache();
+
+            if (ComputeBufferManager.TryGetInstance(out ComputeBufferManager bufferManager))
+            {
+                bufferManager.ReleaseStructuredBuffers();
+            }
         }
 
         private BiomeSettings[] GetActiveBiomes(bool logWarningIfFallback)
@@ -1068,7 +1121,8 @@ namespace TerrainSystem
 
             // Step 1: Complete all running jobs and dispose resources
             CleanupAllJobs();
-            
+            ClearResolutionDependentCaches();
+
             // Give a frame to ensure all jobs have completed
             yield return null;
             
@@ -2280,20 +2334,21 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 
             try
             {
+                ComputeBufferManager bufferManager = ComputeBufferManager.Instance;
                 int kernelIndex = voxelTerrainShader.FindKernel("MarchingCubes");
 
                 Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
                 long cubeCount = (long)voxelDimensions.x * voxelDimensions.y * voxelDimensions.z; // actual cubes evaluated by marching cubes
                 int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
-                densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
+                densityBuffer = bufferManager.GetBuffer(voxelCount, sizeof(float));
 
-                float[] densities = new float[voxelCount];
+                NativeArray<float> densities = GetDensityUploadArray(voxelDimensions);
                 chunk.CopyVoxelDataTo(densities);
-                densityBuffer.SetData(densities);
+                densityBuffer.SetData(densities, 0, 0, voxelCount);
 
                 int gradientCount = (voxelDimensions.x + 3) * (voxelDimensions.y + 3) * (voxelDimensions.z + 3);
-                gradientDensityBuffer = ComputeBufferManager.Instance.GetBuffer(gradientCount, sizeof(float), ComputeBufferType.Structured);
+                gradientDensityBuffer = bufferManager.GetBuffer(gradientCount, sizeof(float), ComputeBufferType.Structured);
                 using (var gradientNative = new NativeArray<float>(gradientCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
                 {
                     FillGradientDensities(chunk, lodLevel, gradientNative);
@@ -2323,12 +2378,11 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     vertexCapacity = (int)requestedVertexCapacity;
                 }
 
-                vertexBuffer = ComputeBufferManager.Instance.GetBuffer(vertexCapacity, 3 * sizeof(float), ComputeBufferType.Structured);
-                normalBuffer = ComputeBufferManager.Instance.GetBuffer(vertexCapacity, 3 * sizeof(float), ComputeBufferType.Structured);
-                counterBuffer = ComputeBufferManager.Instance.GetBuffer(1, sizeof(uint), ComputeBufferType.Structured);
+                vertexBuffer = bufferManager.GetStructuredVertexBuffer(voxelDimensions, vertexCapacity);
+                normalBuffer = bufferManager.GetStructuredNormalBuffer(voxelDimensions, vertexCapacity);
+                counterBuffer = bufferManager.GetStructuredCounterBuffer(voxelDimensions);
 
-                uint[] zeros = { 0 };
-                counterBuffer.SetData(zeros);
+                bufferManager.ResetCounterBuffer(counterBuffer);
 
                 voxelTerrainShader.SetBuffer(kernelIndex, "_DensitiesForMC", densityBuffer);
                 voxelTerrainShader.SetBuffer(kernelIndex, "_GradientDensities", gradientDensityBuffer);
@@ -2395,9 +2449,6 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             {
                 ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
                 ComputeBufferManager.Instance.ReleaseBuffer(gradientDensityBuffer);
-                ComputeBufferManager.Instance.ReleaseBuffer(vertexBuffer);
-                ComputeBufferManager.Instance.ReleaseBuffer(normalBuffer);
-                ComputeBufferManager.Instance.ReleaseBuffer(counterBuffer);
             }
         }
 
