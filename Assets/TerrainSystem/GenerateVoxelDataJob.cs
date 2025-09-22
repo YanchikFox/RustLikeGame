@@ -30,6 +30,24 @@ namespace TerrainSystem
         [ReadOnly] public NativeArray<int> biomeOctaves;
         [ReadOnly] public NativeArray<float> biomeLacunarity;
         [ReadOnly] public NativeArray<float> biomePersistence;
+        [ReadOnly] public NativeArray<int> biomeHeightWarpEnabled;
+        [ReadOnly] public NativeArray<float> biomeHeightWarpStrengths;
+        [ReadOnly] public NativeArray<float> biomeHeightWarpScales;
+        [ReadOnly] public NativeArray<int> biomeCaveWarpEnabled;
+        [ReadOnly] public NativeArray<float> biomeCaveWarpStrengths;
+        [ReadOnly] public NativeArray<float> biomeCaveWarpScales;
+        [ReadOnly] public NativeArray<int> biomeExtraHeightLayerEnabled;
+        [ReadOnly] public NativeArray<int> biomeExtraHeightOctaves;
+        [ReadOnly] public NativeArray<float> biomeExtraHeightScales;
+        [ReadOnly] public NativeArray<float> biomeExtraHeightLacunarity;
+        [ReadOnly] public NativeArray<float> biomeExtraHeightPersistence;
+        [ReadOnly] public NativeArray<float> biomeExtraHeightImpact;
+        [ReadOnly] public NativeArray<int> biomeExtraCaveLayerEnabled;
+        [ReadOnly] public NativeArray<int> biomeExtraCaveOctaves;
+        [ReadOnly] public NativeArray<float> biomeExtraCaveScales;
+        [ReadOnly] public NativeArray<float> biomeExtraCaveLacunarity;
+        [ReadOnly] public NativeArray<float> biomeExtraCavePersistence;
+        [ReadOnly] public NativeArray<float> biomeExtraCaveImpact;
 
         // Multi-layered noise parameters
         public float temperatureNoiseScale;
@@ -59,26 +77,31 @@ namespace TerrainSystem
             }
         }
 
+        private static readonly float2 HeightWarpOffset = new float2(37.21f, 17.31f);
+        private static readonly float3 CaveWarpOffsetA = new float3(19.13f, 7.73f, 3.37f);
+        private static readonly float3 CaveWarpOffsetB = new float3(5.21f, 9.18f, 12.89f);
+
         private float CalculateDensity(float3 worldPos)
         {
-            // --- Step 1: Calculate all biome parameters ---
-            
-            // Get noise values for biomes, temperature, and humidity
             float biomeValue = noise.snoise(worldPos.xz * biomeNoiseScale);
             float temperatureValue = noise.snoise(worldPos.xz * temperatureNoiseScale);
             float humidityValue = noise.snoise(worldPos.xz * humidityNoiseScale);
 
-            // Find current and next biome for interpolation
             int currentBiomeIndex = 0;
             for (int i = 0; i < biomeCount; i++)
             {
-                if (biomeValue >= biomeThresholds[i]) { currentBiomeIndex = i; }
-                else { break; }
+                if (biomeValue >= biomeThresholds[i])
+                {
+                    currentBiomeIndex = i;
+                }
+                else
+                {
+                    break;
+                }
             }
             int nextBiomeIndex = math.min(currentBiomeIndex + 1, biomeCount - 1);
 
-            // Calculate blend factor between biomes
-            float blendFactor = 0.0f;
+            float blendFactor = 0f;
             if (currentBiomeIndex != nextBiomeIndex)
             {
                 float range = biomeThresholds[nextBiomeIndex] - biomeThresholds[currentBiomeIndex];
@@ -88,7 +111,6 @@ namespace TerrainSystem
                 }
             }
 
-            // Interpolate base parameters between biomes
             float baseGroundLevel = math.lerp(biomeGroundLevels[currentBiomeIndex], biomeGroundLevels[nextBiomeIndex], blendFactor);
             float baseHeightImpact = math.lerp(biomeHeightImpacts[currentBiomeIndex], biomeHeightImpacts[nextBiomeIndex], blendFactor);
             float baseHeightScale = math.lerp(biomeHeightScales[currentBiomeIndex], biomeHeightScales[nextBiomeIndex], blendFactor);
@@ -98,129 +120,184 @@ namespace TerrainSystem
             float finalLacunarity = math.lerp(biomeLacunarity[currentBiomeIndex], biomeLacunarity[nextBiomeIndex], blendFactor);
             float finalPersistence = math.lerp(biomePersistence[currentBiomeIndex], biomePersistence[nextBiomeIndex], blendFactor);
 
-            // --- Step 2: Apply temperature and humidity modifiers ---
+            float heightWarpToggle = math.lerp((float)biomeHeightWarpEnabled[currentBiomeIndex], (float)biomeHeightWarpEnabled[nextBiomeIndex], blendFactor);
+            float heightWarpStrength = math.lerp(biomeHeightWarpStrengths[currentBiomeIndex], biomeHeightWarpStrengths[nextBiomeIndex], blendFactor);
+            float heightWarpScale = math.lerp(biomeHeightWarpScales[currentBiomeIndex], biomeHeightWarpScales[nextBiomeIndex], blendFactor);
+            float caveWarpToggle = math.lerp((float)biomeCaveWarpEnabled[currentBiomeIndex], (float)biomeCaveWarpEnabled[nextBiomeIndex], blendFactor);
+            float caveWarpStrength = math.lerp(biomeCaveWarpStrengths[currentBiomeIndex], biomeCaveWarpStrengths[nextBiomeIndex], blendFactor);
+            float caveWarpScale = math.lerp(biomeCaveWarpScales[currentBiomeIndex], biomeCaveWarpScales[nextBiomeIndex], blendFactor);
+            float extraHeightToggle = math.lerp((float)biomeExtraHeightLayerEnabled[currentBiomeIndex], (float)biomeExtraHeightLayerEnabled[nextBiomeIndex], blendFactor);
+            int extraHeightOctaves = (int)math.round(math.lerp(biomeExtraHeightOctaves[currentBiomeIndex], biomeExtraHeightOctaves[nextBiomeIndex], blendFactor));
+            float extraHeightScale = math.lerp(biomeExtraHeightScales[currentBiomeIndex], biomeExtraHeightScales[nextBiomeIndex], blendFactor);
+            float extraHeightLacunarity = math.lerp(biomeExtraHeightLacunarity[currentBiomeIndex], biomeExtraHeightLacunarity[nextBiomeIndex], blendFactor);
+            float extraHeightPersistence = math.lerp(biomeExtraHeightPersistence[currentBiomeIndex], biomeExtraHeightPersistence[nextBiomeIndex], blendFactor);
+            float extraHeightImpact = math.lerp(biomeExtraHeightImpact[currentBiomeIndex], biomeExtraHeightImpact[nextBiomeIndex], blendFactor);
+            float extraCaveToggle = math.lerp((float)biomeExtraCaveLayerEnabled[currentBiomeIndex], (float)biomeExtraCaveLayerEnabled[nextBiomeIndex], blendFactor);
+            int extraCaveOctaves = (int)math.round(math.lerp(biomeExtraCaveOctaves[currentBiomeIndex], biomeExtraCaveOctaves[nextBiomeIndex], blendFactor));
+            float extraCaveScale = math.lerp(biomeExtraCaveScales[currentBiomeIndex], biomeExtraCaveScales[nextBiomeIndex], blendFactor);
+            float extraCaveLacunarity = math.lerp(biomeExtraCaveLacunarity[currentBiomeIndex], biomeExtraCaveLacunarity[nextBiomeIndex], blendFactor);
+            float extraCavePersistence = math.lerp(biomeExtraCavePersistence[currentBiomeIndex], biomeExtraCavePersistence[nextBiomeIndex], blendFactor);
+            float extraCaveImpact = math.lerp(biomeExtraCaveImpact[currentBiomeIndex], biomeExtraCaveImpact[nextBiomeIndex], blendFactor);
 
             float groundLevelModifier = 0f;
             float heightImpactModifier = 1f;
             float caveImpactModifier = 1f;
 
-            // Temperature modifiers
             if (temperatureValue > 0.6f)
             {
                 float hotFactor = math.saturate((temperatureValue - 0.6f) / 0.4f);
-                heightImpactModifier *= math.lerp(1f, 0.3f, hotFactor); // Reduce height variation in hot areas
+                heightImpactModifier *= math.lerp(1f, 0.3f, hotFactor);
             }
 
-            // Humidity modifiers
             if (humidityValue > 0.5f)
             {
                 float humidFactor = math.saturate((humidityValue - 0.5f) / 0.5f);
-                heightImpactModifier *= math.lerp(1f, 1.3f, humidFactor); // Increase height variation in humid areas
-                groundLevelModifier += math.lerp(0f, -2.0f, humidFactor); // Lower ground in humid areas
-            }
-            
-            // Tundra modifiers (cold and dry)
-            if (temperatureValue < -0.3f && humidityValue < 0.0f)
-            {
-                float tundraFactor = math.saturate((-temperatureValue - 0.3f) / 0.7f) * math.saturate(-humidityValue);
-                caveImpactModifier *= math.lerp(1f, 1.5f, tundraFactor); // Increase cave formation in tundra
+                heightImpactModifier *= math.lerp(1f, 1.3f, humidFactor);
+                groundLevelModifier += math.lerp(0f, -2f, humidFactor);
             }
 
-            // --- Step 3: Calculate final parameters ---
+            if (temperatureValue < -0.3f && humidityValue < 0f)
+            {
+                float tundraFactor = math.saturate((-temperatureValue - 0.3f) / 0.7f) * math.saturate(-humidityValue);
+                caveImpactModifier *= math.lerp(1f, 1.5f, tundraFactor);
+            }
 
             float finalGroundLevel = baseGroundLevel + groundLevelModifier;
             float finalHeightImpact = baseHeightImpact * heightImpactModifier;
             float finalCaveImpact = baseCaveImpact * caveImpactModifier;
 
-            // --- Step 4: Calculate 2D heightmap noise and create surface ---
-            
-            // Calculate 2D heightmap noise with normalization
-            float sum2D = 0f;
-            float maxAmplitude2D = 0f;
-            float freq = baseHeightScale;
-            float amp = 1f;
-            
-            // Calculate maximum possible amplitude for normalization
-            for (int i = 0; i < finalOctaves; i++)
+            float2 heightSamplePos = worldPos.xz;
+            bool useHeightWarp = heightWarpToggle > 0.5f && math.abs(heightWarpStrength) > 0.0001f && math.abs(heightWarpScale) > 0.0001f;
+            if (useHeightWarp)
             {
-                maxAmplitude2D += amp;
-                amp *= finalPersistence;
+                float2 warpInput = heightSamplePos * heightWarpScale;
+                float warpX = noise.snoise(warpInput);
+                float warpZ = noise.snoise(warpInput + HeightWarpOffset);
+                heightSamplePos += new float2(warpX, warpZ) * heightWarpStrength;
             }
-            
-            // Compute the actual 2D noise
-            freq = baseHeightScale;
-            amp = 1f;
-            for (int i = 0; i < finalOctaves; i++)
+
+            float sum2D = FractalNoise2D(heightSamplePos, finalOctaves, baseHeightScale, finalLacunarity, finalPersistence);
+            float heightContribution = sum2D * finalHeightImpact;
+
+            bool useExtraHeightLayer = extraHeightToggle > 0.5f && extraHeightOctaves > 0 && math.abs(extraHeightImpact) > 0.0001f && math.abs(extraHeightScale) > 0.0001f;
+            if (useExtraHeightLayer)
             {
-                sum2D += noise.snoise(worldPos.xz * freq) * amp;
-                freq *= finalLacunarity;
-                amp *= finalPersistence;
+                float extraHeightNoise = FractalNoise2D(heightSamplePos, extraHeightOctaves, extraHeightScale, extraHeightLacunarity, extraHeightPersistence);
+                heightContribution += extraHeightNoise * extraHeightImpact;
             }
-            
-            // Normalize the 2D noise sum
-            sum2D /= maxAmplitude2D;
-            
-            // Calculate surface density using ONLY the 2D noise.
-            // Below the surface we want negative values (solid), above positive (air).
-            float surfaceHeight = finalGroundLevel + (sum2D * finalHeightImpact);
+
+            float surfaceHeight = finalGroundLevel + heightContribution;
             float surfaceDensity = worldPos.y - surfaceHeight;
-            float finalDensity = surfaceDensity; // Start with surface density
-            
-            // --- Step 5: Conditional cave carving (only underground) ---
-            
-            // Only apply cave carving if we're underground
-            if (surfaceDensity < 0)
+            float finalDensity = surfaceDensity;
+
+            float3 caveSamplePos = worldPos;
+            bool useCaveWarp = caveWarpToggle > 0.5f && math.abs(caveWarpStrength) > 0.0001f && math.abs(caveWarpScale) > 0.0001f;
+            if (useCaveWarp)
             {
-                // Calculate 3D cave noise with normalization
-                float sum3D = 0f;
-                float maxAmplitude3D = 0f;
-                
-                // Calculate maximum possible amplitude for normalization
-                freq = baseCaveScale;
-                amp = 1f;
-                for (int i = 0; i < finalOctaves; i++)
-                {
-                    maxAmplitude3D += amp;
-                    amp *= finalPersistence;
-                }
-                
-                // Compute the actual 3D noise
-                freq = baseCaveScale;
-                amp = 1f;
-                for (int i = 0; i < finalOctaves; i++)
-                {
-                    sum3D += noise.snoise(worldPos * freq) * amp;
-                    freq *= finalLacunarity;
-                    amp *= finalPersistence;
-                }
-                
-                // Normalize the 3D noise sum
-                sum3D /= maxAmplitude3D;
-                
-                // Apply cave carving - intensity increases with depth
-                float depthFactor = math.min(-surfaceDensity / 10f, 1f); // Scale cave intensity with depth
-                finalDensity -= (sum3D * finalCaveImpact * depthFactor);
+                float3 warpInput = caveSamplePos * caveWarpScale;
+                float warpX = noise.snoise(warpInput);
+                float warpY = noise.snoise(warpInput + CaveWarpOffsetA);
+                float warpZ = noise.snoise(warpInput + CaveWarpOffsetB);
+                caveSamplePos += new float3(warpX, warpY, warpZ) * caveWarpStrength;
             }
-            
-            // --- Step 6: River carving (last step) ---
-            
+
+            if (surfaceDensity < 0f)
+            {
+                float depthFactor = math.min(-surfaceDensity / 10f, 1f);
+                float sum3D = FractalNoise3D(caveSamplePos, finalOctaves, baseCaveScale, finalLacunarity, finalPersistence);
+                finalDensity -= sum3D * finalCaveImpact * depthFactor;
+
+                bool useExtraCaveLayer = extraCaveToggle > 0.5f && extraCaveOctaves > 0 && math.abs(extraCaveImpact) > 0.0001f && math.abs(extraCaveScale) > 0.0001f;
+                if (useExtraCaveLayer)
+                {
+                    float extraCaveNoise = FractalNoise3D(caveSamplePos, extraCaveOctaves, extraCaveScale, extraCaveLacunarity, extraCavePersistence);
+                    finalDensity -= extraCaveNoise * extraCaveImpact * depthFactor;
+                }
+            }
+
             float riverNoiseValue = noise.snoise(worldPos.xz * riverNoiseScale);
-            float riverProximity = math.abs(riverNoiseValue); // How close to a river center
-            
+            float riverProximity = math.abs(riverNoiseValue);
+
             if (riverProximity < riverThreshold)
             {
-                // This is a river location
-                float carveFactor = 1.0f - math.smoothstep(0, riverThreshold, riverProximity);
-                
-                // Only apply river carving near the surface
-                // Use surfaceDensity (pre-cave) to determine if we're near the surface
-                if (surfaceDensity < 0 && surfaceDensity > -20) 
+                float carveFactor = 1f - math.smoothstep(0f, riverThreshold, riverProximity);
+                if (surfaceDensity < 0f && surfaceDensity > -20f)
                 {
                     finalDensity -= riverDepth * carveFactor;
                 }
             }
-            
+
             return finalDensity;
+        }
+
+        private static float FractalNoise2D(float2 pos, int octaves, float frequency, float lacunarity, float persistence)
+        {
+            if (octaves <= 0)
+            {
+                return 0f;
+            }
+
+            float sum = 0f;
+            float maxAmplitude = 0f;
+            float amp = 1f;
+            float freq = frequency;
+
+            for (int i = 0; i < octaves; i++)
+            {
+                maxAmplitude += amp;
+                amp *= persistence;
+            }
+
+            if (maxAmplitude <= 0f)
+            {
+                return 0f;
+            }
+
+            amp = 1f;
+            freq = frequency;
+            for (int i = 0; i < octaves; i++)
+            {
+                sum += noise.snoise(pos * freq) * amp;
+                freq *= lacunarity;
+                amp *= persistence;
+            }
+
+            return sum / maxAmplitude;
+        }
+
+        private static float FractalNoise3D(float3 pos, int octaves, float frequency, float lacunarity, float persistence)
+        {
+            if (octaves <= 0)
+            {
+                return 0f;
+            }
+
+            float sum = 0f;
+            float maxAmplitude = 0f;
+            float amp = 1f;
+            float freq = frequency;
+
+            for (int i = 0; i < octaves; i++)
+            {
+                maxAmplitude += amp;
+                amp *= persistence;
+            }
+
+            if (maxAmplitude <= 0f)
+            {
+                return 0f;
+            }
+
+            amp = 1f;
+            freq = frequency;
+            for (int i = 0; i < octaves; i++)
+            {
+                sum += noise.snoise(pos * freq) * amp;
+                freq *= lacunarity;
+                amp *= persistence;
+            }
+
+            return sum / maxAmplitude;
         }
     }
 }

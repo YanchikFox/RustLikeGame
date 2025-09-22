@@ -23,6 +23,24 @@ StructuredBuffer<float> _BiomeCaveScales;
 StructuredBuffer<int>   _BiomeOctaves;
 StructuredBuffer<float> _BiomeLacunarity;
 StructuredBuffer<float> _BiomePersistence;
+StructuredBuffer<int>   _BiomeHeightWarpEnabled;
+StructuredBuffer<float> _BiomeHeightWarpStrengths;
+StructuredBuffer<float> _BiomeHeightWarpScales;
+StructuredBuffer<int>   _BiomeCaveWarpEnabled;
+StructuredBuffer<float> _BiomeCaveWarpStrengths;
+StructuredBuffer<float> _BiomeCaveWarpScales;
+StructuredBuffer<int>   _BiomeExtraHeightLayerEnabled;
+StructuredBuffer<int>   _BiomeExtraHeightOctaves;
+StructuredBuffer<float> _BiomeExtraHeightScales;
+StructuredBuffer<float> _BiomeExtraHeightLacunarity;
+StructuredBuffer<float> _BiomeExtraHeightPersistence;
+StructuredBuffer<float> _BiomeExtraHeightImpact;
+StructuredBuffer<int>   _BiomeExtraCaveLayerEnabled;
+StructuredBuffer<int>   _BiomeExtraCaveOctaves;
+StructuredBuffer<float> _BiomeExtraCaveScales;
+StructuredBuffer<float> _BiomeExtraCaveLacunarity;
+StructuredBuffer<float> _BiomeExtraCavePersistence;
+StructuredBuffer<float> _BiomeExtraCaveImpact;
 
 float _TemperatureNoiseScale;
 float _HumidityNoiseScale;
@@ -136,33 +154,65 @@ float snoise(float3 v)
 
 float fractalNoise(float3 pos, int octaves, float freq, float lacunarity, float persistence)
 {
+    if (octaves <= 0)
+    {
+        return 0.0;
+    }
+
     float sum = 0.0;
     float maxAmplitude = 0.0;
     float amplitude = 1.0;
+    float currentFreq = freq;
 
     for (int i = 0; i < octaves; i++)
     {
-        sum += snoise(pos * freq) * amplitude;
+        sum += snoise(pos * currentFreq) * amplitude;
         maxAmplitude += amplitude;
-        freq *= lacunarity;
+        currentFreq *= lacunarity;
         amplitude *= persistence;
     }
-    return sum / maxAmplitude;
+
+    if (maxAmplitude > 0.0)
+    {
+        sum /= maxAmplitude;
+    }
+    else
+    {
+        sum = 0.0;
+    }
+
+    return sum;
 }
 float fractalNoise(float2 pos, int octaves, float freq, float lacunarity, float persistence)
 {
+    if (octaves <= 0)
+    {
+        return 0.0;
+    }
+
     float sum = 0.0;
     float maxAmplitude = 0.0;
     float amplitude = 1.0;
+    float currentFreq = freq;
 
     for (int i = 0; i < octaves; i++)
     {
-        sum += snoise(pos * freq) * amplitude;
+        sum += snoise(pos * currentFreq) * amplitude;
         maxAmplitude += amplitude;
-        freq *= lacunarity;
+        currentFreq *= lacunarity;
         amplitude *= persistence;
     }
-    return sum / maxAmplitude;
+
+    if (maxAmplitude > 0.0)
+    {
+        sum /= maxAmplitude;
+    }
+    else
+    {
+        sum = 0.0;
+    }
+
+    return sum;
 }
 
 //-------------------------------------------------------------------------------------
@@ -177,7 +227,14 @@ float calculateDensity(float3 worldPos)
     int currentBiomeIndex = 0;
     for (int i = 0; i < _BiomeCount; i++)
     {
-        if (biomeValue >= _BiomeThresholds[i]) { currentBiomeIndex = i; } else { break; }
+        if (biomeValue >= _BiomeThresholds[i])
+        {
+            currentBiomeIndex = i;
+        }
+        else
+        {
+            break;
+        }
     }
     int nextBiomeIndex = min(currentBiomeIndex + 1, _BiomeCount - 1);
 
@@ -185,7 +242,10 @@ float calculateDensity(float3 worldPos)
     if (currentBiomeIndex != nextBiomeIndex)
     {
         float range = _BiomeThresholds[nextBiomeIndex] - _BiomeThresholds[currentBiomeIndex];
-        if (range > 0.0001) { blendFactor = saturate((biomeValue - _BiomeThresholds[currentBiomeIndex]) / range); }
+        if (range > 0.0001)
+        {
+            blendFactor = saturate((biomeValue - _BiomeThresholds[currentBiomeIndex]) / range);
+        }
     }
 
     float baseGroundLevel = lerp(_BiomeGroundLevels[currentBiomeIndex], _BiomeGroundLevels[nextBiomeIndex], blendFactor);
@@ -197,6 +257,25 @@ float calculateDensity(float3 worldPos)
     float finalLacunarity = lerp(_BiomeLacunarity[currentBiomeIndex], _BiomeLacunarity[nextBiomeIndex], blendFactor);
     float finalPersistence = lerp(_BiomePersistence[currentBiomeIndex], _BiomePersistence[nextBiomeIndex], blendFactor);
 
+    float heightWarpToggle = lerp((float)_BiomeHeightWarpEnabled[currentBiomeIndex], (float)_BiomeHeightWarpEnabled[nextBiomeIndex], blendFactor);
+    float heightWarpStrength = lerp(_BiomeHeightWarpStrengths[currentBiomeIndex], _BiomeHeightWarpStrengths[nextBiomeIndex], blendFactor);
+    float heightWarpScale = lerp(_BiomeHeightWarpScales[currentBiomeIndex], _BiomeHeightWarpScales[nextBiomeIndex], blendFactor);
+    float caveWarpToggle = lerp((float)_BiomeCaveWarpEnabled[currentBiomeIndex], (float)_BiomeCaveWarpEnabled[nextBiomeIndex], blendFactor);
+    float caveWarpStrength = lerp(_BiomeCaveWarpStrengths[currentBiomeIndex], _BiomeCaveWarpStrengths[nextBiomeIndex], blendFactor);
+    float caveWarpScale = lerp(_BiomeCaveWarpScales[currentBiomeIndex], _BiomeCaveWarpScales[nextBiomeIndex], blendFactor);
+    float extraHeightToggle = lerp((float)_BiomeExtraHeightLayerEnabled[currentBiomeIndex], (float)_BiomeExtraHeightLayerEnabled[nextBiomeIndex], blendFactor);
+    int extraHeightOctaves = (int)round(lerp(_BiomeExtraHeightOctaves[currentBiomeIndex], _BiomeExtraHeightOctaves[nextBiomeIndex], blendFactor));
+    float extraHeightScale = lerp(_BiomeExtraHeightScales[currentBiomeIndex], _BiomeExtraHeightScales[nextBiomeIndex], blendFactor);
+    float extraHeightLacunarity = lerp(_BiomeExtraHeightLacunarity[currentBiomeIndex], _BiomeExtraHeightLacunarity[nextBiomeIndex], blendFactor);
+    float extraHeightPersistence = lerp(_BiomeExtraHeightPersistence[currentBiomeIndex], _BiomeExtraHeightPersistence[nextBiomeIndex], blendFactor);
+    float extraHeightImpact = lerp(_BiomeExtraHeightImpact[currentBiomeIndex], _BiomeExtraHeightImpact[nextBiomeIndex], blendFactor);
+    float extraCaveToggle = lerp((float)_BiomeExtraCaveLayerEnabled[currentBiomeIndex], (float)_BiomeExtraCaveLayerEnabled[nextBiomeIndex], blendFactor);
+    int extraCaveOctaves = (int)round(lerp(_BiomeExtraCaveOctaves[currentBiomeIndex], _BiomeExtraCaveOctaves[nextBiomeIndex], blendFactor));
+    float extraCaveScale = lerp(_BiomeExtraCaveScales[currentBiomeIndex], _BiomeExtraCaveScales[nextBiomeIndex], blendFactor);
+    float extraCaveLacunarity = lerp(_BiomeExtraCaveLacunarity[currentBiomeIndex], _BiomeExtraCaveLacunarity[nextBiomeIndex], blendFactor);
+    float extraCavePersistence = lerp(_BiomeExtraCavePersistence[currentBiomeIndex], _BiomeExtraCavePersistence[nextBiomeIndex], blendFactor);
+    float extraCaveImpact = lerp(_BiomeExtraCaveImpact[currentBiomeIndex], _BiomeExtraCaveImpact[nextBiomeIndex], blendFactor);
+
     float groundLevelModifier = 0.0;
     float heightImpactModifier = 1.0;
     float caveImpactModifier = 1.0;
@@ -207,33 +286,74 @@ float calculateDensity(float3 worldPos)
         heightImpactModifier *= lerp(1.0, 1.3, humidFactor);
         groundLevelModifier += lerp(0.0, -2.0, humidFactor);
     }
-    if (temperatureValue < -0.3 && humidityValue < 0.0) { caveImpactModifier *= lerp(1.0, 1.5, saturate((-temperatureValue - 0.3) / 0.7) * saturate(-humidityValue)); }
+    if (temperatureValue < -0.3 && humidityValue < 0.0)
+    {
+        caveImpactModifier *= lerp(1.0, 1.5, saturate((-temperatureValue - 0.3) / 0.7) * saturate(-humidityValue));
+    }
 
     float finalGroundLevel = baseGroundLevel + groundLevelModifier;
     float finalHeightImpact = baseHeightImpact * heightImpactModifier;
     float finalCaveImpact = baseCaveImpact * caveImpactModifier;
 
-    float sum2D = fractalNoise(worldPos.xz, finalOctaves, baseHeightScale, finalLacunarity, finalPersistence);
-    float surfaceHeight = finalGroundLevel + (sum2D * finalHeightImpact);
+    float2 heightSamplePos = worldPos.xz;
+    bool useHeightWarp = (heightWarpToggle > 0.5) && abs(heightWarpStrength) > 0.0001 && abs(heightWarpScale) > 0.0001;
+    if (useHeightWarp)
+    {
+        float2 warpInput = heightSamplePos * heightWarpScale;
+        float warpX = snoise(warpInput);
+        float warpZ = snoise(warpInput + float2(37.21, 17.31));
+        heightSamplePos += float2(warpX, warpZ) * heightWarpStrength;
+    }
+
+    float sum2D = fractalNoise(heightSamplePos, finalOctaves, baseHeightScale, finalLacunarity, finalPersistence);
+    float heightContribution = sum2D * finalHeightImpact;
+
+    bool useExtraHeightLayer = (extraHeightToggle > 0.5) && extraHeightOctaves > 0 && abs(extraHeightImpact) > 0.0001 && abs(extraHeightScale) > 0.0001;
+    if (useExtraHeightLayer)
+    {
+        float extraHeightNoise = fractalNoise(heightSamplePos, extraHeightOctaves, extraHeightScale, extraHeightLacunarity, extraHeightPersistence);
+        heightContribution += extraHeightNoise * extraHeightImpact;
+    }
+
+    float surfaceHeight = finalGroundLevel + heightContribution;
     float surfaceDensity = worldPos.y - surfaceHeight;
     float finalDensity = surfaceDensity;
-    
-    if (surfaceDensity < 0)
+
+    float3 caveSamplePos = worldPos;
+    bool useCaveWarp = (caveWarpToggle > 0.5) && abs(caveWarpStrength) > 0.0001 && abs(caveWarpScale) > 0.0001;
+    if (useCaveWarp)
     {
-        float sum3D = fractalNoise(worldPos, finalOctaves, baseCaveScale, finalLacunarity, finalPersistence);
+        float3 warpInput = caveSamplePos * caveWarpScale;
+        float warpX = snoise(warpInput);
+        float warpY = snoise(warpInput + float3(19.13, 7.73, 3.37));
+        float warpZ = snoise(warpInput + float3(5.21, 9.18, 12.89));
+        caveSamplePos += float3(warpX, warpY, warpZ) * caveWarpStrength;
+    }
+
+    if (surfaceDensity < 0.0)
+    {
         float depthFactor = min(-surfaceDensity / 10.0, 1.0);
-        finalDensity -= (sum3D * finalCaveImpact * depthFactor);
+        float sum3D = fractalNoise(caveSamplePos, finalOctaves, baseCaveScale, finalLacunarity, finalPersistence);
+        finalDensity -= sum3D * finalCaveImpact * depthFactor;
+
+        bool useExtraCaveLayer = (extraCaveToggle > 0.5) && extraCaveOctaves > 0 && abs(extraCaveImpact) > 0.0001 && abs(extraCaveScale) > 0.0001;
+        if (useExtraCaveLayer)
+        {
+            float extraCaveNoise = fractalNoise(caveSamplePos, extraCaveOctaves, extraCaveScale, extraCaveLacunarity, extraCavePersistence);
+            finalDensity -= extraCaveNoise * extraCaveImpact * depthFactor;
+        }
     }
 
     float riverNoiseValue = snoise(worldPos.xz * _RiverNoiseScale);
     float riverProximity = abs(riverNoiseValue);
     if (riverProximity < _RiverThreshold)
     {
-        if (surfaceDensity < 0 && surfaceDensity > -20)
+        if (surfaceDensity < 0.0 && surfaceDensity > -20.0)
         {
             finalDensity -= _RiverDepth * (1.0 - smoothstep(0, _RiverThreshold, riverProximity));
         }
     }
+
     return finalDensity;
 }
 
