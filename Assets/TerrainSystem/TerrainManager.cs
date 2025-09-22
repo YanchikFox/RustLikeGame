@@ -133,6 +133,23 @@ namespace TerrainSystem
             public int BufferCount;
         }
 
+        private struct MeshGpuReadbackRequest
+        {
+            public AsyncGPUReadbackRequest VertexRequest;
+            public AsyncGPUReadbackRequest NormalRequest;
+            public AsyncGPUReadbackRequest CounterRequest;
+            public ComputeBuffer DensityBuffer;
+            public ComputeBuffer GradientBuffer;
+            public ComputeBuffer VertexBuffer;
+            public ComputeBuffer NormalBuffer;
+            public ComputeBuffer CounterBuffer;
+            public int LodLevel;
+            public Vector3Int VoxelDimensions;
+            public Vector3Int ThreadGroups;
+            public int VertexCapacity;
+            public long CubeCount;
+        }
+
         private struct DensitySummary
         {
             public int SampleCount;
@@ -268,6 +285,8 @@ namespace TerrainSystem
             new Dictionary<Vector3Int, NativeArray<float>>();
         private readonly Dictionary<Vector3Int, GpuGenerationRequestInfo> gpuGenerationRequestsInfo =
             new Dictionary<Vector3Int, GpuGenerationRequestInfo>();
+        private readonly Dictionary<Vector3Int, MeshGpuReadbackRequest> runningGpuMeshRequests =
+            new Dictionary<Vector3Int, MeshGpuReadbackRequest>();
         private readonly Dictionary<Vector3Int, ChunkData> chunks = new Dictionary<Vector3Int, ChunkData>();
         private readonly Queue<Vector3Int> dirtyChunkQueue = new Queue<Vector3Int>();
         private readonly Dictionary<Vector3Int, MeshJobHandleData> runningMeshJobs = new Dictionary<Vector3Int, MeshJobHandleData>();
@@ -501,6 +520,134 @@ namespace TerrainSystem
 
                         runningGpuGenRequests.Remove(pos);
                         gpuGenerationRequestsInfo.Remove(pos);
+                    }
+                }
+            }
+
+            if (runningGpuMeshRequests.Count > 0)
+            {
+                List<Vector3Int> completedMeshRequests = null;
+
+                foreach (var kvp in runningGpuMeshRequests)
+                {
+                    Vector3Int chunkPos = kvp.Key;
+                    MeshGpuReadbackRequest requestData = kvp.Value;
+
+                    if (!requestData.CounterRequest.done || !requestData.VertexRequest.done || !requestData.NormalRequest.done)
+                    {
+                        continue;
+                    }
+
+                    completedMeshRequests ??= new List<Vector3Int>();
+                    completedMeshRequests.Add(chunkPos);
+
+                    if (requestData.CounterRequest.hasError || requestData.VertexRequest.hasError || requestData.NormalRequest.hasError)
+                    {
+                        Vector3Int tg = requestData.ThreadGroups;
+                        LogError(
+                            "GpuReadback",
+                            $"stage=readbackComplete mode=GPU {FormatChunkId(chunkPos, requestData.LodLevel)} result=error vertexCapacity={requestData.VertexCapacity} threadGroups={FormatThreadGroups(tg.x, tg.y, tg.z)}"
+                        );
+                        ReleaseMeshRequestBuffers(requestData);
+                        gpuGenerationRequestsInfo.Remove(chunkPos);
+                        continue;
+                    }
+
+                    NativeArray<uint> counterData = requestData.CounterRequest.GetData<uint>();
+                    long rawVertexCount = counterData.Length > 0 ? counterData[0] : 0u;
+                    if (rawVertexCount > int.MaxValue)
+                    {
+                        LogWarning(
+                            "MeshGen",
+                            $"{FormatChunkId(chunkPos, requestData.LodLevel)} stage=readbackComplete mode=GPU warning=vertexCountOverflow value={rawVertexCount}"
+                        );
+                        rawVertexCount = int.MaxValue;
+                    }
+
+                    int vertexCount = (int)rawVertexCount;
+
+                    if (vertexCount > requestData.VertexCapacity)
+                    {
+                        LogWarning(
+                            "MeshGen",
+                            $"{FormatChunkId(chunkPos, requestData.LodLevel)} stage=readbackComplete mode=GPU warning=vertexOverflow vertices={vertexCount} capacity={requestData.VertexCapacity}"
+                        );
+                        vertexCount = requestData.VertexCapacity;
+                    }
+
+                    Mesh mesh = null;
+                    if (vertexCount > 0)
+                    {
+                        NativeArray<Vector3> vertexData = requestData.VertexRequest.GetData<Vector3>();
+                        NativeArray<Vector3> normalData = requestData.NormalRequest.GetData<Vector3>();
+                        int availableCount = Mathf.Min(vertexCount, Mathf.Min(vertexData.Length, normalData.Length));
+
+                        if (availableCount < vertexCount)
+                        {
+                            LogWarning(
+                                "MeshGen",
+                                $"{FormatChunkId(chunkPos, requestData.LodLevel)} stage=readbackComplete mode=GPU warning=dataClamped requested={vertexCount} available={availableCount}"
+                            );
+                            vertexCount = availableCount;
+                        }
+
+                        Vector3[] vertices = new Vector3[vertexCount];
+                        Vector3[] normals = new Vector3[vertexCount];
+                        for (int i = 0; i < vertexCount; i++)
+                        {
+                            vertices[i] = vertexData[i];
+                            normals[i] = normalData[i];
+                        }
+
+                        int[] triangles = new int[vertexCount];
+                        for (int i = 0; i < vertexCount; i++)
+                        {
+                            triangles[i] = i;
+                        }
+
+                        mesh = meshGenerator != null
+                            ? meshGenerator.CreateMeshFromArrays(vertices, triangles, normals)
+                            : null;
+
+                        if (mesh == null && meshGenerator == null)
+                        {
+                            LogError(
+                                "MeshGen",
+                                $"{FormatChunkId(chunkPos, requestData.LodLevel)} stage=readbackComplete mode=GPU reason=missingMeshGenerator"
+                            );
+                        }
+                    }
+                    else
+                    {
+                        mesh = new Mesh();
+                    }
+
+                    if (mesh != null && chunks.TryGetValue(chunkPos, out var chunkData) && chunkData.chunk != null)
+                    {
+                        ApplyMesh(chunkData.chunk, mesh);
+
+                        int lodForLog = chunkData.lodLevel;
+                        Vector3Int voxelDimensions = requestData.VoxelDimensions;
+                        Vector3Int tg = requestData.ThreadGroups;
+                        int indexCount = vertexCount;
+                        int triangleCount = vertexCount / 3;
+                        int densitySamples = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
+
+                        LogStructured(
+                            "MeshGen",
+                            $"stage=completed mode=GPU {FormatChunkId(chunkPos, lodForLog)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={requestData.CubeCount} densitySamples={densitySamples} vertexCapacity={requestData.VertexCapacity} vertices={vertexCount} indices={indexCount} triangles={triangleCount} threadGroups={FormatThreadGroups(tg.x, tg.y, tg.z)}"
+                        );
+                    }
+
+                    ReleaseMeshRequestBuffers(requestData);
+                    gpuGenerationRequestsInfo.Remove(chunkPos);
+                }
+
+                if (completedMeshRequests != null)
+                {
+                    foreach (var pos in completedMeshRequests)
+                    {
+                        runningGpuMeshRequests.Remove(pos);
                     }
                 }
             }
@@ -1184,6 +1331,27 @@ namespace TerrainSystem
             }
             runningGenJobs.Clear();
 
+            foreach (var kvp in runningGpuMeshRequests)
+            {
+                MeshGpuReadbackRequest meshRequest = kvp.Value;
+                if (!meshRequest.CounterRequest.done)
+                {
+                    meshRequest.CounterRequest.WaitForCompletion();
+                }
+                if (!meshRequest.VertexRequest.done)
+                {
+                    meshRequest.VertexRequest.WaitForCompletion();
+                }
+                if (!meshRequest.NormalRequest.done)
+                {
+                    meshRequest.NormalRequest.WaitForCompletion();
+                }
+
+                ReleaseMeshRequestBuffers(meshRequest);
+                gpuGenerationRequestsInfo.Remove(kvp.Key);
+            }
+            runningGpuMeshRequests.Clear();
+
             ClearTransitionMeshes();
 
             LogStructured("Regeneration", "World regeneration: All jobs completed and resources disposed.");
@@ -1471,6 +1639,26 @@ namespace TerrainSystem
                 LogWarning("GpuBuffers", $"CancelChunkProcessing found a density buffer for chunk {chunkPos} without a matching GPU request. Releasing buffer defensively.");
                 ComputeBufferManager.Instance.ReleaseBuffer(buffer);
                 densityBuffers.Remove(chunkPos);
+                gpuGenerationRequestsInfo.Remove(chunkPos);
+            }
+
+            if (runningGpuMeshRequests.TryGetValue(chunkPos, out var meshRequest))
+            {
+                if (!meshRequest.CounterRequest.done)
+                {
+                    meshRequest.CounterRequest.WaitForCompletion();
+                }
+                if (!meshRequest.VertexRequest.done)
+                {
+                    meshRequest.VertexRequest.WaitForCompletion();
+                }
+                if (!meshRequest.NormalRequest.done)
+                {
+                    meshRequest.NormalRequest.WaitForCompletion();
+                }
+
+                ReleaseMeshRequestBuffers(meshRequest);
+                runningGpuMeshRequests.Remove(chunkPos);
                 gpuGenerationRequestsInfo.Remove(chunkPos);
             }
 
@@ -2119,6 +2307,11 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     continue;
                 }
 
+                if (runningGpuMeshRequests.ContainsKey(chunkPos))
+                {
+                    continue;
+                }
+
                 if (enableFrustumCulling && !IsChunkVisible(chunkPos, chunkData.lodLevel))
                 {
                     skippedChunks ??= new List<Vector3Int>();
@@ -2326,11 +2519,18 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 return false;
             }
 
+            Vector3Int chunkPos = chunk.ChunkPosition;
+            if (runningGpuMeshRequests.ContainsKey(chunkPos))
+            {
+                return true;
+            }
+
             ComputeBuffer densityBuffer = null;
             ComputeBuffer gradientDensityBuffer = null;
             ComputeBuffer vertexBuffer = null;
             ComputeBuffer normalBuffer = null;
             ComputeBuffer counterBuffer = null;
+            bool requestQueued = false;
 
             try
             {
@@ -2338,7 +2538,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 int kernelIndex = voxelTerrainShader.FindKernel("MarchingCubes");
 
                 Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
-                long cubeCount = (long)voxelDimensions.x * voxelDimensions.y * voxelDimensions.z; // actual cubes evaluated by marching cubes
+                long cubeCount = (long)voxelDimensions.x * voxelDimensions.y * voxelDimensions.z;
                 int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
                 densityBuffer = bufferManager.GetBuffer(voxelCount, sizeof(float));
@@ -2355,18 +2555,13 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     gradientDensityBuffer.SetData(gradientNative);
                 }
 
-                const int maxVerticesPerCube = 15; // Marching cubes can emit at most 5 triangles (15 vertices) per cube at the surface
-                const int maxVertexBufferCapacity = int.MaxValue - (int.MaxValue % 3); // cap so index buffer stays within int range and triangle multiple
+                const int maxVerticesPerCube = 15;
+                const int maxVertexBufferCapacity = int.MaxValue - (int.MaxValue % 3);
                 long safeCubeCount = Math.Max(0L, cubeCount);
-                long requestedVertexCapacity;
-                if (safeCubeCount > 0 && safeCubeCount > long.MaxValue / maxVerticesPerCube)
-                {
-                    requestedVertexCapacity = long.MaxValue;
-                }
-                else
-                {
-                    requestedVertexCapacity = safeCubeCount * maxVerticesPerCube;
-                }
+                long requestedVertexCapacity = safeCubeCount > 0 && safeCubeCount > long.MaxValue / maxVerticesPerCube
+                    ? long.MaxValue
+                    : safeCubeCount * maxVerticesPerCube;
+
                 int vertexCapacity;
                 if (requestedVertexCapacity > maxVertexBufferCapacity)
                 {
@@ -2378,9 +2573,9 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     vertexCapacity = (int)requestedVertexCapacity;
                 }
 
-                vertexBuffer = bufferManager.GetStructuredVertexBuffer(voxelDimensions, vertexCapacity);
-                normalBuffer = bufferManager.GetStructuredNormalBuffer(voxelDimensions, vertexCapacity);
-                counterBuffer = bufferManager.GetStructuredCounterBuffer(voxelDimensions);
+                vertexBuffer = bufferManager.GetBuffer(vertexCapacity, sizeof(float) * 3, ComputeBufferType.Structured);
+                normalBuffer = bufferManager.GetBuffer(vertexCapacity, sizeof(float) * 3, ComputeBufferType.Structured);
+                counterBuffer = bufferManager.GetBuffer(1, sizeof(uint), ComputeBufferType.Structured);
 
                 bufferManager.ResetCounterBuffer(counterBuffer);
 
@@ -2401,54 +2596,77 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 int threadGroupsZ = Mathf.CeilToInt(Mathf.Max(1f, voxelDimensions.z) / 8.0f);
                 voxelTerrainShader.Dispatch(kernelIndex, threadGroupsX, threadGroupsY, threadGroupsZ);
 
-                uint[] countData = new uint[1];
-                counterBuffer.GetData(countData);
-                int vertexCount = (int)countData[0];
-
-                Mesh mesh;
-                if (vertexCount > 0)
-                {
-                    Vector3[] vertices = new Vector3[vertexCount];
-                    Vector3[] normals = new Vector3[vertexCount];
-                    vertexBuffer.GetData(vertices, 0, 0, vertexCount);
-                    normalBuffer.GetData(normals, 0, 0, vertexCount);
-
-                    int[] triangles = new int[vertexCount];
-                    for (int i = 0; i < vertexCount; i++)
-                    {
-                        triangles[i] = i;
-                    }
-
-                    mesh = meshGenerator.CreateMeshFromArrays(vertices, triangles, normals);
-                }
-                else
-                {
-                    mesh = new Mesh();
-                }
-
-                ApplyMesh(chunk, mesh);
+                var counterRequest = AsyncGPUReadback.Request(counterBuffer);
+                var vertexRequest = AsyncGPUReadback.Request(vertexBuffer);
+                var normalRequest = AsyncGPUReadback.Request(normalBuffer);
 
                 Vector3Int threadGroups = new Vector3Int(threadGroupsX, threadGroupsY, threadGroupsZ);
+                runningGpuMeshRequests[chunkPos] = new MeshGpuReadbackRequest
+                {
+                    VertexRequest = vertexRequest,
+                    NormalRequest = normalRequest,
+                    CounterRequest = counterRequest,
+                    DensityBuffer = densityBuffer,
+                    GradientBuffer = gradientDensityBuffer,
+                    VertexBuffer = vertexBuffer,
+                    NormalBuffer = normalBuffer,
+                    CounterBuffer = counterBuffer,
+                    LodLevel = lodLevel,
+                    VoxelDimensions = voxelDimensions,
+                    ThreadGroups = threadGroups,
+                    VertexCapacity = vertexCapacity,
+                    CubeCount = cubeCount
+                };
+
+                gpuGenerationRequestsInfo[chunkPos] = new GpuGenerationRequestInfo
+                {
+                    LodLevel = lodLevel,
+                    VoxelDimensions = voxelDimensions,
+                    ThreadGroupsX = threadGroups.x,
+                    ThreadGroupsY = threadGroups.y,
+                    ThreadGroupsZ = threadGroups.z,
+                    VoxelCount = voxelCount,
+                    BufferCount = vertexCapacity
+                };
+
                 LogStructured(
                     "MeshGen",
-                    $"stage=completed mode=GPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={cubeCount} densitySamples={voxelCount} vertexCapacity={vertexCapacity} vertices={vertexCount} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}"
+                    $"stage=queued mode=GPU {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={cubeCount} densitySamples={voxelCount} vertexCapacity={vertexCapacity} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}"
                 );
 
+                requestQueued = true;
                 return true;
             }
             catch (Exception ex)
             {
-                Vector3Int chunkPos = chunk != null ? chunk.ChunkPosition : Vector3Int.zero;
+                Vector3Int failedChunkPos = chunk != null ? chunk.ChunkPosition : Vector3Int.zero;
                 LogWarning(
                     "MeshGen",
-                    $"{FormatChunkId(chunkPos, lodLevel)} stage=failed mode=GPU reason={ex.Message} action=fallbackToCPU"
+                    $"{FormatChunkId(failedChunkPos, lodLevel)} stage=failed mode=GPU reason={ex.Message} action=fallbackToCPU"
                 );
                 return false;
             }
             finally
             {
-                ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
-                ComputeBufferManager.Instance.ReleaseBuffer(gradientDensityBuffer);
+                if (!requestQueued)
+                {
+                    if (ComputeBufferManager.TryGetInstance(out ComputeBufferManager bufferManager))
+                    {
+                        bufferManager.ReleaseBuffer(densityBuffer);
+                        bufferManager.ReleaseBuffer(gradientDensityBuffer);
+                        bufferManager.ReleaseBuffer(vertexBuffer);
+                        bufferManager.ReleaseBuffer(normalBuffer);
+                        bufferManager.ReleaseBuffer(counterBuffer);
+                    }
+                    else
+                    {
+                        densityBuffer?.Release();
+                        gradientDensityBuffer?.Release();
+                        vertexBuffer?.Release();
+                        normalBuffer?.Release();
+                        counterBuffer?.Release();
+                    }
+                }
             }
         }
 
@@ -2461,6 +2679,26 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 
             chunk.ApplyMesh(mesh);
             MarkTransitionsDirtyForChunk(chunk.ChunkPosition);
+        }
+
+        private void ReleaseMeshRequestBuffers(in MeshGpuReadbackRequest request)
+        {
+            if (ComputeBufferManager.TryGetInstance(out ComputeBufferManager bufferManager))
+            {
+                bufferManager.ReleaseBuffer(request.DensityBuffer);
+                bufferManager.ReleaseBuffer(request.GradientBuffer);
+                bufferManager.ReleaseBuffer(request.VertexBuffer);
+                bufferManager.ReleaseBuffer(request.NormalBuffer);
+                bufferManager.ReleaseBuffer(request.CounterBuffer);
+            }
+            else
+            {
+                request.DensityBuffer?.Release();
+                request.GradientBuffer?.Release();
+                request.VertexBuffer?.Release();
+                request.NormalBuffer?.Release();
+                request.CounterBuffer?.Release();
+            }
         }
 
         private void CompleteGenerationJobs()
