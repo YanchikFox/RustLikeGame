@@ -2012,7 +2012,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 densityBuffer.SetData(densities);
 
                 const int maxVerticesPerCube = 15; // Marching cubes can emit at most 5 triangles (15 vertices) per cube at the surface
-                const int maxAppendBufferCapacity = int.MaxValue - (int.MaxValue % 3); // cap so index buffer stays within int range and triangle multiple
+                const int maxVertexBufferCapacity = int.MaxValue - (int.MaxValue % 3); // cap so index buffer stays within int range and triangle multiple
                 long safeCubeCount = Math.Max(0L, cubeCount);
                 long requestedVertexCapacity;
                 if (safeCubeCount > 0 && safeCubeCount > long.MaxValue / maxVerticesPerCube)
@@ -2023,25 +2023,23 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 {
                     requestedVertexCapacity = safeCubeCount * maxVerticesPerCube;
                 }
-                int appendCapacity;
-                if (requestedVertexCapacity > maxAppendBufferCapacity)
+                int vertexCapacity;
+                if (requestedVertexCapacity > maxVertexBufferCapacity)
                 {
-                    appendCapacity = maxAppendBufferCapacity;
-                LogWarning("MeshGen", $"Requested marching cubes vertex capacity ({requestedVertexCapacity}) exceeds append buffer limit. Clamping to {appendCapacity}.");
+                    vertexCapacity = maxVertexBufferCapacity;
+                    LogWarning("MeshGen", $"Requested marching cubes vertex capacity ({requestedVertexCapacity}) exceeds vertex buffer limit. Clamping to {vertexCapacity}.");
                 }
                 else
                 {
-                    appendCapacity = (int)requestedVertexCapacity;
+                    vertexCapacity = (int)requestedVertexCapacity;
                 }
 
-                vertexBuffer = ComputeBufferManager.Instance.GetBuffer(appendCapacity, 3 * sizeof(float), ComputeBufferType.Append);
-                normalBuffer = ComputeBufferManager.Instance.GetBuffer(appendCapacity, 3 * sizeof(float), ComputeBufferType.Append);
-                counterBuffer = ComputeBufferManager.Instance.GetBuffer(1, sizeof(uint));
+                vertexBuffer = ComputeBufferManager.Instance.GetBuffer(vertexCapacity, 3 * sizeof(float), ComputeBufferType.Structured);
+                normalBuffer = ComputeBufferManager.Instance.GetBuffer(vertexCapacity, 3 * sizeof(float), ComputeBufferType.Structured);
+                counterBuffer = ComputeBufferManager.Instance.GetBuffer(1, sizeof(uint), ComputeBufferType.Structured);
 
                 uint[] zeros = { 0 };
                 counterBuffer.SetData(zeros);
-                vertexBuffer.SetCounterValue(0);
-                normalBuffer.SetCounterValue(0);
 
                 voxelTerrainShader.SetBuffer(kernelIndex, "_DensitiesForMC", densityBuffer);
                 voxelTerrainShader.SetBuffer(kernelIndex, "_VertexBuffer", vertexBuffer);
@@ -2060,7 +2058,6 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 voxelTerrainShader.Dispatch(kernelIndex, threadGroupsX, threadGroupsY, threadGroupsZ);
 
                 uint[] countData = new uint[1];
-                ComputeBuffer.CopyCount(vertexBuffer, counterBuffer, 0);
                 counterBuffer.GetData(countData);
                 int vertexCount = (int)countData[0];
 
@@ -2090,7 +2087,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 Vector3Int threadGroups = new Vector3Int(threadGroupsX, threadGroupsY, threadGroupsZ);
                 LogStructured(
                     "MeshGen",
-                    $"stage=completed mode=GPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={cubeCount} densitySamples={voxelCount} vertexCapacity={appendCapacity} vertices={vertexCount} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}"
+                    $"stage=completed mode=GPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={cubeCount} densitySamples={voxelCount} vertexCapacity={vertexCapacity} vertices={vertexCount} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}"
                 );
 
                 return true;
