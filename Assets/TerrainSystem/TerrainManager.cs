@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Jobs;
@@ -85,6 +86,43 @@ namespace TerrainSystem
             public TerrainChunk chunk;
             public int lodLevel;
         }
+
+        private struct TransitionKey : IEquatable<TransitionKey>
+        {
+            public Vector3Int HighDetail;
+            public Vector3Int LowDetail;
+
+            public TransitionKey(Vector3Int highDetail, Vector3Int lowDetail)
+            {
+                HighDetail = highDetail;
+                LowDetail = lowDetail;
+            }
+
+            public bool Equals(TransitionKey other) => HighDetail == other.HighDetail && LowDetail == other.LowDetail;
+
+            public override bool Equals(object obj) => obj is TransitionKey other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (HighDetail.GetHashCode() * 397) ^ LowDetail.GetHashCode();
+                }
+            }
+
+            public bool Involves(Vector3Int chunkPos) => HighDetail == chunkPos || LowDetail == chunkPos;
+        }
+
+        private class TransitionMeshData
+        {
+            public MeshFilter MeshFilter;
+            public MeshRenderer MeshRenderer;
+            public Mesh Mesh;
+            public Vector3Int Direction;
+            public int HighLod;
+            public int LowLod;
+            public bool Dirty;
+        }
         private ComputeBuffer biomeThresholdsBuffer;
         private ComputeBuffer biomeGroundLevelsBuffer;
         private ComputeBuffer biomeHeightImpactsBuffer;
@@ -107,6 +145,18 @@ namespace TerrainSystem
         private readonly Dictionary<Vector3Int, VoxelGenJobHandleData> runningGenJobs = new Dictionary<Vector3Int, VoxelGenJobHandleData>();
 
         private readonly Dictionary<int, Vector3> cachedChunkWorldSizesByLod = new Dictionary<int, Vector3>();
+
+        private static readonly Vector3Int[] NeighborDirections =
+        {
+            Vector3Int.right,
+            Vector3Int.left,
+            Vector3Int.up,
+            Vector3Int.down,
+            new Vector3Int(0, 0, 1),
+            new Vector3Int(0, 0, -1)
+        };
+
+        private readonly Dictionary<TransitionKey, TransitionMeshData> transitionMeshes = new Dictionary<TransitionKey, TransitionMeshData>();
         
         // Shader property IDs
         private int shaderPropLODLevel;
@@ -364,12 +414,14 @@ private void ReleaseStaticGpuBuffers()
             foreach (var genJob in runningGenJobs.Values)
             {
                 genJob.handle.Complete();
-                
+
                 if (genJob.densities.IsCreated)
                     genJob.densities.Dispose();
             }
             runningGenJobs.Clear();
-            
+
+            ClearTransitionMeshes();
+
             Debug.Log("World regeneration: All jobs completed and resources disposed.");
         }
         #endregion
@@ -461,6 +513,7 @@ private void ReleaseStaticGpuBuffers()
             {
                 if (chunks.TryGetValue(pos, out var chunkData))
                 {
+                    RemoveTransitionsForChunk(pos);
                     Destroy(chunkData.chunk.gameObject);
                     chunks.Remove(pos);
                 }
@@ -485,10 +538,20 @@ private void ReleaseStaticGpuBuffers()
                 {
                     // LOD level has changed, recreate the chunk
                     TerrainChunk oldChunk = chunks[chunkPos].chunk;
+                    RemoveTransitionsForChunk(chunkPos);
                     Destroy(oldChunk.gameObject);
                     chunks.Remove(chunkPos);
                     CreateChunk(chunkPos, lodLevel);
                 }
+            }
+
+            if (transitionLODs)
+            {
+                UpdateTransitionMeshes();
+            }
+            else if (transitionMeshes.Count > 0)
+            {
+                ClearTransitionMeshes();
             }
         }
 
@@ -496,7 +559,7 @@ private void ReleaseStaticGpuBuffers()
         {
             Vector3 worldPos = ChunkToWorldPosition(position);
             GameObject chunkObject = Instantiate(chunkPrefab, worldPos, Quaternion.identity, transform);
-            
+
             // Name the chunk to include LOD level
             chunkObject.name = $"Chunk_{position.x}_{position.y}_{position.z}_LOD{lodLevel}";
             
@@ -522,7 +585,232 @@ private void ReleaseStaticGpuBuffers()
             {
                 ScheduleGenerateVoxelDataJob(chunk, lodLevel);
             }
+
+            MarkTransitionsDirtyForChunk(position);
         }
+
+        #region Transition Mesh Management
+
+        private void UpdateTransitionMeshes()
+        {
+            if (!transitionLODs || meshGenerator == null)
+            {
+                return;
+            }
+
+            var requiredTransitions = new HashSet<TransitionKey>();
+
+            foreach (var entry in chunks)
+            {
+                var chunkPos = entry.Key;
+                var chunkData = entry.Value;
+                if (chunkData.chunk == null)
+                {
+                    continue;
+                }
+
+                foreach (var direction in NeighborDirections)
+                {
+                    Vector3Int neighborPos = chunkPos + direction;
+                    if (!chunks.TryGetValue(neighborPos, out var neighborData) || neighborData.chunk == null)
+                    {
+                        continue;
+                    }
+
+                    if (chunkData.lodLevel >= neighborData.lodLevel)
+                    {
+                        continue;
+                    }
+
+                    var key = new TransitionKey(chunkData.chunk.ChunkPosition, neighborData.chunk.ChunkPosition);
+                    requiredTransitions.Add(key);
+                    EnsureTransitionMesh(key, chunkData.chunk, neighborData.chunk, direction);
+                }
+            }
+
+            if (transitionMeshes.Count == 0)
+            {
+                return;
+            }
+
+            var toRemove = new List<TransitionKey>();
+            foreach (var kvp in transitionMeshes)
+            {
+                if (!requiredTransitions.Contains(kvp.Key))
+                {
+                    DestroyTransitionMesh(kvp.Value);
+                    toRemove.Add(kvp.Key);
+                }
+            }
+
+            for (int i = 0; i < toRemove.Count; i++)
+            {
+                transitionMeshes.Remove(toRemove[i]);
+            }
+        }
+
+        private void EnsureTransitionMesh(TransitionKey key, TerrainChunk highChunk, TerrainChunk lowChunk, Vector3Int direction)
+        {
+            if (!transitionLODs || meshGenerator == null || highChunk == null || lowChunk == null)
+            {
+                return;
+            }
+
+            if (!transitionMeshes.TryGetValue(key, out var data) || data == null || data.MeshFilter == null || data.Mesh == null)
+            {
+                if (data != null)
+                {
+                    DestroyTransitionMesh(data);
+                }
+
+                var transitionObject = new GameObject($"Transition_{key.HighDetail}_{key.LowDetail}");
+                transitionObject.transform.SetParent(highChunk.transform, false);
+                transitionObject.layer = highChunk.gameObject.layer;
+
+                var meshFilter = transitionObject.AddComponent<MeshFilter>();
+                var meshRenderer = transitionObject.AddComponent<MeshRenderer>();
+
+                var sourceRenderer = highChunk.GetComponent<MeshRenderer>();
+                if (sourceRenderer != null)
+                {
+                    meshRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
+                }
+
+                var mesh = new Mesh
+                {
+                    name = $"TransitionMesh_{key.HighDetail}_{key.LowDetail}"
+                };
+
+                meshFilter.sharedMesh = mesh;
+
+                data = new TransitionMeshData
+                {
+                    MeshFilter = meshFilter,
+                    MeshRenderer = meshRenderer,
+                    Mesh = mesh,
+                    Direction = direction,
+                    HighLod = highChunk.LODLevel,
+                    LowLod = lowChunk.LODLevel,
+                    Dirty = true
+                };
+
+                transitionMeshes[key] = data;
+            }
+            else
+            {
+                data.Direction = direction;
+
+                if (data.MeshFilter.transform.parent != highChunk.transform)
+                {
+                    data.MeshFilter.transform.SetParent(highChunk.transform, false);
+                }
+
+                data.MeshFilter.gameObject.layer = highChunk.gameObject.layer;
+
+                if (data.HighLod != highChunk.LODLevel || data.LowLod != lowChunk.LODLevel)
+                {
+                    data.HighLod = highChunk.LODLevel;
+                    data.LowLod = lowChunk.LODLevel;
+                    data.Dirty = true;
+                }
+            }
+
+            if (!transitionLODs)
+            {
+                return;
+            }
+
+            if (data.Dirty)
+            {
+                if (highChunk.IsDirty || lowChunk.IsDirty
+                    || runningMeshJobs.ContainsKey(highChunk.ChunkPosition)
+                    || runningMeshJobs.ContainsKey(lowChunk.ChunkPosition))
+                {
+                    return;
+                }
+
+                bool generated = meshGenerator.GenerateTransitionMesh(highChunk, lowChunk, direction, data.Mesh);
+                if (!generated)
+                {
+                    data.Mesh.Clear();
+                }
+
+                data.Dirty = false;
+            }
+        }
+
+        private void MarkTransitionsDirtyForChunk(Vector3Int chunkPos)
+        {
+            if (transitionMeshes.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var kvp in transitionMeshes)
+            {
+                if (kvp.Key.Involves(chunkPos))
+                {
+                    kvp.Value.Dirty = true;
+                }
+            }
+        }
+
+        private void RemoveTransitionsForChunk(Vector3Int chunkPos)
+        {
+            if (transitionMeshes.Count == 0)
+            {
+                return;
+            }
+
+            var toRemove = new List<TransitionKey>();
+            foreach (var kvp in transitionMeshes)
+            {
+                if (kvp.Key.Involves(chunkPos))
+                {
+                    DestroyTransitionMesh(kvp.Value);
+                    toRemove.Add(kvp.Key);
+                }
+            }
+
+            for (int i = 0; i < toRemove.Count; i++)
+            {
+                transitionMeshes.Remove(toRemove[i]);
+            }
+        }
+
+        private void DestroyTransitionMesh(TransitionMeshData data)
+        {
+            if (data == null)
+            {
+                return;
+            }
+
+            if (data.MeshFilter != null)
+            {
+                var go = data.MeshFilter.gameObject;
+                if (go != null)
+                {
+                    Destroy(go);
+                }
+            }
+
+            if (data.Mesh != null)
+            {
+                Destroy(data.Mesh);
+            }
+        }
+
+        private void ClearTransitionMeshes()
+        {
+            foreach (var entry in transitionMeshes.Values)
+            {
+                DestroyTransitionMesh(entry);
+            }
+
+            transitionMeshes.Clear();
+        }
+
+        #endregion
 
         private void ScheduleGenerateVoxelDataJob(TerrainChunk chunk, int lodLevel)
         {
@@ -1012,6 +1300,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     {
                         ScheduleMarchingCubesJob(chunkData.chunk, chunkData.lodLevel);
                     }
+                    MarkTransitionsDirtyForChunk(pos);
                 }
 
                 if (data.densities.IsCreated) data.densities.Dispose();
@@ -1036,6 +1325,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                         Mesh mesh = meshGenerator.CreateMeshFromJob(jobEntry.Value.vertices, jobEntry.Value.triangles, jobEntry.Value.normals);
                         chunkData.chunk.ApplyMesh(mesh);
                         chunkData.chunk.IsDirty = false;
+                        MarkTransitionsDirtyForChunk(jobEntry.Key);
                     }
 
                     jobEntry.Value.vertices.Dispose();
@@ -1315,6 +1605,11 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 && !runningGenJobs.ContainsKey(chunkPos))
             {
                 dirtyChunkQueue.Enqueue(chunkPos);
+                MarkTransitionsDirtyForChunk(chunkPos);
+            }
+            else if (chunks.ContainsKey(chunkPos))
+            {
+                MarkTransitionsDirtyForChunk(chunkPos);
             }
         }
 
