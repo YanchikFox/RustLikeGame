@@ -160,6 +160,7 @@ namespace TerrainSystem
         private ComputeBuffer triangleTableBuffer;
         private ComputeBuffer edgeConnectionsBuffer;
         private bool gpuBuffersInitialized;
+        private bool needsGpuBufferInitRetry;
 
         private TerrainProcessingMode runtimeProcessingMode = TerrainProcessingMode.CPU;
         private bool hasLoggedModeFallback;
@@ -300,6 +301,19 @@ namespace TerrainSystem
         private void Update()
         {
             RefreshRuntimeProcessingMode(false);
+
+            if (needsGpuBufferInitRetry && meshGenerator != null && voxelTerrainShader != null &&
+                runtimeProcessingMode != TerrainProcessingMode.CPU &&
+                meshGenerator.NativeTriangleTable.IsCreated && meshGenerator.NativeTriangleTable.Length > 0 &&
+                meshGenerator.NativeEdgeConnections.IsCreated && meshGenerator.NativeEdgeConnections.Length > 0)
+            {
+                InitializeStaticGpuBuffers();
+                if (gpuBuffersInitialized)
+                {
+                    needsGpuBufferInitRetry = false;
+                }
+            }
+
             HandleGeometrySettingsChangeIfNeeded();
             UpdateChunksAroundPlayer();
             UpdateAdaptiveChunkBudget();
@@ -425,8 +439,11 @@ private void LateUpdate()
                 Debug.LogWarning(
                     "TerrainManager attempted to initialize GPU buffers before Marching Cubes lookup tables were ready. Initialization will be retried once the tables are generated.",
                     this);
+                needsGpuBufferInitRetry = true;
                 return;
             }
+
+            needsGpuBufferInitRetry = false;
 
             BiomeSettings[] activeBiomes = GetActiveBiomes(true);
             int biomeCount = activeBiomes.Length;
@@ -1615,7 +1632,9 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
         private void ScheduleMarchingCubesJob(TerrainChunk chunk, int lodLevel)
         {
             if (isRegenerating) return;
-            
+
+            meshGenerator?.EnsureTablesInitialized();
+
             // Get the actual voxel dimensions for this LOD level
             Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
             float adjustedVoxelSize = GetVoxelSizeForLOD(lodLevel);
