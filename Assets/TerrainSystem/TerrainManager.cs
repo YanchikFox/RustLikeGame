@@ -591,22 +591,11 @@ namespace TerrainSystem
                             vertexCount = availableCount;
                         }
 
-                        Vector3[] vertices = new Vector3[vertexCount];
-                        Vector3[] normals = new Vector3[vertexCount];
-                        for (int i = 0; i < vertexCount; i++)
-                        {
-                            vertices[i] = vertexData[i];
-                            normals[i] = normalData[i];
-                        }
-
-                        int[] triangles = new int[vertexCount];
-                        for (int i = 0; i < vertexCount; i++)
-                        {
-                            triangles[i] = i;
-                        }
+                        NativeSlice<Vector3> vertexSlice = vertexData.Slice(0, vertexCount);
+                        NativeSlice<Vector3> normalSlice = normalData.Slice(0, vertexCount);
 
                         mesh = meshGenerator != null
-                            ? meshGenerator.CreateMeshFromArrays(vertices, triangles, normals)
+                            ? meshGenerator.CreateMeshFromNativeSlices(vertexSlice, default, normalSlice, useSequentialIndices: true, sequentialIndexCount: vertexCount)
                             : null;
 
                         if (mesh == null && meshGenerator == null)
