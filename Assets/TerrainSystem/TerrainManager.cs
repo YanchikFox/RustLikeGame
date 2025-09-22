@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Text;
 using UnityEngine;
 using Unity.Jobs;
 using Unity.Collections;
@@ -14,30 +16,6 @@ namespace TerrainSystem
         CPU,
         GPU,
         Hybrid
-    }
-
-    /// <summary>
-    /// Serialized debug toggles that allow detailed logging to be enabled from the Inspector at runtime.
-    /// Toggle these flags on the <see cref="TerrainManager"/> component when you need chunk, voxel, or mesh traces
-    /// without modifying code.
-    /// </summary>
-    [Serializable]
-    public class TerrainDebugSettings
-    {
-        [Tooltip("Log when chunks are created, initialized, pooled, or returned. Enable when tracking chunk lifecycle issues.")]
-        public bool logChunkLifecycle = false;
-
-        [Tooltip("Log CPU/GPU voxel generation scheduling and completion details. Enable this when terrain generation stalls.")]
-        public bool logVoxelGeneration = false;
-
-        [Tooltip("Log GPU density readback completions, including buffer metadata. Useful for diagnosing GPU stalls.")]
-        public bool logGpuReadbacks = false;
-
-        [Tooltip("Log marching-cubes mesh generation completion details, including vertex counts.")]
-        public bool logMeshGeneration = false;
-
-        [Tooltip("Log density summaries (min/max/average) after voxel jobs complete. Combine with other flags for deeper analysis.")]
-        public bool logDensitySummaries = false;
     }
 
     public class TerrainManager : MonoBehaviour
@@ -112,23 +90,21 @@ namespace TerrainSystem
         [Header("Debug Settings")]
         [SerializeField] private bool isRegenerating = false;
         [SerializeField] private bool showLODLevels = false;
-        [Tooltip("Toggle runtime logging for terrain generation diagnostics without editing code.")]
-        [SerializeField] private TerrainDebugSettings debugSettings = new TerrainDebugSettings();
         #endregion
 
         #region Private Fields
-        /// <summary>
-        /// Runtime access to logging toggles so debug traces can be enabled without recompiling.
-        /// </summary>
-        public TerrainDebugSettings DebugSettings => debugSettings ??= new TerrainDebugSettings();
-
         private ILogger TerrainLogger => Debug.unityLogger;
+        private readonly object logLock = new object();
+        private StreamWriter logWriter;
+        private string logFilePath;
+        private string lastLogFilePath;
+        private bool logFileInitialized;
+        private bool logFileAnnounced;
 
-        private bool ShouldLogChunkLifecycle => DebugSettings.logChunkLifecycle;
-        private bool ShouldLogVoxelGeneration => DebugSettings.logVoxelGeneration;
-        private bool ShouldLogGpuReadbacks => DebugSettings.logGpuReadbacks;
-        private bool ShouldLogMeshGeneration => DebugSettings.logMeshGeneration;
-        private bool ShouldLogDensitySummaries => DebugSettings.logDensitySummaries;
+        /// <summary>
+        /// The most recent terrain log file created for this manager.
+        /// </summary>
+        public string LogFilePath => lastLogFilePath;
 
         private struct MeshJobHandleData
         {
@@ -317,7 +293,7 @@ namespace TerrainSystem
                 resolvedMode = TerrainProcessingMode.CPU;
                 if (logWarnings && Application.isPlaying && !hasLoggedModeFallback)
                 {
-                    Debug.LogWarning("Compute shader is not available. Falling back to CPU terrain processing mode.", this);
+                    LogWarning("System", "Compute shader is not available. Falling back to CPU terrain processing mode.");
                     hasLoggedModeFallback = true;
                 }
             }
@@ -344,16 +320,28 @@ namespace TerrainSystem
             }
         }
 
+        private void OnEnable()
+        {
+            AnnounceLogFile();
+            LogStructured("System", "TerrainManager enabled");
+        }
+
+        private void OnDisable()
+        {
+            LogStructured("System", "TerrainManager disabled");
+            CloseLogWriter();
+        }
+
+        private void OnDestroy()
+        {
+            CloseLogWriter();
+        }
+
         private void Start()
         {
-            if (debugSettings == null)
-            {
-                debugSettings = new TerrainDebugSettings();
-            }
-
             if (meshGenerator == null || chunkPrefab == null)
             {
-                Debug.LogError("TerrainManager is missing required references!", this);
+                LogError("System", "TerrainManager is missing required references!");
                 enabled = false;
                 return;
             }
@@ -379,6 +367,11 @@ namespace TerrainSystem
             InvalidateChunkWorldSizeCache();
 
             RefreshRuntimeProcessingMode(true);
+
+            LogStructured(
+                "System",
+                $"Start complete requestedMode={processingMode} runtimeMode={runtimeProcessingMode} chunkWorldSize={FormatVector3(chunkWorldSize)} voxelSize={voxelSize.ToString("F3", CultureInfo.InvariantCulture)} loadDistance={loadDistance.ToString("F1", CultureInfo.InvariantCulture)} maxChunksPerFrame={maxChunksPerFrame}"
+            );
 
             UpdateChunksAroundPlayer();
         }
@@ -429,15 +422,15 @@ namespace TerrainSystem
                     if (request.hasError)
                     {
                         GpuGenerationRequestInfo info = GetGpuRequestInfoForLogging(chunkPos);
-                        Vector3Int threadGroups = new Vector3Int(info.ThreadGroupsX, info.ThreadGroupsY, info.ThreadGroupsZ);
+                        Vector3Int errorThreadGroups = new Vector3Int(info.ThreadGroupsX, info.ThreadGroupsY, info.ThreadGroupsZ);
                         string errorMessage = $"stage=readbackComplete mode=GPU {FormatChunkId(chunkPos, info.LodLevel)} result=error";
                         if (info.BufferCount > 0)
                         {
                             errorMessage = $"{errorMessage} bufferCount={info.BufferCount}";
                         }
-                        if (threadGroups != Vector3Int.zero)
+                        if (errorThreadGroups != Vector3Int.zero)
                         {
-                            errorMessage = $"{errorMessage} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}";
+                            errorMessage = $"{errorMessage} threadGroups={FormatThreadGroups(errorThreadGroups.x, errorThreadGroups.y, errorThreadGroups.z)}";
                         }
                         LogError("GpuReadback", errorMessage);
                         continue;
@@ -513,11 +506,6 @@ namespace TerrainSystem
                 baseMaxChunksPerFrame = maxChunksPerFrame;
             }
 
-            if (debugSettings == null)
-            {
-                debugSettings = new TerrainDebugSettings();
-            }
-
             RefreshRuntimeProcessingMode(Application.isPlaying);
             if (Application.isPlaying)
             {
@@ -543,9 +531,9 @@ namespace TerrainSystem
             if (!meshGenerator.NativeTriangleTable.IsCreated || meshGenerator.NativeTriangleTable.Length <= 0 ||
                 !meshGenerator.NativeEdgeConnections.IsCreated || meshGenerator.NativeEdgeConnections.Length <= 0)
             {
-                Debug.LogWarning(
-                    "TerrainManager attempted to initialize GPU buffers before Marching Cubes lookup tables were ready. Initialization will be retried once the tables are generated.",
-                    this);
+                LogWarning(
+                    "GpuBuffers",
+                    "TerrainManager attempted to initialize GPU buffers before Marching Cubes lookup tables were ready. Initialization will be retried once the tables are generated.");
                 needsGpuBufferInitRetry = true;
                 return;
             }
@@ -652,9 +640,9 @@ namespace TerrainSystem
 
             if (logWarningIfFallback && !hasLoggedDefaultBiomeFallback)
             {
-                Debug.LogWarning(
-                    "TerrainManager has no biomes configured. Using a default biome profile for terrain generation.",
-                    this);
+                LogWarning(
+                    "Biome",
+                    "TerrainManager has no biomes configured. Using a default biome profile for terrain generation.");
                 hasLoggedDefaultBiomeFallback = true;
             }
 
@@ -826,7 +814,7 @@ namespace TerrainSystem
         {
             if (isRegenerating)
             {
-                Debug.LogWarning("World regeneration already in progress!");
+                LogWarning("Regeneration", "World regeneration already in progress!");
                 return;
             }
 
@@ -864,7 +852,7 @@ namespace TerrainSystem
             previousChunkWorldSize = chunkWorldSize;
 
             // Step 5: Start regenerating the world
-            Debug.Log("World regeneration: Starting new terrain generation...");
+            LogStructured("Regeneration", "World regeneration: Starting new terrain generation...");
             UpdateChunksAroundPlayer();
             
             isRegenerating = false;
@@ -875,7 +863,7 @@ namespace TerrainSystem
         /// </summary>
         private void CleanupAllJobs()
         {
-            Debug.Log("World regeneration: Cleaning up jobs...");
+            LogStructured("Regeneration", "World regeneration: Cleaning up jobs...");
             
             // Complete and dispose all mesh jobs
             foreach (var jobData in runningMeshJobs.Values)
@@ -905,7 +893,7 @@ namespace TerrainSystem
 
             ClearTransitionMeshes();
 
-            Debug.Log("World regeneration: All jobs completed and resources disposed.");
+            LogStructured("Regeneration", "World regeneration: All jobs completed and resources disposed.");
         }
         #endregion
 
@@ -1067,15 +1055,12 @@ namespace TerrainSystem
 
             chunk.Initialize(position, voxelDimensions, adjustedVoxelSize, worldPos, lodLevel);
 
-            if (ShouldLogChunkLifecycle)
-            {
-                int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
-                string source = reusedFromPool ? "pooled" : "new";
-                LogStructured(
-                    "ChunkLifecycle",
-                    $"action=create {FormatChunkId(position, lodLevel)} source={source} worldPos={FormatVector3(worldPos)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={voxelCount}"
-                );
-            }
+            int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
+            string source = reusedFromPool ? "pooled" : "new";
+            LogStructured(
+                "ChunkLifecycle",
+                $"action=create {FormatChunkId(position, lodLevel)} source={source} worldPos={FormatVector3(worldPos)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={voxelCount}"
+            );
 
             // Store chunk with LOD level
             chunks[position] = new ChunkData
@@ -1142,13 +1127,10 @@ namespace TerrainSystem
             chunk.gameObject.SetActive(false);
             chunkPool.Enqueue(chunk);
 
-            if (ShouldLogChunkLifecycle)
-            {
-                LogStructured(
-                    "ChunkLifecycle",
-                    $"action=recycle {FormatChunkId(chunk.ChunkPosition, chunk.LODLevel)} poolSize={chunkPool.Count}"
-                );
-            }
+            LogStructured(
+                "ChunkLifecycle",
+                $"action=recycle {FormatChunkId(chunk.ChunkPosition, chunk.LODLevel)} poolSize={chunkPool.Count}"
+            );
         }
 
         private void CancelChunkProcessing(Vector3Int chunkPos)
@@ -1188,12 +1170,12 @@ namespace TerrainSystem
                 }
                 else
                 {
-                    Debug.LogWarning($"[TerrainManager] Cancelled GPU generation for chunk {chunkPos}, but no density buffer was registered.");
+                    LogWarning("GpuBuffers", $"Cancelled GPU generation for chunk {chunkPos}, but no density buffer was registered.");
                 }
             }
             else if (densityBuffers.TryGetValue(chunkPos, out var buffer))
             {
-                Debug.LogWarning($"[TerrainManager] CancelChunkProcessing found a density buffer for chunk {chunkPos} without a matching GPU request. Releasing buffer defensively.");
+                LogWarning("GpuBuffers", $"CancelChunkProcessing found a density buffer for chunk {chunkPos} without a matching GPU request. Releasing buffer defensively.");
                 ComputeBufferManager.Instance.ReleaseBuffer(buffer);
                 densityBuffers.Remove(chunkPos);
                 gpuGenerationRequestsInfo.Remove(chunkPos);
@@ -1568,7 +1550,7 @@ namespace TerrainSystem
             int activeBiomeCount = cachedBiomeCount;
             if (activeBiomeCount == 0)
             {
-                Debug.LogWarning("No biome data available for voxel generation.", this);
+                LogWarning("VoxelGen", "No biome data available for voxel generation.");
                 densities.Dispose();
                 return;
             }
@@ -1612,13 +1594,10 @@ namespace TerrainSystem
                 densities = densities
             };
 
-            if (ShouldLogVoxelGeneration)
-            {
-                LogStructured(
-                    "VoxelGen",
-                    $"stage=queued mode=CPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={(voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1)} biomeCount={activeBiomeCount}"
-                );
-            }
+            LogStructured(
+                "VoxelGen",
+                $"stage=queued mode=CPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={(voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1)} biomeCount={activeBiomeCount}"
+            );
         }
         
         private void ScheduleGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
@@ -1689,13 +1668,10 @@ namespace TerrainSystem
                 BufferCount = densityBuffer.count
             };
 
-            if (ShouldLogVoxelGeneration)
-            {
-                LogStructured(
-                    "VoxelGen",
-                    $"stage=queued mode=GPU {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={voxelCount} bufferCount={densityBuffer.count} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)} biomeCount={biomeCount}"
-                );
-            }
+            LogStructured(
+                "VoxelGen",
+                $"stage=queued mode=GPU {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={voxelCount} bufferCount={densityBuffer.count} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)} biomeCount={biomeCount}"
+            );
         }
 
 // --- Äîáàâüòå ýòîò íîâûé ìåòîä â TerrainManager.cs ---
@@ -1703,7 +1679,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 {
     if (request.hasError)
     {
-        Debug.LogError("GPU readback error.");
+        LogError("GpuReadback", "GPU readback error.");
         return;
     }
 
@@ -2056,7 +2032,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 if (requestedVertexCapacity > maxAppendBufferCapacity)
                 {
                     appendCapacity = maxAppendBufferCapacity;
-                    Debug.LogWarning($"Requested marching cubes vertex capacity ({requestedVertexCapacity}) exceeds append buffer limit. Clamping to {appendCapacity}.", this);
+                LogWarning("MeshGen", $"Requested marching cubes vertex capacity ({requestedVertexCapacity}) exceeds append buffer limit. Clamping to {appendCapacity}.");
                 }
                 else
                 {
@@ -2116,14 +2092,11 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 
                 ApplyMesh(chunk, mesh);
 
-                if (ShouldLogMeshGeneration)
-                {
-                    Vector3Int threadGroups = new Vector3Int(threadGroupsX, threadGroupsY, threadGroupsZ);
-                    LogStructured(
-                        "MeshGen",
-                        $"stage=completed mode=GPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={cubeCount} densitySamples={voxelCount} vertexCapacity={appendCapacity} vertices={vertexCount} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}"
-                    );
-                }
+                Vector3Int threadGroups = new Vector3Int(threadGroupsX, threadGroupsY, threadGroupsZ);
+                LogStructured(
+                    "MeshGen",
+                    $"stage=completed mode=GPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={cubeCount} densitySamples={voxelCount} vertexCapacity={appendCapacity} vertices={vertexCount} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}"
+                );
 
                 return true;
             }
@@ -2211,18 +2184,15 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     mesh = meshGenerator.CreateMeshFromJob(jobData.vertices, jobData.triangles, jobData.normals);
                     ApplyMesh(chunkData.chunk, mesh);
 
-                    if (ShouldLogMeshGeneration)
-                    {
-                        Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(chunkData.lodLevel);
-                        int vertexCount = mesh != null ? mesh.vertexCount : 0;
-                        int indexCount = mesh != null ? mesh.triangles.Length : 0;
-                        int triangleCount = indexCount / 3;
-                        int densitySamples = jobData.densities.IsCreated ? jobData.densities.Length : 0;
-                        LogStructured(
-                            "MeshGen",
-                            $"stage=completed mode=CPU {FormatChunkId(jobEntry.Key, chunkData.lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} vertices={vertexCount} indices={indexCount} triangles={triangleCount} densitySamples={densitySamples}"
-                        );
-                    }
+                    Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(chunkData.lodLevel);
+                    int vertexCount = mesh != null ? mesh.vertexCount : 0;
+                    int indexCount = mesh != null ? mesh.triangles.Length : 0;
+                    int triangleCount = indexCount / 3;
+                    int densitySamples = jobData.densities.IsCreated ? jobData.densities.Length : 0;
+                    LogStructured(
+                        "MeshGen",
+                        $"stage=completed mode=CPU {FormatChunkId(jobEntry.Key, chunkData.lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} vertices={vertexCount} indices={indexCount} triangles={triangleCount} densitySamples={densitySamples}"
+                    );
                 }
 
                 jobData.vertices.Dispose();
@@ -2467,17 +2437,104 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
         #region Debug Logging Helpers
         private void LogStructured(string category, string message)
         {
-            TerrainLogger.Log(LogType.Log, this, FormatLog(category, message));
+            string formattedMessage = FormatLog(category, message);
+            TerrainLogger.Log(LogType.Log, formattedMessage, this);
+            WriteLogToFile("INFO", formattedMessage);
         }
 
         private void LogWarning(string category, string message)
         {
-            TerrainLogger.Log(LogType.Warning, this, FormatLog(category, message));
+            string formattedMessage = FormatLog(category, message);
+            TerrainLogger.Log(LogType.Warning, formattedMessage, this);
+            WriteLogToFile("WARN", formattedMessage);
         }
 
         private void LogError(string category, string message)
         {
-            TerrainLogger.Log(LogType.Error, this, FormatLog(category, message));
+            string formattedMessage = FormatLog(category, message);
+            TerrainLogger.Log(LogType.Error, formattedMessage, this);
+            WriteLogToFile("ERROR", formattedMessage);
+        }
+
+        private void WriteLogToFile(string severity, string message)
+        {
+            lock (logLock)
+            {
+                EnsureLogWriter();
+
+                if (logWriter == null)
+                {
+                    return;
+                }
+
+                string timestamp = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                logWriter.WriteLine($"{timestamp} [{severity}] {message}");
+            }
+        }
+
+        private void EnsureLogWriter()
+        {
+            if (logWriter != null)
+            {
+                return;
+            }
+
+            string directory = Path.Combine(Application.persistentDataPath, "TerrainLogs");
+            Directory.CreateDirectory(directory);
+
+            if (string.IsNullOrEmpty(logFilePath))
+            {
+                logFilePath = Path.Combine(directory, $"Terrain_{DateTime.UtcNow:yyyyMMdd_HHmmss}.log");
+                lastLogFilePath = logFilePath;
+            }
+
+            bool append = logFileInitialized && File.Exists(logFilePath);
+            logWriter = new StreamWriter(logFilePath, append, Encoding.UTF8)
+            {
+                AutoFlush = true
+            };
+
+            string header = logFileInitialized
+                ? $"# TerrainManager logging resumed at {DateTime.UtcNow:O}"
+                : $"# TerrainManager log started at {DateTime.UtcNow:O}";
+            logWriter.WriteLine(header);
+            logFileInitialized = true;
+        }
+
+        private void CloseLogWriter()
+        {
+            lock (logLock)
+            {
+                if (logWriter != null)
+                {
+                    logWriter.Flush();
+                    logWriter.Dispose();
+                    logWriter = null;
+                }
+
+                logFilePath = null;
+                logFileInitialized = false;
+                logFileAnnounced = false;
+            }
+        }
+
+        private void AnnounceLogFile()
+        {
+            string path = null;
+            lock (logLock)
+            {
+                EnsureLogWriter();
+                if (!logFileAnnounced && !string.IsNullOrEmpty(logFilePath))
+                {
+                    logFileAnnounced = true;
+                    path = logFilePath;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(path))
+            {
+                LogStructured("System", $"Detailed terrain diagnostics will be written to {path}");
+            }
         }
 
         private static string FormatLog(string category, string message) => $"[Terrain][{category}] {message}";
@@ -2547,32 +2604,6 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
         private void LogDensitySummary(string category, string stage, string mode, Vector3Int chunkPos, int lodLevel, Vector3Int voxelDimensions, DensitySummary summary, int bufferCount = 0, Vector3Int threadGroups = default)
         {
-            bool categoryEnabled = category == "GpuReadback" ? (ShouldLogGpuReadbacks || ShouldLogVoxelGeneration) : ShouldLogVoxelGeneration;
-            bool shouldLog = categoryEnabled || ShouldLogDensitySummaries;
-
-            if (!summary.HasSamples)
-            {
-                if (shouldLog)
-                {
-                    string emptyMessage = $"stage={stage} mode={mode} {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} samples=0";
-                    if (bufferCount > 0)
-                    {
-                        emptyMessage = $"{emptyMessage} bufferCount={bufferCount}";
-                    }
-                    if (threadGroups != Vector3Int.zero)
-                    {
-                        emptyMessage = $"{emptyMessage} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}";
-                    }
-                    LogStructured(category, emptyMessage);
-                }
-                return;
-            }
-
-            if (!shouldLog && !summary.HasInvalidSamples)
-            {
-                return;
-            }
-
             string messageBase = $"stage={stage} mode={mode} {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)}";
             if (bufferCount > 0)
             {
@@ -2583,16 +2614,21 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 messageBase = $"{messageBase} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}";
             }
 
+            if (!summary.HasSamples)
+            {
+                LogStructured(category, $"{messageBase} samples=0");
+                return;
+            }
+
             string fullMessage = $"{messageBase} {FormatDensitySummary(summary)}";
 
             if (summary.HasInvalidSamples)
             {
                 LogWarning(category, $"{fullMessage} anomaly=invalidDensity");
+                return;
             }
-            else if (shouldLog)
-            {
-                LogStructured(category, fullMessage);
-            }
+
+            LogStructured(category, fullMessage);
         }
 
         private static Vector3Int CalculateThreadGroups(Vector3Int voxelDimensions)
@@ -2682,7 +2718,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 else
                     changeDescription = $"chunkWorldSize {previousChunkWorldSize}→{chunkWorldSize}";
 
-                Debug.Log($"Terrain settings changed ({changeDescription}). Regenerating world...");
+                LogStructured("System", $"Terrain settings changed ({changeDescription}). Regenerating world...");
                 InvalidateChunkWorldSizeCache();
                 RegenerateWorld();
             }
