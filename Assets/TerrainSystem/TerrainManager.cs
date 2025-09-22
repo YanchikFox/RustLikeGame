@@ -325,7 +325,6 @@ namespace TerrainSystem
             AnnounceLogFile();
             LogStructured("System", "TerrainManager enabled");
         }
-
         private void OnDisable()
         {
             LogStructured("System", "TerrainManager disabled");
