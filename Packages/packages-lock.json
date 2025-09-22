@@ -32,7 +32,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collab-proxy": {
-      "version": "2.8.2",
+      "version": "2.9.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -82,7 +82,7 @@
       "source": "builtin",
       "dependencies": {
         "com.unity.ide.visualstudio": "2.0.23",
-        "com.unity.ide.rider": "3.0.37",
+        "com.unity.ide.rider": "3.0.38",
         "com.unity.editorcoroutines": "1.0.0",
         "com.unity.performance.profile-analyzer": "1.2.3",
         "com.unity.test-framework": "1.5.1",
@@ -90,8 +90,8 @@
       }
     },
     "com.unity.ide.rider": {
-      "version": "3.0.37",
-      "depth": 1,
+      "version": "3.0.38",
+      "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.ext.nunit": "1.0.6"
@@ -168,28 +168,6 @@
         "com.unity.rendering.light-transport": "1.0.1"
       }
     },
-    "com.unity.render-pipelines.high-definition": {
-      "version": "17.2.0",
-      "depth": 0,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.modules.video": "1.0.0",
-        "com.unity.modules.animation": "1.0.0",
-        "com.unity.modules.imageconversion": "1.0.0",
-        "com.unity.render-pipelines.core": "17.2.0",
-        "com.unity.shadergraph": "17.2.0",
-        "com.unity.visualeffectgraph": "17.2.0",
-        "com.unity.render-pipelines.high-definition-config": "17.2.0"
-      }
-    },
-    "com.unity.render-pipelines.high-definition-config": {
-      "version": "17.2.0",
-      "depth": 1,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.render-pipelines.core": "17.2.0"
-      }
-    },
     "com.unity.render-pipelines.universal": {
       "version": "17.2.0",
       "depth": 0,
@@ -219,7 +197,7 @@
       }
     },
     "com.unity.scriptablebuildpipeline": {
-      "version": "2.4.1",
+      "version": "2.4.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {

@@ -21,6 +21,8 @@ TagManager:
   - Ceiling
   - Inventory
   - IgnoreTag
+  - ship
+  - asteroid
   layers:
   - Default
   - TransparentFX
@@ -33,7 +35,7 @@ TagManager:
   - Door
   - LayerToIgnore
   - Buildable
-  - 
+  - Culling
   - 
   - 
   - 
