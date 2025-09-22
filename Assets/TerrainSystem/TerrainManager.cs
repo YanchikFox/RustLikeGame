@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using Unity.Jobs;
 using Unity.Collections;
@@ -13,6 +14,30 @@ namespace TerrainSystem
         CPU,
         GPU,
         Hybrid
+    }
+
+    /// <summary>
+    /// Serialized debug toggles that allow detailed logging to be enabled from the Inspector at runtime.
+    /// Toggle these flags on the <see cref="TerrainManager"/> component when you need chunk, voxel, or mesh traces
+    /// without modifying code.
+    /// </summary>
+    [Serializable]
+    public class TerrainDebugSettings
+    {
+        [Tooltip("Log when chunks are created, initialized, pooled, or returned. Enable when tracking chunk lifecycle issues.")]
+        public bool logChunkLifecycle = false;
+
+        [Tooltip("Log CPU/GPU voxel generation scheduling and completion details. Enable this when terrain generation stalls.")]
+        public bool logVoxelGeneration = false;
+
+        [Tooltip("Log GPU density readback completions, including buffer metadata. Useful for diagnosing GPU stalls.")]
+        public bool logGpuReadbacks = false;
+
+        [Tooltip("Log marching-cubes mesh generation completion details, including vertex counts.")]
+        public bool logMeshGeneration = false;
+
+        [Tooltip("Log density summaries (min/max/average) after voxel jobs complete. Combine with other flags for deeper analysis.")]
+        public bool logDensitySummaries = false;
     }
 
     public class TerrainManager : MonoBehaviour
@@ -87,9 +112,24 @@ namespace TerrainSystem
         [Header("Debug Settings")]
         [SerializeField] private bool isRegenerating = false;
         [SerializeField] private bool showLODLevels = false;
+        [Tooltip("Toggle runtime logging for terrain generation diagnostics without editing code.")]
+        [SerializeField] private TerrainDebugSettings debugSettings = new TerrainDebugSettings();
         #endregion
 
         #region Private Fields
+        /// <summary>
+        /// Runtime access to logging toggles so debug traces can be enabled without recompiling.
+        /// </summary>
+        public TerrainDebugSettings DebugSettings => debugSettings ??= new TerrainDebugSettings();
+
+        private ILogger TerrainLogger => Debug.unityLogger;
+
+        private bool ShouldLogChunkLifecycle => DebugSettings.logChunkLifecycle;
+        private bool ShouldLogVoxelGeneration => DebugSettings.logVoxelGeneration;
+        private bool ShouldLogGpuReadbacks => DebugSettings.logGpuReadbacks;
+        private bool ShouldLogMeshGeneration => DebugSettings.logMeshGeneration;
+        private bool ShouldLogDensitySummaries => DebugSettings.logDensitySummaries;
+
         private struct MeshJobHandleData
         {
             public JobHandle handle;
@@ -104,6 +144,31 @@ namespace TerrainSystem
         {
             public JobHandle handle;
             public NativeArray<float> densities;
+        }
+
+        private struct GpuGenerationRequestInfo
+        {
+            public int LodLevel;
+            public Vector3Int VoxelDimensions;
+            public int ThreadGroupsX;
+            public int ThreadGroupsY;
+            public int ThreadGroupsZ;
+            public int VoxelCount;
+            public int BufferCount;
+        }
+
+        private struct DensitySummary
+        {
+            public int SampleCount;
+            public int ValidSamples;
+            public int InvalidSamples;
+            public float Min;
+            public float Max;
+            public float Average;
+
+            public bool HasSamples => SampleCount > 0;
+            public bool HasValidSamples => ValidSamples > 0;
+            public bool HasInvalidSamples => InvalidSamples > 0;
         }
 
         private struct ChunkData
@@ -179,11 +244,13 @@ namespace TerrainSystem
         private bool hasLoggedModeFallback;
 
 // Ñëîâàðü äëÿ îòñëåæèâàíèÿ àñèíõðîííûõ çàïðîñîâ ê GPU
-        private readonly Dictionary<Vector3Int, AsyncGPUReadbackRequest> runningGpuGenRequests = 
+        private readonly Dictionary<Vector3Int, AsyncGPUReadbackRequest> runningGpuGenRequests =
             new Dictionary<Vector3Int, AsyncGPUReadbackRequest>();
 // Ñëîâàðü äëÿ õðàíåíèÿ áóôåðà ïëîòíîñòåé âî âðåìÿ ãåíåðàöèè
-        private readonly Dictionary<Vector3Int, ComputeBuffer> densityBuffers = 
+        private readonly Dictionary<Vector3Int, ComputeBuffer> densityBuffers =
             new Dictionary<Vector3Int, ComputeBuffer>();
+        private readonly Dictionary<Vector3Int, GpuGenerationRequestInfo> gpuGenerationRequestsInfo =
+            new Dictionary<Vector3Int, GpuGenerationRequestInfo>();
         private readonly Dictionary<Vector3Int, ChunkData> chunks = new Dictionary<Vector3Int, ChunkData>();
         private readonly Queue<Vector3Int> dirtyChunkQueue = new Queue<Vector3Int>();
         private readonly Dictionary<Vector3Int, MeshJobHandleData> runningMeshJobs = new Dictionary<Vector3Int, MeshJobHandleData>();
@@ -279,6 +346,11 @@ namespace TerrainSystem
 
         private void Start()
         {
+            if (debugSettings == null)
+            {
+                debugSettings = new TerrainDebugSettings();
+            }
+
             if (meshGenerator == null || chunkPrefab == null)
             {
                 Debug.LogError("TerrainManager is missing required references!", this);
@@ -333,66 +405,80 @@ namespace TerrainSystem
             ProcessDirtyChunks();
         }
 
-private void LateUpdate()
-{
-    CompleteGenerationJobs(); // Äëÿ ñòàðîé ñèñòåìû íà CPU
-
-    // Íîâûé áåçîïàñíûé ñïîñîá îáðàáîòêè GPU çàïðîñîâ
-    if (runningGpuGenRequests.Count > 0)
-    {
-        // Ñîçäàåì ñïèñîê äëÿ êëþ÷åé çàâåðøåííûõ çàïðîñîâ
-        List<Vector3Int> completedRequests = null;
-
-        foreach (var kvp in runningGpuGenRequests)
+        private void LateUpdate()
         {
-            var request = kvp.Value;
-            // Ïðîâåðÿåì, çàâåðøåí ëè çàïðîñ
-            if (request.done)
+            CompleteGenerationJobs();
+
+            if (runningGpuGenRequests.Count > 0)
             {
-                // Åñëè äà, îáðàáàòûâàåì åãî
-                if (request.hasError)
+                List<Vector3Int> completedRequests = null;
+
+                foreach (var kvp in runningGpuGenRequests)
                 {
-                    Debug.LogError($"GPU readback error for chunk {kvp.Key}.");
-                }
-                else
-                {
-                    // Ïîëó÷àåì äàííûå
-                    NativeArray<float> densities = request.GetData<float>();
-                    if (chunks.TryGetValue(kvp.Key, out var chunkData))
+                    Vector3Int chunkPos = kvp.Key;
+                    AsyncGPUReadbackRequest request = kvp.Value;
+
+                    if (!request.done)
                     {
-                        // Ïðèìåíÿåì äàííûå ê ÷àíêó
-                        chunkData.chunk.ApplyDensities(densities);
-                        // Ñòàâèì ÷àíê â î÷åðåäü íà ñîçäàíèå ìåøà
-                        QueueChunkForUpdate(kvp.Key);
+                        continue;
+                    }
+
+                    completedRequests ??= new List<Vector3Int>();
+                    completedRequests.Add(chunkPos);
+
+                    if (request.hasError)
+                    {
+                        GpuGenerationRequestInfo info = GetGpuRequestInfoForLogging(chunkPos);
+                        Vector3Int threadGroups = new Vector3Int(info.ThreadGroupsX, info.ThreadGroupsY, info.ThreadGroupsZ);
+                        string errorMessage = $"stage=readbackComplete mode=GPU {FormatChunkId(chunkPos, info.LodLevel)} result=error";
+                        if (info.BufferCount > 0)
+                        {
+                            errorMessage = $"{errorMessage} bufferCount={info.BufferCount}";
+                        }
+                        if (threadGroups != Vector3Int.zero)
+                        {
+                            errorMessage = $"{errorMessage} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}";
+                        }
+                        LogError("GpuReadback", errorMessage);
+                        continue;
+                    }
+
+                    NativeArray<float> densities = request.GetData<float>();
+
+                    if (!chunks.TryGetValue(chunkPos, out var chunkData) || chunkData.chunk == null)
+                    {
+                        continue;
+                    }
+
+                    Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(chunkData.lodLevel);
+                    GpuGenerationRequestInfo requestInfo = EnsureGpuRequestInfo(chunkPos, chunkData.lodLevel, voxelDimensions, densities.Length);
+
+                    DensitySummary summary = CalculateDensitySummary(densities);
+                    Vector3Int threadGroups = new Vector3Int(requestInfo.ThreadGroupsX, requestInfo.ThreadGroupsY, requestInfo.ThreadGroupsZ);
+                    LogDensitySummary("GpuReadback", "readbackComplete", "GPU", chunkPos, chunkData.lodLevel, voxelDimensions, summary, requestInfo.BufferCount, threadGroups);
+
+                    chunkData.chunk.ApplyDensities(densities);
+                    QueueChunkForUpdate(chunkPos);
+                }
+
+                if (completedRequests != null)
+                {
+                    foreach (var pos in completedRequests)
+                    {
+                        if (densityBuffers.TryGetValue(pos, out ComputeBuffer buffer))
+                        {
+                            ComputeBufferManager.Instance.ReleaseBuffer(buffer);
+                            densityBuffers.Remove(pos);
+                        }
+
+                        runningGpuGenRequests.Remove(pos);
+                        gpuGenerationRequestsInfo.Remove(pos);
                     }
                 }
-                
-                // Äîáàâëÿåì êëþ÷ â ñïèñîê íà óäàëåíèå
-                if (completedRequests == null)
-                {
-                    completedRequests = new List<Vector3Int>();
-                }
-                completedRequests.Add(kvp.Key);
             }
-        }
 
-        // Óäàëÿåì âñå îáðàáîòàííûå çàïðîñû èç ñëîâàðÿ ÏÎÑËÅ öèêëà
-        if (completedRequests != null)
-        {
-            foreach (var pos in completedRequests)
-            {
-                if (densityBuffers.TryGetValue(pos, out ComputeBuffer buffer))
-                {
-                    ComputeBufferManager.Instance.ReleaseBuffer(buffer);
-                    densityBuffers.Remove(pos);
-                }
-                runningGpuGenRequests.Remove(pos);
-            }
+            CompleteRunningMeshJobs();
         }
-    }
-
-    CompleteRunningMeshJobs();
-}
 
         private void OnDestroy()
         {
@@ -425,6 +511,11 @@ private void LateUpdate()
             if (!Application.isPlaying)
             {
                 baseMaxChunksPerFrame = maxChunksPerFrame;
+            }
+
+            if (debugSettings == null)
+            {
+                debugSettings = new TerrainDebugSettings();
             }
 
             RefreshRuntimeProcessingMode(Application.isPlaying);
@@ -966,7 +1057,7 @@ private void LateUpdate()
             }
 
             Vector3 worldPos = ChunkToWorldPosition(position);
-            TerrainChunk chunk = GetChunkFromPool(worldPos);
+            TerrainChunk chunk = GetChunkFromPool(worldPos, out bool reusedFromPool);
             GameObject chunkObject = chunk.gameObject;
             chunkObject.name = $"Chunk_{position.x}_{position.y}_{position.z}_LOD{lodLevel}";
 
@@ -975,6 +1066,16 @@ private void LateUpdate()
             float adjustedVoxelSize = GetVoxelSizeForLOD(lodLevel);
 
             chunk.Initialize(position, voxelDimensions, adjustedVoxelSize, worldPos, lodLevel);
+
+            if (ShouldLogChunkLifecycle)
+            {
+                int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
+                string source = reusedFromPool ? "pooled" : "new";
+                LogStructured(
+                    "ChunkLifecycle",
+                    $"action=create {FormatChunkId(position, lodLevel)} source={source} worldPos={FormatVector3(worldPos)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={voxelCount}"
+                );
+            }
 
             // Store chunk with LOD level
             chunks[position] = new ChunkData
@@ -996,7 +1097,7 @@ private void LateUpdate()
             MarkTransitionsDirtyForChunk(position);
         }
 
-        private TerrainChunk GetChunkFromPool(Vector3 worldPosition)
+        private TerrainChunk GetChunkFromPool(Vector3 worldPosition, out bool reused)
         {
             TerrainChunk chunk = null;
 
@@ -1009,6 +1110,11 @@ private void LateUpdate()
             {
                 GameObject chunkObject = Instantiate(chunkPrefab, worldPosition, Quaternion.identity, transform);
                 chunk = chunkObject.GetComponent<TerrainChunk>();
+                reused = false;
+            }
+            else
+            {
+                reused = true;
             }
 
             Transform chunkTransform = chunk.transform;
@@ -1035,6 +1141,14 @@ private void LateUpdate()
             chunkTransform.localScale = Vector3.one;
             chunk.gameObject.SetActive(false);
             chunkPool.Enqueue(chunk);
+
+            if (ShouldLogChunkLifecycle)
+            {
+                LogStructured(
+                    "ChunkLifecycle",
+                    $"action=recycle {FormatChunkId(chunk.ChunkPosition, chunk.LODLevel)} poolSize={chunkPool.Count}"
+                );
+            }
         }
 
         private void CancelChunkProcessing(Vector3Int chunkPos)
@@ -1065,6 +1179,7 @@ private void LateUpdate()
                 }
 
                 runningGpuGenRequests.Remove(chunkPos);
+                gpuGenerationRequestsInfo.Remove(chunkPos);
 
                 if (densityBuffers.TryGetValue(chunkPos, out var buffer))
                 {
@@ -1081,6 +1196,7 @@ private void LateUpdate()
                 Debug.LogWarning($"[TerrainManager] CancelChunkProcessing found a density buffer for chunk {chunkPos} without a matching GPU request. Releasing buffer defensively.");
                 ComputeBufferManager.Instance.ReleaseBuffer(buffer);
                 densityBuffers.Remove(chunkPos);
+                gpuGenerationRequestsInfo.Remove(chunkPos);
             }
 
             if (dirtyChunkQueue.Contains(chunkPos))
@@ -1495,75 +1611,92 @@ private void LateUpdate()
                 handle = handle,
                 densities = densities
             };
+
+            if (ShouldLogVoxelGeneration)
+            {
+                LogStructured(
+                    "VoxelGen",
+                    $"stage=queued mode=CPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={(voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1)} biomeCount={activeBiomeCount}"
+                );
+            }
         }
         
-// Çàìåíèòå ñóùåñòâóþùèé ìåòîä ScheduleGenerateVoxelDataGPU ýòèì êîäîì
-private void ScheduleGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
-{
-    if (!ShouldUseGpuForVoxelGeneration || voxelTerrainShader == null || chunk == null)
-    {
-        ScheduleGenerateVoxelDataJob(chunk, lodLevel);
-        return;
-    }
+        private void ScheduleGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
+        {
+            if (!ShouldUseGpuForVoxelGeneration || voxelTerrainShader == null || chunk == null)
+            {
+                ScheduleGenerateVoxelDataJob(chunk, lodLevel);
+                return;
+            }
 
-    // Íå çàïóñêàåì íîâóþ ãåíåðàöèþ, åñëè îíà óæå èäåò äëÿ ýòîãî ÷àíêà
-    if (densityBuffers.ContainsKey(chunk.ChunkPosition) || runningGpuGenRequests.ContainsKey(chunk.ChunkPosition)) return;
+            Vector3Int chunkPos = chunk.ChunkPosition;
+            if (densityBuffers.ContainsKey(chunkPos) || runningGpuGenRequests.ContainsKey(chunkPos))
+            {
+                return;
+            }
 
-    // 1. Íàõîäèì ÿäðî (Kernel) â øåéäåðå
-    int kernel = voxelTerrainShader.FindKernel("GenerateVoxelData");
+            int kernel = voxelTerrainShader.FindKernel("GenerateVoxelData");
 
-    // 2. Ïîëó÷àåì ðàçìåðû äëÿ ýòîãî LOD
-    Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
-    int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
+            Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
+            int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
-    // 3. Áåðåì áóôåð èç ïóëà
-    ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
-    densityBuffers.Add(chunk.ChunkPosition, densityBuffer); // Ñîõðàíÿåì äëÿ áóäóùåãî èñïîëüçîâàíèÿ
+            ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
+            densityBuffers.Add(chunkPos, densityBuffer);
 
-    // 4. Ïåðåäàåì âñå ïàðàìåòðû â øåéäåð
-    voxelTerrainShader.SetBuffer(kernel, "_DensityValues", densityBuffer);
-    
-    // Ïåðåäàåì ïàðàìåòðû ÷àíêà
-    voxelTerrainShader.SetVector("_ChunkWorldOrigin", chunk.WorldPosition);
-    voxelTerrainShader.SetInts("_ChunkSize", voxelDimensions.x, voxelDimensions.y, voxelDimensions.z);
-    voxelTerrainShader.SetFloat("_VoxelSize", voxelSize); // Áàçîâûé ðàçìåð
-    voxelTerrainShader.SetInt("_LODLevel", lodLevel);     // Óðîâåíü LOD
-    
-    // Ïåðåäàåì ïàðàìåòðû áèîìîâ (èç ñòàòè÷åñêèõ áóôåðîâ)
-    BiomeSettings[] activeBiomes = GetActiveBiomes(false);
-    int biomeCount = activeBiomes.Length;
-    voxelTerrainShader.SetFloat("_BiomeNoiseScale", biomeNoiseScale);
-    voxelTerrainShader.SetInt("_BiomeCount", biomeCount);
-    if (biomeCount > 0)
-    {
-        voxelTerrainShader.SetBuffer(kernel, "_BiomeThresholds", biomeThresholdsBuffer);
-        voxelTerrainShader.SetBuffer(kernel, "_BiomeGroundLevels", biomeGroundLevelsBuffer);
-        voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightImpacts", biomeHeightImpactsBuffer);
-        voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightScales", biomeHeightScalesBuffer);
-        voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveImpacts", biomeCaveImpactsBuffer);
-        voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveScales", biomeCaveScalesBuffer);
-        voxelTerrainShader.SetBuffer(kernel, "_BiomeOctaves", biomeOctavesBuffer);
-        voxelTerrainShader.SetBuffer(kernel, "_BiomeLacunarity", biomeLacunarityBuffer);
-        voxelTerrainShader.SetBuffer(kernel, "_BiomePersistence", biomePersistenceBuffer);
-    }
-    
-    // Ïåðåäàåì ïàðàìåòðû äîïîëíèòåëüíîãî øóìà
-    voxelTerrainShader.SetFloat("_TemperatureNoiseScale", temperatureNoiseScale);
-    voxelTerrainShader.SetFloat("_HumidityNoiseScale", humidityNoiseScale);
-    voxelTerrainShader.SetFloat("_RiverNoiseScale", riverNoiseScale);
-    voxelTerrainShader.SetFloat("_RiverThreshold", riverThreshold);
-    voxelTerrainShader.SetFloat("_RiverDepth", riverDepth);
-    
-    // 5. Âû÷èñëÿåì êîëè÷åñòâî ãðóïï ïîòîêîâ è çàïóñêàåì øåéäåð
-    int threadGroupsX = Mathf.CeilToInt((voxelDimensions.x + 1) / 8.0f);
-    int threadGroupsY = Mathf.CeilToInt((voxelDimensions.y + 1) / 8.0f);
-    int threadGroupsZ = Mathf.CeilToInt((voxelDimensions.z + 1) / 8.0f);
-    voxelTerrainShader.Dispatch(kernel, threadGroupsX, threadGroupsY, threadGroupsZ);
+            voxelTerrainShader.SetBuffer(kernel, "_DensityValues", densityBuffer);
+            voxelTerrainShader.SetVector("_ChunkWorldOrigin", chunk.WorldPosition);
+            voxelTerrainShader.SetInts("_ChunkSize", voxelDimensions.x, voxelDimensions.y, voxelDimensions.z);
+            voxelTerrainShader.SetFloat("_VoxelSize", voxelSize);
+            voxelTerrainShader.SetInt("_LODLevel", lodLevel);
 
-    // 6. Çàïðàøèâàåì äàííûå îáðàòíî ñ GPU àñèíõðîííî
-    var request = AsyncGPUReadback.Request(densityBuffer);
-    runningGpuGenRequests.Add(chunk.ChunkPosition, request);
-}
+            BiomeSettings[] activeBiomes = GetActiveBiomes(false);
+            int biomeCount = activeBiomes.Length;
+            voxelTerrainShader.SetFloat("_BiomeNoiseScale", biomeNoiseScale);
+            voxelTerrainShader.SetInt("_BiomeCount", biomeCount);
+            if (biomeCount > 0)
+            {
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeThresholds", biomeThresholdsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeGroundLevels", biomeGroundLevelsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightImpacts", biomeHeightImpactsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightScales", biomeHeightScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveImpacts", biomeCaveImpactsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveScales", biomeCaveScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeOctaves", biomeOctavesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeLacunarity", biomeLacunarityBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomePersistence", biomePersistenceBuffer);
+            }
+
+            voxelTerrainShader.SetFloat("_TemperatureNoiseScale", temperatureNoiseScale);
+            voxelTerrainShader.SetFloat("_HumidityNoiseScale", humidityNoiseScale);
+            voxelTerrainShader.SetFloat("_RiverNoiseScale", riverNoiseScale);
+            voxelTerrainShader.SetFloat("_RiverThreshold", riverThreshold);
+            voxelTerrainShader.SetFloat("_RiverDepth", riverDepth);
+
+            Vector3Int threadGroups = CalculateThreadGroups(voxelDimensions);
+            voxelTerrainShader.Dispatch(kernel, threadGroups.x, threadGroups.y, threadGroups.z);
+
+            var request = AsyncGPUReadback.Request(densityBuffer);
+            runningGpuGenRequests.Add(chunkPos, request);
+
+            gpuGenerationRequestsInfo[chunkPos] = new GpuGenerationRequestInfo
+            {
+                LodLevel = lodLevel,
+                VoxelDimensions = voxelDimensions,
+                ThreadGroupsX = threadGroups.x,
+                ThreadGroupsY = threadGroups.y,
+                ThreadGroupsZ = threadGroups.z,
+                VoxelCount = voxelCount,
+                BufferCount = densityBuffer.count
+            };
+
+            if (ShouldLogVoxelGeneration)
+            {
+                LogStructured(
+                    "VoxelGen",
+                    $"stage=queued mode=GPU {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={voxelCount} bufferCount={densityBuffer.count} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)} biomeCount={biomeCount}"
+                );
+            }
+        }
 
 // --- Äîáàâüòå ýòîò íîâûé ìåòîä â TerrainManager.cs ---
 private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
@@ -1982,11 +2115,25 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 }
 
                 ApplyMesh(chunk, mesh);
+
+                if (ShouldLogMeshGeneration)
+                {
+                    Vector3Int threadGroups = new Vector3Int(threadGroupsX, threadGroupsY, threadGroupsZ);
+                    LogStructured(
+                        "MeshGen",
+                        $"stage=completed mode=GPU {FormatChunkId(chunk.ChunkPosition, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={cubeCount} densitySamples={voxelCount} vertexCapacity={appendCapacity} vertices={vertexCount} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}"
+                    );
+                }
+
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"GPU marching cubes failed for chunk {chunk?.ChunkPosition}: {ex.Message}. Falling back to CPU.", this);
+                Vector3Int chunkPos = chunk != null ? chunk.ChunkPosition : Vector3Int.zero;
+                LogWarning(
+                    "MeshGen",
+                    $"{FormatChunkId(chunkPos, lodLevel)} stage=failed mode=GPU reason={ex.Message} action=fallbackToCPU"
+                );
                 return false;
             }
             finally
@@ -2016,15 +2163,19 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             var completed = new List<Vector3Int>();
             foreach (var kvp in runningGenJobs)
             {
-                var pos = kvp.Key;
+                Vector3Int pos = kvp.Key;
                 var data = kvp.Value;
 
                 if (!data.handle.IsCompleted) continue;
 
                 data.handle.Complete();
 
-                if (chunks.TryGetValue(pos, out var chunkData))
+                if (chunks.TryGetValue(pos, out var chunkData) && chunkData.chunk != null)
                 {
+                    Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(chunkData.lodLevel);
+                    DensitySummary summary = CalculateDensitySummary(data.densities);
+                    LogDensitySummary("VoxelGen", "completed", "CPU", pos, chunkData.lodLevel, voxelDimensions, summary);
+
                     chunkData.chunk.ApplyDensities(data.densities);
                     if (!isRegenerating)
                     {
@@ -2046,22 +2197,40 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             var completedJobs = new List<Vector3Int>();
             foreach (var jobEntry in runningMeshJobs)
             {
-                if (jobEntry.Value.handle.IsCompleted)
+                MeshJobHandleData jobData = jobEntry.Value;
+                if (!jobData.handle.IsCompleted)
                 {
-                    jobEntry.Value.handle.Complete();
-                    if (chunks.TryGetValue(jobEntry.Key, out var chunkData))
-                    {
-                        Mesh mesh = meshGenerator.CreateMeshFromJob(jobEntry.Value.vertices, jobEntry.Value.triangles, jobEntry.Value.normals);
-                        ApplyMesh(chunkData.chunk, mesh);
-                    }
-
-                    jobEntry.Value.vertices.Dispose();
-                    jobEntry.Value.triangles.Dispose();
-                    jobEntry.Value.normals.Dispose();
-                    if (jobEntry.Value.densities.IsCreated) jobEntry.Value.densities.Dispose();
-                    if (jobEntry.Value.gradientDensities.IsCreated) jobEntry.Value.gradientDensities.Dispose();
-                    completedJobs.Add(jobEntry.Key);
+                    continue;
                 }
+
+                jobData.handle.Complete();
+
+                Mesh mesh = null;
+                if (chunks.TryGetValue(jobEntry.Key, out var chunkData) && chunkData.chunk != null)
+                {
+                    mesh = meshGenerator.CreateMeshFromJob(jobData.vertices, jobData.triangles, jobData.normals);
+                    ApplyMesh(chunkData.chunk, mesh);
+
+                    if (ShouldLogMeshGeneration)
+                    {
+                        Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(chunkData.lodLevel);
+                        int vertexCount = mesh != null ? mesh.vertexCount : 0;
+                        int indexCount = mesh != null ? mesh.triangles.Length : 0;
+                        int triangleCount = indexCount / 3;
+                        int densitySamples = jobData.densities.IsCreated ? jobData.densities.Length : 0;
+                        LogStructured(
+                            "MeshGen",
+                            $"stage=completed mode=CPU {FormatChunkId(jobEntry.Key, chunkData.lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} vertices={vertexCount} indices={indexCount} triangles={triangleCount} densitySamples={densitySamples}"
+                        );
+                    }
+                }
+
+                jobData.vertices.Dispose();
+                jobData.triangles.Dispose();
+                jobData.normals.Dispose();
+                if (jobData.densities.IsCreated) jobData.densities.Dispose();
+                if (jobData.gradientDensities.IsCreated) jobData.gradientDensities.Dispose();
+                completedJobs.Add(jobEntry.Key);
             }
             foreach (var pos in completedJobs) runningMeshJobs.Remove(pos);
         }
@@ -2293,6 +2462,203 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             }
         }
 
+        #endregion
+
+        #region Debug Logging Helpers
+        private void LogStructured(string category, string message)
+        {
+            TerrainLogger.Log(LogType.Log, this, FormatLog(category, message));
+        }
+
+        private void LogWarning(string category, string message)
+        {
+            TerrainLogger.Log(LogType.Warning, this, FormatLog(category, message));
+        }
+
+        private void LogError(string category, string message)
+        {
+            TerrainLogger.Log(LogType.Error, this, FormatLog(category, message));
+        }
+
+        private static string FormatLog(string category, string message) => $"[Terrain][{category}] {message}";
+
+        private static string FormatChunkId(Vector3Int chunkPos, int lodLevel) => $"chunk=({chunkPos.x},{chunkPos.y},{chunkPos.z}) lod={lodLevel}";
+
+        private static string FormatVoxelDimensions(Vector3Int dims) => $"{dims.x}x{dims.y}x{dims.z}";
+
+        private static string FormatVector3(Vector3 value) => string.Format(CultureInfo.InvariantCulture, "({0:F2},{1:F2},{2:F2})", value.x, value.y, value.z);
+
+        private static string FormatThreadGroups(int x, int y, int z) => $"({x},{y},{z})";
+
+        private static string FormatDensitySummary(DensitySummary summary)
+        {
+            string min = summary.HasValidSamples ? summary.Min.ToString("F3", CultureInfo.InvariantCulture) : "n/a";
+            string max = summary.HasValidSamples ? summary.Max.ToString("F3", CultureInfo.InvariantCulture) : "n/a";
+            string avg = summary.HasValidSamples ? summary.Average.ToString("F3", CultureInfo.InvariantCulture) : "n/a";
+            return $"samples={summary.SampleCount} valid={summary.ValidSamples} invalid={summary.InvalidSamples} min={min} max={max} avg={avg}";
+        }
+
+        private DensitySummary CalculateDensitySummary(NativeArray<float> densities)
+        {
+            if (!densities.IsCreated || densities.Length == 0)
+            {
+                return new DensitySummary
+                {
+                    SampleCount = densities.IsCreated ? densities.Length : 0,
+                    ValidSamples = 0,
+                    InvalidSamples = 0,
+                    Min = 0f,
+                    Max = 0f,
+                    Average = 0f
+                };
+            }
+
+            double total = 0d;
+            int validCount = 0;
+            int invalidCount = 0;
+            float min = float.PositiveInfinity;
+            float max = float.NegativeInfinity;
+
+            for (int i = 0; i < densities.Length; i++)
+            {
+                float value = densities[i];
+                if (float.IsNaN(value) || float.IsInfinity(value))
+                {
+                    invalidCount++;
+                    continue;
+                }
+
+                if (value < min) min = value;
+                if (value > max) max = value;
+                total += value;
+                validCount++;
+            }
+
+            return new DensitySummary
+            {
+                SampleCount = densities.Length,
+                ValidSamples = validCount,
+                InvalidSamples = invalidCount,
+                Min = validCount > 0 ? min : 0f,
+                Max = validCount > 0 ? max : 0f,
+                Average = validCount > 0 ? (float)(total / validCount) : 0f
+            };
+        }
+
+        private void LogDensitySummary(string category, string stage, string mode, Vector3Int chunkPos, int lodLevel, Vector3Int voxelDimensions, DensitySummary summary, int bufferCount = 0, Vector3Int threadGroups = default)
+        {
+            bool categoryEnabled = category == "GpuReadback" ? (ShouldLogGpuReadbacks || ShouldLogVoxelGeneration) : ShouldLogVoxelGeneration;
+            bool shouldLog = categoryEnabled || ShouldLogDensitySummaries;
+
+            if (!summary.HasSamples)
+            {
+                if (shouldLog)
+                {
+                    string emptyMessage = $"stage={stage} mode={mode} {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} samples=0";
+                    if (bufferCount > 0)
+                    {
+                        emptyMessage = $"{emptyMessage} bufferCount={bufferCount}";
+                    }
+                    if (threadGroups != Vector3Int.zero)
+                    {
+                        emptyMessage = $"{emptyMessage} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}";
+                    }
+                    LogStructured(category, emptyMessage);
+                }
+                return;
+            }
+
+            if (!shouldLog && !summary.HasInvalidSamples)
+            {
+                return;
+            }
+
+            string messageBase = $"stage={stage} mode={mode} {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)}";
+            if (bufferCount > 0)
+            {
+                messageBase = $"{messageBase} bufferCount={bufferCount}";
+            }
+            if (threadGroups != Vector3Int.zero)
+            {
+                messageBase = $"{messageBase} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)}";
+            }
+
+            string fullMessage = $"{messageBase} {FormatDensitySummary(summary)}";
+
+            if (summary.HasInvalidSamples)
+            {
+                LogWarning(category, $"{fullMessage} anomaly=invalidDensity");
+            }
+            else if (shouldLog)
+            {
+                LogStructured(category, fullMessage);
+            }
+        }
+
+        private static Vector3Int CalculateThreadGroups(Vector3Int voxelDimensions)
+        {
+            int threadGroupsX = Mathf.CeilToInt((voxelDimensions.x + 1) / 8.0f);
+            int threadGroupsY = Mathf.CeilToInt((voxelDimensions.y + 1) / 8.0f);
+            int threadGroupsZ = Mathf.CeilToInt((voxelDimensions.z + 1) / 8.0f);
+
+            threadGroupsX = Mathf.Max(1, threadGroupsX);
+            threadGroupsY = Mathf.Max(1, threadGroupsY);
+            threadGroupsZ = Mathf.Max(1, threadGroupsZ);
+
+            return new Vector3Int(threadGroupsX, threadGroupsY, threadGroupsZ);
+        }
+
+        private GpuGenerationRequestInfo EnsureGpuRequestInfo(Vector3Int chunkPos, int lodLevel, Vector3Int voxelDimensions, int sampleCount)
+        {
+            if (gpuGenerationRequestsInfo.TryGetValue(chunkPos, out var info))
+            {
+                return info;
+            }
+
+            Vector3Int threadGroups = CalculateThreadGroups(voxelDimensions);
+            info = new GpuGenerationRequestInfo
+            {
+                LodLevel = lodLevel,
+                VoxelDimensions = voxelDimensions,
+                ThreadGroupsX = threadGroups.x,
+                ThreadGroupsY = threadGroups.y,
+                ThreadGroupsZ = threadGroups.z,
+                VoxelCount = sampleCount,
+                BufferCount = sampleCount
+            };
+            gpuGenerationRequestsInfo[chunkPos] = info;
+            return info;
+        }
+
+        private GpuGenerationRequestInfo GetGpuRequestInfoForLogging(Vector3Int chunkPos)
+        {
+            if (gpuGenerationRequestsInfo.TryGetValue(chunkPos, out var info))
+            {
+                return info;
+            }
+
+            int lodLevel = 0;
+            Vector3Int voxelDimensions = Vector3Int.zero;
+            if (chunks.TryGetValue(chunkPos, out var chunkData) && chunkData.chunk != null)
+            {
+                lodLevel = chunkData.lodLevel;
+                voxelDimensions = GetChunkVoxelDimensionsForLOD(chunkData.lodLevel);
+            }
+
+            Vector3Int threadGroups = voxelDimensions == Vector3Int.zero ? Vector3Int.zero : CalculateThreadGroups(voxelDimensions);
+            int bufferCount = densityBuffers.TryGetValue(chunkPos, out var buffer) ? buffer.count : 0;
+
+            return new GpuGenerationRequestInfo
+            {
+                LodLevel = lodLevel,
+                VoxelDimensions = voxelDimensions,
+                ThreadGroupsX = threadGroups.x,
+                ThreadGroupsY = threadGroups.y,
+                ThreadGroupsZ = threadGroups.z,
+                VoxelCount = 0,
+                BufferCount = bufferCount
+            };
+        }
         #endregion
 
         #region Utility Methods
