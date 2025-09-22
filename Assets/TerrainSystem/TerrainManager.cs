@@ -1771,8 +1771,9 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 chunk.CopyVoxelDataTo(densities);
                 densityBuffer.SetData(densities);
 
+                const int maxVerticesPerCell = 15; // Marching cubes worst case is 5 triangles per cell => 15 unique vertices
                 int safeCellCount = Mathf.Max(0, cellCount);
-                long maxVertexCountLong = (long)safeCellCount * 15L;
+                long maxVertexCountLong = (long)safeCellCount * maxVerticesPerCell;
                 int maxVertexCount;
                 if (maxVertexCountLong > int.MaxValue)
                 {
