@@ -1,0 +1,981 @@
+﻿# TerrainManager log started at 2025-09-22T15:26:35.5127257Z
+2025-09-22T15:26:35.5127257Z [INFO] [Terrain][System] Terrain settings changed (VoxelSize 0→1 and chunkWorldSize (0.00, 0.00, 0.00)→(16.00, 16.00, 16.00)). Regenerating world...
+2025-09-22T15:26:35.5157389Z [INFO] [Terrain][Regeneration] World regeneration: Cleaning up jobs...
+2025-09-22T15:26:35.5172460Z [INFO] [Terrain][Regeneration] World regeneration: All jobs completed and resources disposed.
+2025-09-22T15:26:35.6564916Z [INFO] [Terrain][System] Detailed terrain diagnostics will be written to C:/Users/anton/AppData/LocalLow/DefaultCompany/Tester\TerrainLogs\Terrain_20250922_152635.log
+2025-09-22T15:26:35.6564916Z [INFO] [Terrain][System] TerrainManager enabled
+2025-09-22T15:26:36.4803899Z [INFO] [Terrain][System] Start complete requestedMode=CPU runtimeMode=CPU chunkWorldSize=(16.00,16.00,16.00) voxelSize=1.000 loadDistance=64.0 maxChunksPerFrame=4
+2025-09-22T15:26:36.4971701Z [INFO] [Terrain][Regeneration] World regeneration: Starting new terrain generation...
+2025-09-22T15:26:37.9008940Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,-4) lod=0 source=new worldPos=(-64.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9109182Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9119177Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,-4) lod=0 source=new worldPos=(-64.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9119177Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9119177Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,-4) lod=0 source=new worldPos=(-64.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9119177Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9129171Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,-3) lod=0 source=new worldPos=(-64.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9129171Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9129171Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,-3) lod=0 source=new worldPos=(-64.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9129171Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,-3) lod=0 source=new worldPos=(-64.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,-2) lod=0 source=new worldPos=(-64.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,-2) lod=0 source=new worldPos=(-64.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,-2) lod=0 source=new worldPos=(-64.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9139182Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,-1) lod=0 source=new worldPos=(-64.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,-1) lod=0 source=new worldPos=(-64.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,-1) lod=0 source=new worldPos=(-64.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,0) lod=0 source=new worldPos=(-64.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,0) lod=0 source=new worldPos=(-64.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9149172Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,0) lod=0 source=new worldPos=(-64.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,1) lod=0 source=new worldPos=(-64.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,1) lod=0 source=new worldPos=(-64.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,1) lod=0 source=new worldPos=(-64.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,2) lod=0 source=new worldPos=(-64.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9159758Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,2) lod=0 source=new worldPos=(-64.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,2) lod=0 source=new worldPos=(-64.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,3) lod=0 source=new worldPos=(-64.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,3) lod=0 source=new worldPos=(-64.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,3) lod=0 source=new worldPos=(-64.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,0,4) lod=0 source=new worldPos=(-64.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,1,4) lod=0 source=new worldPos=(-64.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,2,4) lod=0 source=new worldPos=(-64.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9169769Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,-4) lod=0 source=new worldPos=(-48.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,-4) lod=0 source=new worldPos=(-48.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,-4) lod=0 source=new worldPos=(-48.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,-3) lod=0 source=new worldPos=(-48.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9185791Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,-3) lod=0 source=new worldPos=(-48.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,-3) lod=0 source=new worldPos=(-48.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,-2) lod=0 source=new worldPos=(-48.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,-2) lod=0 source=new worldPos=(-48.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,-2) lod=0 source=new worldPos=(-48.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9195861Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,-1) lod=0 source=new worldPos=(-48.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,-1) lod=0 source=new worldPos=(-48.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,-1) lod=0 source=new worldPos=(-48.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,0) lod=0 source=new worldPos=(-48.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,0) lod=0 source=new worldPos=(-48.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9206535Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,0) lod=0 source=new worldPos=(-48.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,1) lod=0 source=new worldPos=(-48.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,1) lod=0 source=new worldPos=(-48.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,1) lod=0 source=new worldPos=(-48.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,2) lod=0 source=new worldPos=(-48.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9216526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,2) lod=0 source=new worldPos=(-48.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,2) lod=0 source=new worldPos=(-48.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,3) lod=0 source=new worldPos=(-48.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,3) lod=0 source=new worldPos=(-48.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,3) lod=0 source=new worldPos=(-48.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,0,4) lod=0 source=new worldPos=(-48.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,1,4) lod=0 source=new worldPos=(-48.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,2,4) lod=0 source=new worldPos=(-48.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9226515Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9241589Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,-4) lod=0 source=new worldPos=(-32.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9241589Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9241589Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,-4) lod=0 source=new worldPos=(-32.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9241589Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9241589Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,-4) lod=0 source=new worldPos=(-32.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9241589Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,-3) lod=0 source=new worldPos=(-32.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,-3) lod=0 source=new worldPos=(-32.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,-3) lod=0 source=new worldPos=(-32.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,-2) lod=0 source=new worldPos=(-32.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,-2) lod=0 source=new worldPos=(-32.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9246814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9256889Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,-2) lod=0 source=new worldPos=(-32.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9256889Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9256889Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,-1) lod=0 source=new worldPos=(-32.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9256889Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9256889Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,-1) lod=0 source=new worldPos=(-32.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9256889Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9256889Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,-1) lod=0 source=new worldPos=(-32.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9256889Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,0) lod=0 source=new worldPos=(-32.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,0) lod=0 source=new worldPos=(-32.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,0) lod=0 source=new worldPos=(-32.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,1) lod=0 source=new worldPos=(-32.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,1) lod=0 source=new worldPos=(-32.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,1) lod=0 source=new worldPos=(-32.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,2) lod=0 source=new worldPos=(-32.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,2) lod=0 source=new worldPos=(-32.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9266892Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9283472Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,2) lod=0 source=new worldPos=(-32.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9283472Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9283472Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,3) lod=0 source=new worldPos=(-32.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9283472Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9283472Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,3) lod=0 source=new worldPos=(-32.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9288603Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9288603Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,3) lod=0 source=new worldPos=(-32.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9288603Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9288603Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,0,4) lod=0 source=new worldPos=(-32.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9288603Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9288603Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,1,4) lod=0 source=new worldPos=(-32.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,2,4) lod=0 source=new worldPos=(-32.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,-4) lod=0 source=new worldPos=(-16.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,-4) lod=0 source=new worldPos=(-16.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,-4) lod=0 source=new worldPos=(-16.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9293765Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,-3) lod=0 source=new worldPos=(-16.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,-3) lod=0 source=new worldPos=(-16.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,-3) lod=0 source=new worldPos=(-16.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,-2) lod=0 source=new worldPos=(-16.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,-2) lod=0 source=new worldPos=(-16.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9303812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,-2) lod=0 source=new worldPos=(-16.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,-1) lod=0 source=new worldPos=(-16.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,-1) lod=0 source=new worldPos=(-16.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,-1) lod=0 source=new worldPos=(-16.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,0) lod=0 source=new worldPos=(-16.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9313812Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,0) lod=0 source=new worldPos=(-16.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,0) lod=0 source=new worldPos=(-16.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,1) lod=0 source=new worldPos=(-16.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,1) lod=0 source=new worldPos=(-16.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,1) lod=0 source=new worldPos=(-16.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,2) lod=0 source=new worldPos=(-16.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,2) lod=0 source=new worldPos=(-16.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9323809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,2) lod=0 source=new worldPos=(-16.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9338851Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9338851Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,3) lod=0 source=new worldPos=(-16.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9338851Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9338851Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,3) lod=0 source=new worldPos=(-16.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,3) lod=0 source=new worldPos=(-16.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,0,4) lod=0 source=new worldPos=(-16.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,1,4) lod=0 source=new worldPos=(-16.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,2,4) lod=0 source=new worldPos=(-16.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9344005Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9354085Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,-4) lod=0 source=new worldPos=(0.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9354085Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9354085Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,-4) lod=0 source=new worldPos=(0.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9354085Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9354085Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,-4) lod=0 source=new worldPos=(0.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9354085Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9354085Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,-3) lod=0 source=new worldPos=(0.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,-3) lod=0 source=new worldPos=(0.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,-3) lod=0 source=new worldPos=(0.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,-2) lod=0 source=new worldPos=(0.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,-2) lod=0 source=new worldPos=(0.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,-2) lod=0 source=new worldPos=(0.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9364070Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,-1) lod=0 source=new worldPos=(0.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,-1) lod=0 source=new worldPos=(0.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,-1) lod=0 source=new worldPos=(0.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,0) lod=0 source=new worldPos=(0.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,0) lod=0 source=new worldPos=(0.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9374500Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9384507Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,0) lod=0 source=new worldPos=(0.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9384507Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9384507Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,1) lod=0 source=new worldPos=(0.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9384507Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9389556Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,1) lod=0 source=new worldPos=(0.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9389556Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9389556Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,1) lod=0 source=new worldPos=(0.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9389556Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9389556Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,2) lod=0 source=new worldPos=(0.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,2) lod=0 source=new worldPos=(0.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,2) lod=0 source=new worldPos=(0.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,3) lod=0 source=new worldPos=(0.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,3) lod=0 source=new worldPos=(0.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9394751Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,3) lod=0 source=new worldPos=(0.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,0,4) lod=0 source=new worldPos=(0.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,1,4) lod=0 source=new worldPos=(0.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,2,4) lod=0 source=new worldPos=(0.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,-4) lod=0 source=new worldPos=(16.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9404809Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,-4) lod=0 source=new worldPos=(16.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,-4) lod=0 source=new worldPos=(16.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,-3) lod=0 source=new worldPos=(16.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,-3) lod=0 source=new worldPos=(16.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9414811Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,-3) lod=0 source=new worldPos=(16.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,-2) lod=0 source=new worldPos=(16.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,-2) lod=0 source=new worldPos=(16.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,-2) lod=0 source=new worldPos=(16.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,-1) lod=0 source=new worldPos=(16.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,-1) lod=0 source=new worldPos=(16.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9424814Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9434816Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,-1) lod=0 source=new worldPos=(16.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9434816Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9434816Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,0) lod=0 source=new worldPos=(16.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9434816Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9434816Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,0) lod=0 source=new worldPos=(16.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,0) lod=0 source=new worldPos=(16.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,1) lod=0 source=new worldPos=(16.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,1) lod=0 source=new worldPos=(16.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,1) lod=0 source=new worldPos=(16.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9439853Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9449904Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,2) lod=0 source=new worldPos=(16.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9449904Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9449904Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,2) lod=0 source=new worldPos=(16.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9449904Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9449904Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,2) lod=0 source=new worldPos=(16.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9449904Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9449904Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,3) lod=0 source=new worldPos=(16.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9459910Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9459910Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,3) lod=0 source=new worldPos=(16.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9459910Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9459910Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,3) lod=0 source=new worldPos=(16.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9459910Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9459910Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,0,4) lod=0 source=new worldPos=(16.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9459910Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9459910Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,1,4) lod=0 source=new worldPos=(16.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,2,4) lod=0 source=new worldPos=(16.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,-4) lod=0 source=new worldPos=(32.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,-4) lod=0 source=new worldPos=(32.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,-4) lod=0 source=new worldPos=(32.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9471907Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9481880Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,-3) lod=0 source=new worldPos=(32.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9481880Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9481880Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,-3) lod=0 source=new worldPos=(32.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9481880Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9481880Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,-3) lod=0 source=new worldPos=(32.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,-2) lod=0 source=new worldPos=(32.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,-2) lod=0 source=new worldPos=(32.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,-2) lod=0 source=new worldPos=(32.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,-1) lod=0 source=new worldPos=(32.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9486926Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,-1) lod=0 source=new worldPos=(32.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,-1) lod=0 source=new worldPos=(32.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,0) lod=0 source=new worldPos=(32.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,0) lod=0 source=new worldPos=(32.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,0) lod=0 source=new worldPos=(32.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9496986Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,1) lod=0 source=new worldPos=(32.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,1) lod=0 source=new worldPos=(32.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,1) lod=0 source=new worldPos=(32.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,2) lod=0 source=new worldPos=(32.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,2) lod=0 source=new worldPos=(32.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9506973Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,2) lod=0 source=new worldPos=(32.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,3) lod=0 source=new worldPos=(32.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,3) lod=0 source=new worldPos=(32.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,3) lod=0 source=new worldPos=(32.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,0,4) lod=0 source=new worldPos=(32.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,1,4) lod=0 source=new worldPos=(32.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9516970Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9532039Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,2,4) lod=0 source=new worldPos=(32.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9532039Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9532039Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,-4) lod=0 source=new worldPos=(48.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9532039Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9537197Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,-4) lod=0 source=new worldPos=(48.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9537197Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9537197Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,-4) lod=0 source=new worldPos=(48.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9537197Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9537197Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,-3) lod=0 source=new worldPos=(48.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9537197Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9537197Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,-3) lod=0 source=new worldPos=(48.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9537197Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9547266Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,-3) lod=0 source=new worldPos=(48.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9547266Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9557279Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,-2) lod=0 source=new worldPos=(48.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9557279Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9557279Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,-2) lod=0 source=new worldPos=(48.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9557279Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9557279Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,-2) lod=0 source=new worldPos=(48.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9557279Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9557279Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,-1) lod=0 source=new worldPos=(48.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9568162Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9568162Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,-1) lod=0 source=new worldPos=(48.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9568162Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9568162Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,-1) lod=0 source=new worldPos=(48.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9568162Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9568162Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,0) lod=0 source=new worldPos=(48.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9568162Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9568162Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,0) lod=0 source=new worldPos=(48.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9578182Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9578182Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,0) lod=0 source=new worldPos=(48.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9578182Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9578182Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,1) lod=0 source=new worldPos=(48.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,1) lod=0 source=new worldPos=(48.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,1) lod=0 source=new worldPos=(48.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,2) lod=0 source=new worldPos=(48.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,2) lod=0 source=new worldPos=(48.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9583243Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,2) lod=0 source=new worldPos=(48.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,3) lod=0 source=new worldPos=(48.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,3) lod=0 source=new worldPos=(48.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,3) lod=0 source=new worldPos=(48.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,0,4) lod=0 source=new worldPos=(48.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9593322Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9605563Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,1,4) lod=0 source=new worldPos=(48.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9605563Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9605563Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,2,4) lod=0 source=new worldPos=(48.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9605563Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9605563Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,-4) lod=0 source=new worldPos=(64.00,0.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9605563Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9605563Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,-4) lod=0 source=new worldPos=(64.00,16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9605563Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,-4) lod=0 source=new worldPos=(64.00,32.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,-3) lod=0 source=new worldPos=(64.00,0.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,-3) lod=0 source=new worldPos=(64.00,16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,-3) lod=0 source=new worldPos=(64.00,32.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9615551Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,-2) lod=0 source=new worldPos=(64.00,0.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,-2) lod=0 source=new worldPos=(64.00,16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,-2) lod=0 source=new worldPos=(64.00,32.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,-1) lod=0 source=new worldPos=(64.00,0.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,-1) lod=0 source=new worldPos=(64.00,16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9625560Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9635840Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,-1) lod=0 source=new worldPos=(64.00,32.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9635840Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9635840Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,0) lod=0 source=new worldPos=(64.00,0.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9635840Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9635840Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,0) lod=0 source=new worldPos=(64.00,16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9635840Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9635840Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,0) lod=0 source=new worldPos=(64.00,32.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9635840Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9645930Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,1) lod=0 source=new worldPos=(64.00,0.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9645930Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9645930Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,1) lod=0 source=new worldPos=(64.00,16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9645930Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9645930Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,1) lod=0 source=new worldPos=(64.00,32.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9645930Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9645930Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,2) lod=0 source=new worldPos=(64.00,0.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9645930Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9655920Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,2) lod=0 source=new worldPos=(64.00,16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9655920Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9655920Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,2) lod=0 source=new worldPos=(64.00,32.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9655920Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9655920Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,3) lod=0 source=new worldPos=(64.00,0.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,3) lod=0 source=new worldPos=(64.00,16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,3) lod=0 source=new worldPos=(64.00,32.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,0,4) lod=0 source=new worldPos=(64.00,0.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,0,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,1,4) lod=0 source=new worldPos=(64.00,16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9661013Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:37.9671050Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,2,4) lod=0 source=new worldPos=(64.00,32.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:37.9671050Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,2,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.2270577Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.968
+2025-09-22T15:26:38.2285847Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.423
+2025-09-22T15:26:38.2285847Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2301108Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.934
+2025-09-22T15:26:38.2301108Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.435
+2025-09-22T15:26:38.2301108Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2301108Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.921
+2025-09-22T15:26:38.2311268Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.579
+2025-09-22T15:26:38.2311268Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2311268Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.973
+2025-09-22T15:26:38.2311268Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.405
+2025-09-22T15:26:38.2323790Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2323790Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.982
+2025-09-22T15:26:38.2323790Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.374
+2025-09-22T15:26:38.2323790Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2333788Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.961
+2025-09-22T15:26:38.2333788Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.388
+2025-09-22T15:26:38.2333788Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2333788Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.988
+2025-09-22T15:26:38.2343804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.327
+2025-09-22T15:26:38.2343804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2343804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.957
+2025-09-22T15:26:38.2343804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.227
+2025-09-22T15:26:38.2353921Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2353921Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.872
+2025-09-22T15:26:38.2359584Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.665
+2025-09-22T15:26:38.2359584Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2365453Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.994
+2025-09-22T15:26:38.2365453Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.070
+2025-09-22T15:26:38.2370620Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2370620Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.931
+2025-09-22T15:26:38.2370620Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.343
+2025-09-22T15:26:38.2370620Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2370620Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.921
+2025-09-22T15:26:38.2385743Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.279
+2025-09-22T15:26:38.2385743Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2385743Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.919
+2025-09-22T15:26:38.2385743Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.639
+2025-09-22T15:26:38.2385743Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2385743Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.950
+2025-09-22T15:26:38.2401331Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.210
+2025-09-22T15:26:38.2401331Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2406481Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.935
+2025-09-22T15:26:38.2406481Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.551
+2025-09-22T15:26:38.2406481Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2406481Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.927
+2025-09-22T15:26:38.2416563Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.396
+2025-09-22T15:26:38.2416563Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2416563Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.861
+2025-09-22T15:26:38.2416563Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.501
+2025-09-22T15:26:38.2426559Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2426559Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.831
+2025-09-22T15:26:38.2426559Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.729
+2025-09-22T15:26:38.2426559Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2436560Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.939
+2025-09-22T15:26:38.2436560Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.471
+2025-09-22T15:26:38.2436560Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2436560Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.909
+2025-09-22T15:26:38.2436560Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.573
+2025-09-22T15:26:38.2451987Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2451987Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.932
+2025-09-22T15:26:38.2451987Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.368
+2025-09-22T15:26:38.2451987Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2451987Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.959
+2025-09-22T15:26:38.2451987Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.483
+2025-09-22T15:26:38.2467067Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2467067Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.951
+2025-09-22T15:26:38.2467067Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.437
+2025-09-22T15:26:38.2467067Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2467067Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.952
+2025-09-22T15:26:38.2467067Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.268
+2025-09-22T15:26:38.2482674Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2482674Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.916
+2025-09-22T15:26:38.2482674Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.539
+2025-09-22T15:26:38.2482674Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2482674Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.914
+2025-09-22T15:26:38.2482674Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.350
+2025-09-22T15:26:38.2498168Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2498168Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.947
+2025-09-22T15:26:38.2498168Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.539
+2025-09-22T15:26:38.2498168Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2508591Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.984
+2025-09-22T15:26:38.2508591Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.320
+2025-09-22T15:26:38.2508591Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2508591Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.897
+2025-09-22T15:26:38.2518619Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.587
+2025-09-22T15:26:38.2518619Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2528220Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.878
+2025-09-22T15:26:38.2528220Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.583
+2025-09-22T15:26:38.2528220Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2528220Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.936
+2025-09-22T15:26:38.2538214Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.597
+2025-09-22T15:26:38.2538214Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2538214Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.925
+2025-09-22T15:26:38.2548211Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.454
+2025-09-22T15:26:38.2548211Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-0.545 max=1.000 avg=0.999
+2025-09-22T15:26:38.2553249Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.898
+2025-09-22T15:26:38.2553249Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.496
+2025-09-22T15:26:38.2553249Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2563286Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.777
+2025-09-22T15:26:38.2563286Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.748
+2025-09-22T15:26:38.2563286Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2573328Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.942
+2025-09-22T15:26:38.2573328Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.404
+2025-09-22T15:26:38.2573328Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2573328Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.937
+2025-09-22T15:26:38.2583327Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.630
+2025-09-22T15:26:38.2583327Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2588362Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.983
+2025-09-22T15:26:38.2588362Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.187
+2025-09-22T15:26:38.2588362Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2598398Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.980
+2025-09-22T15:26:38.2598398Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.203
+2025-09-22T15:26:38.2598398Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2608439Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.967
+2025-09-22T15:26:38.2608439Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.332
+2025-09-22T15:26:38.2608439Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2618446Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.914
+2025-09-22T15:26:38.2618446Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.478
+2025-09-22T15:26:38.2618446Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2618446Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.961
+2025-09-22T15:26:38.2628452Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.246
+2025-09-22T15:26:38.2628452Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-0.545 max=1.000 avg=0.999
+2025-09-22T15:26:38.2628452Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.926
+2025-09-22T15:26:38.2638444Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.430
+2025-09-22T15:26:38.2638444Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2638444Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.897
+2025-09-22T15:26:38.2648445Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.474
+2025-09-22T15:26:38.2648445Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2653490Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.858
+2025-09-22T15:26:38.2653490Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.628
+2025-09-22T15:26:38.2653490Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2663530Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.907
+2025-09-22T15:26:38.2663530Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.594
+2025-09-22T15:26:38.2663530Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2663530Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.836
+2025-09-22T15:26:38.2673578Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.687
+2025-09-22T15:26:38.2673578Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2673578Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.912
+2025-09-22T15:26:38.2683580Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.545
+2025-09-22T15:26:38.2688625Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2688625Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.895
+2025-09-22T15:26:38.2688625Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.532
+2025-09-22T15:26:38.2698672Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2698672Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.959
+2025-09-22T15:26:38.2698672Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.415
+2025-09-22T15:26:38.2698672Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2708723Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=0.900 avg=-0.995
+2025-09-22T15:26:38.2708723Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.278
+2025-09-22T15:26:38.2708723Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2718715Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.958
+2025-09-22T15:26:38.2718715Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.472
+2025-09-22T15:26:38.2718715Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2718715Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.879
+2025-09-22T15:26:38.2718715Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.593
+2025-09-22T15:26:38.2718715Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2733745Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.853
+2025-09-22T15:26:38.2733745Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.473
+2025-09-22T15:26:38.2738917Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2744024Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.886
+2025-09-22T15:26:38.2744024Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.605
+2025-09-22T15:26:38.2744024Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2744024Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.897
+2025-09-22T15:26:38.2744024Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.500
+2025-09-22T15:26:38.2744024Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2759161Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.940
+2025-09-22T15:26:38.2759161Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.453
+2025-09-22T15:26:38.2759161Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2769210Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.933
+2025-09-22T15:26:38.2769210Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.333
+2025-09-22T15:26:38.2769210Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2769210Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.866
+2025-09-22T15:26:38.2769210Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.717
+2025-09-22T15:26:38.2769210Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2784243Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.858
+2025-09-22T15:26:38.2784243Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.688
+2025-09-22T15:26:38.2784243Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2794278Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.968
+2025-09-22T15:26:38.2794278Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.305
+2025-09-22T15:26:38.2799316Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2799316Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.953
+2025-09-22T15:26:38.2799316Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.359
+2025-09-22T15:26:38.2799316Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2809361Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.977
+2025-09-22T15:26:38.2809361Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.164
+2025-09-22T15:26:38.2809361Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2819361Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.871
+2025-09-22T15:26:38.2819361Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.700
+2025-09-22T15:26:38.2819361Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2819361Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.966
+2025-09-22T15:26:38.2829364Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.419
+2025-09-22T15:26:38.2829364Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2829364Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.940
+2025-09-22T15:26:38.2829364Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.421
+2025-09-22T15:26:38.2829364Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2844396Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.983
+2025-09-22T15:26:38.2844396Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.040
+2025-09-22T15:26:38.2844396Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2844396Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.974
+2025-09-22T15:26:38.2844396Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.399
+2025-09-22T15:26:38.2844396Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2859568Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.945
+2025-09-22T15:26:38.2859568Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.579
+2025-09-22T15:26:38.2859568Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2869610Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.979
+2025-09-22T15:26:38.2869610Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.283
+2025-09-22T15:26:38.2869610Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2869610Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.958
+2025-09-22T15:26:38.2869610Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.414
+2025-09-22T15:26:38.2869610Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2884643Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.980
+2025-09-22T15:26:38.2884643Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.395
+2025-09-22T15:26:38.2884643Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2894687Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.967
+2025-09-22T15:26:38.2894687Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.474
+2025-09-22T15:26:38.2899724Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2899724Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.958
+2025-09-22T15:26:38.2899724Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.293
+2025-09-22T15:26:38.2899724Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2909770Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.939
+2025-09-22T15:26:38.2909770Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.581
+2025-09-22T15:26:38.2909770Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2919770Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.981
+2025-09-22T15:26:38.2919770Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.440
+2025-09-22T15:26:38.2919770Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2919770Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.943
+2025-09-22T15:26:38.2929769Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.504
+2025-09-22T15:26:38.2929769Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2929769Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.906
+2025-09-22T15:26:38.2929769Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.558
+2025-09-22T15:26:38.2929769Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2944804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.961
+2025-09-22T15:26:38.2944804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.422
+2025-09-22T15:26:38.2944804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2944804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.987
+2025-09-22T15:26:38.2944804Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.157
+2025-09-22T15:26:38.2959952Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2959952Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.890
+2025-09-22T15:26:38.2959952Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.401
+2025-09-22T15:26:38.2959952Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.2969999Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,0,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=-0.889
+2025-09-22T15:26:38.2969999Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=1.000 avg=0.619
+2025-09-22T15:26:38.2969999Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,2,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=1.000 max=1.000 avg=1.000
+2025-09-22T15:26:38.3951802Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,-4) lod=0 source=new worldPos=(-64.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3951802Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3951802Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,-3) lod=0 source=new worldPos=(-64.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,-2) lod=0 source=new worldPos=(-64.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,-1) lod=0 source=new worldPos=(-64.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,0) lod=0 source=new worldPos=(-64.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,1) lod=0 source=new worldPos=(-64.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3956863Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,2) lod=0 source=new worldPos=(-64.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,3) lod=0 source=new worldPos=(-64.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-4,-1,4) lod=0 source=new worldPos=(-64.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-4,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,-4) lod=0 source=new worldPos=(-48.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,-3) lod=0 source=new worldPos=(-48.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,-2) lod=0 source=new worldPos=(-48.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,-1) lod=0 source=new worldPos=(-48.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3966993Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,0) lod=0 source=new worldPos=(-48.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,1) lod=0 source=new worldPos=(-48.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,2) lod=0 source=new worldPos=(-48.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,3) lod=0 source=new worldPos=(-48.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-3,-1,4) lod=0 source=new worldPos=(-48.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-3,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3982046Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,-4) lod=0 source=new worldPos=(-32.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3992559Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3992559Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,-3) lod=0 source=new worldPos=(-32.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3992559Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3992559Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,-2) lod=0 source=new worldPos=(-32.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3992559Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3997649Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,-1) lod=0 source=new worldPos=(-32.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3997649Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3997649Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,0) lod=0 source=new worldPos=(-32.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3997649Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3997649Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,1) lod=0 source=new worldPos=(-32.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3997649Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.3997649Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,2) lod=0 source=new worldPos=(-32.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.3997649Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,3) lod=0 source=new worldPos=(-32.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-2,-1,4) lod=0 source=new worldPos=(-32.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-2,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,-4) lod=0 source=new worldPos=(-16.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,-3) lod=0 source=new worldPos=(-16.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,-2) lod=0 source=new worldPos=(-16.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4007754Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4017947Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,-1) lod=0 source=new worldPos=(-16.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4017947Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4017947Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,0) lod=0 source=new worldPos=(-16.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4017947Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4017947Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,1) lod=0 source=new worldPos=(-16.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4017947Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4017947Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,2) lod=0 source=new worldPos=(-16.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4017947Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,3) lod=0 source=new worldPos=(-16.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(-1,-1,4) lod=0 source=new worldPos=(-16.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(-1,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,-4) lod=0 source=new worldPos=(0.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,-3) lod=0 source=new worldPos=(0.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,-2) lod=0 source=new worldPos=(0.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4027741Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4038900Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,-1) lod=0 source=new worldPos=(0.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4038900Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4038900Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,0) lod=0 source=new worldPos=(0.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4038900Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,1) lod=0 source=new worldPos=(0.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,2) lod=0 source=new worldPos=(0.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,3) lod=0 source=new worldPos=(0.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(0,-1,4) lod=0 source=new worldPos=(0.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(0,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,-4) lod=0 source=new worldPos=(16.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4044090Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,-3) lod=0 source=new worldPos=(16.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,-2) lod=0 source=new worldPos=(16.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,-1) lod=0 source=new worldPos=(16.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,0) lod=0 source=new worldPos=(16.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,1) lod=0 source=new worldPos=(16.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4054123Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,2) lod=0 source=new worldPos=(16.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,3) lod=0 source=new worldPos=(16.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(1,-1,4) lod=0 source=new worldPos=(16.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(1,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,-4) lod=0 source=new worldPos=(32.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,-3) lod=0 source=new worldPos=(32.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,-2) lod=0 source=new worldPos=(32.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4064118Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4079213Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,-1) lod=0 source=new worldPos=(32.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4079213Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4079213Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,0) lod=0 source=new worldPos=(32.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4079213Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4079213Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,1) lod=0 source=new worldPos=(32.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4084381Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4084381Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,2) lod=0 source=new worldPos=(32.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4084381Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4084381Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,3) lod=0 source=new worldPos=(32.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4084381Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(2,-1,4) lod=0 source=new worldPos=(32.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(2,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,-4) lod=0 source=new worldPos=(48.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,-3) lod=0 source=new worldPos=(48.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,-2) lod=0 source=new worldPos=(48.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,-1) lod=0 source=new worldPos=(48.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4089526Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4099585Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,0) lod=0 source=new worldPos=(48.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4099585Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4099585Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,1) lod=0 source=new worldPos=(48.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,2) lod=0 source=new worldPos=(48.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,3) lod=0 source=new worldPos=(48.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(3,-1,4) lod=0 source=new worldPos=(48.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(3,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,-4) lod=0 source=new worldPos=(64.00,-16.00,-64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,-4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,-3) lod=0 source=new worldPos=(64.00,-16.00,-48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,-3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,-2) lod=0 source=new worldPos=(64.00,-16.00,-32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,-2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4109594Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,-1) lod=0 source=new worldPos=(64.00,-16.00,-16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,-1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,0) lod=0 source=new worldPos=(64.00,-16.00,0.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,0) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,1) lod=0 source=new worldPos=(64.00,-16.00,16.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,1) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,2) lod=0 source=new worldPos=(64.00,-16.00,32.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,2) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,3) lod=0 source=new worldPos=(64.00,-16.00,48.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,3) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4124692Z [INFO] [Terrain][ChunkLifecycle] action=create chunk=(4,-1,4) lod=0 source=new worldPos=(64.00,-16.00,64.00) voxels=16x16x16 sampleCount=4913
+2025-09-22T15:26:38.4134745Z [INFO] [Terrain][VoxelGen] stage=queued mode=CPU chunk=(4,-1,4) lod=0 voxels=16x16x16 sampleCount=4913 biomeCount=1
+2025-09-22T15:26:38.4415741Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4415741Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4430794Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4430794Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4430794Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4441334Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4441334Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4441334Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4441334Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(4,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4441334Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4456383Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4456383Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4456383Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4456383Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4466432Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4466432Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4466432Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4466432Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(3,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4466432Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4481745Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4481745Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4481745Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4481745Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4492104Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4492104Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4492104Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4492104Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(2,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4492104Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4492104Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4507176Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4507176Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4512696Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4512696Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4512696Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4512696Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4512696Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(1,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4527887Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4527887Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4527887Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4527887Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4527887Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4527887Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4544072Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4544072Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4544072Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(0,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4544072Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4554108Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4554108Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4554108Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4554108Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4565920Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4565920Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4565920Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4565920Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-1,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4575929Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4575929Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4575929Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4575929Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4585911Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4585911Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4585911Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4585911Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4585911Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-2,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4585911Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4602025Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4602025Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4602025Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4612389Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4612389Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4612389Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4612389Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4612389Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-3,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4612389Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4612389Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4628815Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4628815Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4628815Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,0) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4628815Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,-1) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4639114Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,-2) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4639114Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,-3) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:38.4639114Z [INFO] [Terrain][VoxelGen] stage=completed mode=CPU chunk=(-4,-1,-4) lod=0 voxels=16x16x16 samples=4913 valid=4913 invalid=0 min=-1.000 max=-1.000 avg=-1.000
+2025-09-22T15:26:47.5309262Z [INFO] [Terrain][System] TerrainManager disabled
