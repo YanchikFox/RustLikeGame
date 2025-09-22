@@ -413,6 +413,21 @@ private void LateUpdate()
                 return;
             }
 
+            if (!meshGenerator.NativeTriangleTable.IsCreated || meshGenerator.NativeTriangleTable.Length <= 0 ||
+                !meshGenerator.NativeEdgeConnections.IsCreated || meshGenerator.NativeEdgeConnections.Length <= 0)
+            {
+                meshGenerator.EnsureTablesInitialized();
+            }
+
+            if (!meshGenerator.NativeTriangleTable.IsCreated || meshGenerator.NativeTriangleTable.Length <= 0 ||
+                !meshGenerator.NativeEdgeConnections.IsCreated || meshGenerator.NativeEdgeConnections.Length <= 0)
+            {
+                Debug.LogWarning(
+                    "TerrainManager attempted to initialize GPU buffers before Marching Cubes lookup tables were ready. Initialization will be retried once the tables are generated.",
+                    this);
+                return;
+            }
+
             BiomeSettings[] activeBiomes = GetActiveBiomes(true);
             int biomeCount = activeBiomes.Length;
             if (biomeCount > 0)

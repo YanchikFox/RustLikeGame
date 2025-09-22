@@ -455,9 +455,7 @@ private static readonly int[] flatTriangleTable =
         
         private void Awake()
         {
-            // ?????????????? NativeArray ? ???????? ? ??? ?????? ?? ??????????? ??????
-            nativeTriangleTable = new NativeArray<int>(flatTriangleTable, Allocator.Persistent);
-            nativeEdgeConnections = new NativeArray<int>(flatEdgeConnections, Allocator.Persistent);
+            EnsureTablesInitialized();
         }
 
         private void OnDestroy()
@@ -471,7 +469,28 @@ private static readonly int[] flatTriangleTable =
                 nativeEdgeConnections.Dispose();
             }
         }
-        
+
+        public void EnsureTablesInitialized()
+        {
+            EnsureNativeArrayInitialized(ref nativeTriangleTable, flatTriangleTable);
+            EnsureNativeArrayInitialized(ref nativeEdgeConnections, flatEdgeConnections);
+        }
+
+        private static void EnsureNativeArrayInitialized(ref NativeArray<int> nativeArray, int[] sourceData)
+        {
+            if (nativeArray.IsCreated)
+            {
+                if (nativeArray.Length == sourceData.Length)
+                {
+                    return;
+                }
+
+                nativeArray.Dispose();
+            }
+
+            nativeArray = new NativeArray<int>(sourceData, Allocator.Persistent);
+        }
+
         #region Public API
 
         /// <summary>
