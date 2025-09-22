@@ -500,113 +500,116 @@ private static readonly int[] flatTriangleTable =
         /// </summary>
         public Mesh CreateMeshFromJob(NativeList<Vector3> vertices, NativeList<int> triangles, NativeList<Vector3> normals)
         {
+            if (!vertices.IsCreated)
+            {
+                return new Mesh();
+            }
+
+            NativeSlice<Vector3> vertexSlice = new NativeSlice<Vector3>(vertices.AsArray());
+            NativeSlice<int> indexSlice = triangles.IsCreated ? new NativeSlice<int>(triangles.AsArray()) : default;
+            NativeSlice<Vector3> normalSlice = normals.IsCreated ? new NativeSlice<Vector3>(normals.AsArray()) : default;
+
+            return CreateMeshFromNativeSlices(vertexSlice, indexSlice, normalSlice, useSequentialIndices: false);
+        }
+
+        /// <summary>
+        /// Builds a mesh from native slices of vertex, index and normal data without creating managed arrays.
+        /// </summary>
+        public Mesh CreateMeshFromNativeSlices(
+            NativeSlice<Vector3> vertices,
+            NativeSlice<int> indices,
+            NativeSlice<Vector3> normals,
+            bool useSequentialIndices,
+            int sequentialIndexCount = -1)
+        {
             Mesh mesh = new Mesh();
-            if (!vertices.IsCreated || vertices.Length == 0)
+            int vertexCount = vertices.Length;
+            if (vertexCount == 0)
             {
                 return mesh;
             }
 
-            mesh.indexFormat = vertices.Length > 65535
-                ? IndexFormat.UInt32
-                : IndexFormat.UInt16;
+            bool hasNormals = normals.Length >= vertexCount;
+            int indexCount = useSequentialIndices
+                ? (sequentialIndexCount >= 0 ? sequentialIndexCount : vertexCount)
+                : indices.Length;
 
-            bool hasNormals = normals.IsCreated && normals.Length == vertices.Length;
+            IndexFormat indexFormat = vertexCount > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
+            mesh.indexFormat = indexFormat;
 
             Mesh.MeshDataArray meshDataArray = Mesh.AllocateWritableMeshData(1);
             Mesh.MeshData meshData = meshDataArray[0];
 
             if (hasNormals)
             {
-                meshData.SetVertexBufferParams(vertices.Length,
+                meshData.SetVertexBufferParams(vertexCount,
                     new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, stream: 0),
                     new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, stream: 1));
             }
             else
             {
-                meshData.SetVertexBufferParams(vertices.Length,
+                meshData.SetVertexBufferParams(vertexCount,
                     new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3));
             }
 
-            meshData.SetIndexBufferParams(triangles.Length, mesh.indexFormat);
-
             var vertexPositions = meshData.GetVertexData<Vector3>(0);
-            new NativeSlice<Vector3>(vertexPositions).CopyFrom(vertices.AsArray());
+            new NativeSlice<Vector3>(vertexPositions, 0, vertexCount).CopyFrom(vertices);
 
             if (hasNormals)
             {
                 var vertexNormals = meshData.GetVertexData<Vector3>(1);
-                new NativeSlice<Vector3>(vertexNormals).CopyFrom(normals.AsArray());
+                new NativeSlice<Vector3>(vertexNormals, 0, vertexCount).CopyFrom(normals);
             }
 
-            if (mesh.indexFormat == IndexFormat.UInt32)
+            meshData.SetIndexBufferParams(indexCount, indexFormat);
+
+            if (indexFormat == IndexFormat.UInt32)
             {
                 var indexData = meshData.GetIndexData<int>();
-                new NativeSlice<int>(indexData).CopyFrom(triangles.AsArray());
+                if (useSequentialIndices)
+                {
+                    for (int i = 0; i < indexCount; i++)
+                    {
+                        indexData[i] = i;
+                    }
+                }
+                else if (indexCount > 0)
+                {
+                    new NativeSlice<int>(indexData, 0, indexCount).CopyFrom(indices);
+                }
             }
             else
             {
                 var indexData = meshData.GetIndexData<ushort>();
-                var sourceTriangles = triangles.AsArray();
-                for (int i = 0; i < sourceTriangles.Length; i++)
+                if (useSequentialIndices)
                 {
-                    indexData[i] = (ushort)sourceTriangles[i];
+                    for (int i = 0; i < indexCount; i++)
+                    {
+                        indexData[i] = (ushort)i;
+                    }
+                }
+                else if (indexCount > 0)
+                {
+                    for (int i = 0; i < indexCount; i++)
+                    {
+                        indexData[i] = (ushort)indices[i];
+                    }
                 }
             }
 
             meshData.subMeshCount = 1;
-            var subMeshDescriptor = new SubMeshDescriptor(0, triangles.Length)
+            var subMeshDescriptor = new SubMeshDescriptor(0, indexCount)
             {
-                vertexCount = vertices.Length
+                vertexCount = vertexCount
             };
             meshData.SetSubMesh(0, subMeshDescriptor, MeshUpdateFlags.DontRecalculateBounds);
 
-            Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
+            Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, MeshUpdateFlags.DontRecalculateBounds);
 
             if (!hasNormals)
             {
                 mesh.RecalculateNormals();
             }
-            if (calculateTangents)
-            {
-                mesh.RecalculateTangents();
-            }
-
-            mesh.RecalculateBounds();
-            return mesh;
-        }
-
-        public Mesh CreateMeshFromArrays(Vector3[] vertices, int[] triangles, Vector3[] normals)
-        {
-            Mesh mesh = new Mesh();
-            if (vertices == null || vertices.Length == 0)
-            {
-                return mesh;
-            }
-
-            mesh.indexFormat = vertices.Length > 65535
-                ? UnityEngine.Rendering.IndexFormat.UInt32
-                : UnityEngine.Rendering.IndexFormat.UInt16;
-
-            mesh.SetVertices(vertices);
-
-            if (triangles != null && triangles.Length > 0)
-            {
-                mesh.SetTriangles(triangles, 0, true);
-            }
-            else
-            {
-                mesh.SetTriangles(Array.Empty<int>(), 0);
-            }
-
-            if (normals != null && normals.Length == vertices.Length)
-            {
-                mesh.SetNormals(normals);
-            }
-            else
-            {
-                mesh.RecalculateNormals();
-            }
-
             if (calculateTangents)
             {
                 mesh.RecalculateTangents();
