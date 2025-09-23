@@ -13,21 +13,31 @@ MonoBehaviour:
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::TerrainSystem.BiomeDefinition
   displayName: New Biome
-  startThreshold: -1
+  startThreshold: 22
   octaves: 4
   lacunarity: 2
   persistence: 0.5
-  worldGroundLevel: 20
-  heightImpact: 15
-  heightNoiseScale: 0.05
-  caveImpact: 0.3
-  caveNoiseScale: 0.08
+  worldGroundLevel: 24
+  heightImpact: 10
+  heightNoiseScale: 0.01
+  caveImpact: 0.5
+  caveNoiseScale: 0.025
   enableHeightDomainWarp: 0
-  heightWarpStrength: 0
-  heightWarpScale: 0.05
-  enableCaveDomainWarp: 0
-  caveWarpStrength: 0
-  caveWarpScale: 0.08
+  heightWarpStrength: 6
+  heightWarpScale: 0.015
+  heightWarpUseRidged: 0
+  enableSecondaryHeightDomainWarp: 0
+  secondaryHeightWarpStrength: 0
+  secondaryHeightWarpScale: 0.025
+  secondaryHeightWarpUseRidged: 0
+  enableCaveDomainWarp: 1
+  caveWarpStrength: 56
+  caveWarpScale: 0.03
+  caveWarpUseRidged: 0
+  enableSecondaryCaveDomainWarp: 0
+  secondaryCaveWarpStrength: 0
+  secondaryCaveWarpScale: 0.04
+  secondaryCaveWarpUseRidged: 0
   enableAdditionalHeightLayer: 0
   additionalHeightOctaves: 0
   additionalHeightScale: 0.1
@@ -40,3 +50,19 @@ MonoBehaviour:
   additionalCaveLacunarity: 2
   additionalCavePersistence: 0.5
   additionalCaveImpact: 0
+  enableCliffLayer: 0
+  cliffNoiseScale: 0.05
+  cliffImpact: 0
+  cliffThreshold: 0.2
+  cliffSharpness: 1
+  enablePlateauLayer: 0
+  plateauNoiseScale: 0.04
+  plateauStepHeight: 3
+  plateauStrength: 0
+  plateauThreshold: 0
+  plateauSharpness: 1
+  enableSurfaceCaveMask: 1
+  surfaceCaveMaskScale: 0.04
+  surfaceCaveMaskThreshold: 0.42
+  surfaceCaveMaskStrength: 0.75
+  surfaceCaveMaskFalloff: 12
