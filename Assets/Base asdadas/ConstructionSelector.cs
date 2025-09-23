@@ -32,7 +32,7 @@ public class ConstructionSelector : MonoBehaviour //TODO rename ConstructionFact
             Debug.LogWarning($"Object with IdC {idC} not found.");
         }
 
-        // После выбора объекта, закрываем все окна UI
+        // After selecting an object, close all UI windows
         if (_uiManager != null)
         {
             _uiManager.CloseAllWindows();
