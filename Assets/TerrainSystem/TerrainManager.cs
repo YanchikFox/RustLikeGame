@@ -73,6 +73,8 @@ namespace TerrainSystem
         [Header("Culling Settings")]
         [SerializeField] private Camera targetCamera;
         [SerializeField] private bool enableFrustumCulling = true;
+        [SerializeField, Tooltip("Extra padding (in voxels) applied to each chunk's bounds before frustum tests.")]
+        private float frustumCullingBoundsPaddingVoxels = 1f;
         [SerializeField] private bool useOcclusionRayTest = false;
         [SerializeField] private LayerMask occlusionLayerMask = Physics.DefaultRaycastLayers;
         [SerializeField] private float occlusionRayPadding = 0.25f;
@@ -341,6 +343,7 @@ namespace TerrainSystem
             new Dictionary<Vector3Int, MeshGpuReadbackRequest>();
         private readonly Dictionary<Vector3Int, ChunkData> chunks = new Dictionary<Vector3Int, ChunkData>();
         private readonly Queue<Vector3Int> dirtyChunkQueue = new Queue<Vector3Int>();
+        private readonly HashSet<Vector3Int> chunksPendingVisibilityOverride = new HashSet<Vector3Int>();
         private readonly Dictionary<Vector3Int, MeshJobHandleData> runningMeshJobs = new Dictionary<Vector3Int, MeshJobHandleData>();
         private readonly Dictionary<Vector3Int, VoxelGenJobHandleData> runningGenJobs = new Dictionary<Vector3Int, VoxelGenJobHandleData>();
 
@@ -601,7 +604,7 @@ namespace TerrainSystem
                     LogDensitySummary("GpuReadback", "readbackComplete", "GPU", chunkPos, chunkData.lodLevel, voxelDimensions, summary, requestInfo.BufferCount, requestThreadGroups);
 
                     chunkData.chunk.ApplyDensities(densities);
-                    QueueChunkForUpdate(chunkPos);
+                    QueueChunkForUpdate(chunkPos, true);
                 }
 
                 if (completedRequests != null)
@@ -1516,7 +1519,7 @@ namespace TerrainSystem
                     chunkData.chunk.ApplyDensities(data.densities);
                     if (!isRegenerating)
                     {
-                        QueueChunkForUpdate(pos);
+                        QueueChunkForUpdate(pos, true);
                     }
                 }
 
@@ -2025,6 +2028,8 @@ namespace TerrainSystem
                     dirtyChunkQueue.Enqueue(filteredQueue.Dequeue());
                 }
             }
+
+            chunksPendingVisibilityOverride.Remove(chunkPos);
         }
 
         #region Visibility Checks
@@ -2089,6 +2094,16 @@ namespace TerrainSystem
             }
 
             Bounds bounds = new Bounds(worldOrigin + worldSize * 0.5f, worldSize);
+
+            float paddingInVoxels = Mathf.Max(0f, frustumCullingBoundsPaddingVoxels);
+            if (paddingInVoxels > 0f)
+            {
+                float padding = paddingInVoxels * GetVoxelSizeForLOD(lodLevel);
+                if (padding > 0f)
+                {
+                    bounds.Expand(padding * 2f);
+                }
+            }
 
             if (cameraFrustumPlanes == null || cameraFrustumPlanes.Length != 6)
             {
@@ -2621,7 +2636,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             chunkData.chunk.ApplyDensities(densities);
             
             // Ñòàâèì ÷àíê â î÷åðåäü íà ñîçäàíèå ìåøà (ïîêà ÷òî ÷åðåç CPU Job)
-            QueueChunkForUpdate(pos);
+            QueueChunkForUpdate(pos, true);
         }
         
         // Îñâîáîæäàåì áóôåð ïëîòíîñòåé îáðàòíî â ïóë
@@ -2694,38 +2709,47 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             while (processedCount < chunkBudget && dirtyChunkQueue.Count > 0)
             {
                 Vector3Int chunkPos = dirtyChunkQueue.Dequeue();
+                bool bypassCulling = chunksPendingVisibilityOverride.Contains(chunkPos);
 
                 // Skip if voxel generation is still running for this chunk
                 if (runningGenJobs.ContainsKey(chunkPos))
                     continue;
 
-                if (!chunks.TryGetValue(chunkPos, out var chunkData) || chunkData.chunk == null || runningMeshJobs.ContainsKey(chunkPos))
+                if (!chunks.TryGetValue(chunkPos, out var chunkData) || chunkData.chunk == null)
                 {
+                    chunksPendingVisibilityOverride.Remove(chunkPos);
                     continue;
                 }
 
-                if (runningGpuMeshRequests.ContainsKey(chunkPos))
+                if (runningMeshJobs.ContainsKey(chunkPos) || runningGpuMeshRequests.ContainsKey(chunkPos))
                 {
+                    chunksPendingVisibilityOverride.Remove(chunkPos);
                     continue;
                 }
 
-                if (enableFrustumCulling && !IsChunkVisible(chunkPos, chunkData.lodLevel))
+                if (enableFrustumCulling && !IsChunkVisible(chunkPos, chunkData.lodLevel) && !bypassCulling)
                 {
                     skippedChunks ??= new List<Vector3Int>();
                     skippedChunks.Add(chunkPos);
                     continue;
                 }
 
-                bool processed = false;
+                bool jobScheduled = false;
 
                 if (ShouldUseGpuForMeshGeneration)
                 {
-                    processed = DispatchMarchingCubesGPU(chunkData.chunk, chunkData.lodLevel);
+                    jobScheduled = DispatchMarchingCubesGPU(chunkData.chunk, chunkData.lodLevel);
                 }
 
-                if (!processed)
+                if (!jobScheduled)
                 {
                     ScheduleMarchingCubesJob(chunkData.chunk, chunkData.lodLevel);
+                    jobScheduled = true;
+                }
+
+                if (jobScheduled && bypassCulling)
+                {
+                    chunksPendingVisibilityOverride.Remove(chunkPos);
                 }
 
                 processedCount++;
@@ -3131,7 +3155,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             }
 
             foreach (var pos in completed) runningGenJobs.Remove(pos);
-            foreach (var pos in chunksToQueue) QueueChunkForUpdate(pos);
+            foreach (var pos in chunksToQueue) QueueChunkForUpdate(pos, true);
         }
 
         private void CompleteRunningMeshJobs()
@@ -3695,11 +3719,25 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             }
         }
 
-        public void QueueChunkForUpdate(Vector3Int chunkPos)
+        public void QueueChunkForUpdate(Vector3Int chunkPos, bool allowCullingBypass = false)
         {
             if (isRegenerating) return;
 
-            if (chunks.ContainsKey(chunkPos)
+            bool chunkExists = chunks.ContainsKey(chunkPos);
+
+            if (allowCullingBypass)
+            {
+                if (chunkExists)
+                {
+                    chunksPendingVisibilityOverride.Add(chunkPos);
+                }
+                else
+                {
+                    chunksPendingVisibilityOverride.Remove(chunkPos);
+                }
+            }
+
+            if (chunkExists
                 && !dirtyChunkQueue.Contains(chunkPos)
                 && !runningMeshJobs.ContainsKey(chunkPos)
                 && !runningGenJobs.ContainsKey(chunkPos))
@@ -3707,7 +3745,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 dirtyChunkQueue.Enqueue(chunkPos);
                 MarkTransitionsDirtyForChunk(chunkPos);
             }
-            else if (chunks.ContainsKey(chunkPos))
+            else if (chunkExists)
             {
                 MarkTransitionsDirtyForChunk(chunkPos);
             }
