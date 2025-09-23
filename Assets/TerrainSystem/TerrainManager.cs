@@ -75,6 +75,8 @@ namespace TerrainSystem
         [SerializeField] private bool enableFrustumCulling = true;
         [SerializeField, Tooltip("Extra padding (in voxels) applied to each chunk's bounds before frustum tests.")]
         private float frustumCullingBoundsPaddingVoxels = 1f;
+        [SerializeField, Tooltip("Minimum number of frames to wait before re-testing visibility for hidden chunks.")]
+        private int hiddenChunkVisibilityCooldownFrames = 5;
         [SerializeField] private bool useOcclusionRayTest = false;
         [SerializeField] private LayerMask occlusionLayerMask = Physics.DefaultRaycastLayers;
         [SerializeField] private float occlusionRayPadding = 0.25f;
@@ -92,6 +94,8 @@ namespace TerrainSystem
         [Header("Debug Settings")]
         [SerializeField] private bool isRegenerating = false;
         [SerializeField] private bool showLODLevels = false;
+        [SerializeField, Tooltip("When enabled, logs per-frame profiling information for dirty chunk processing.")]
+        private bool logChunkQueueProfiling = false;
         #endregion
 
         #region Private Fields
@@ -343,6 +347,7 @@ namespace TerrainSystem
             new Dictionary<Vector3Int, MeshGpuReadbackRequest>();
         private readonly Dictionary<Vector3Int, ChunkData> chunks = new Dictionary<Vector3Int, ChunkData>();
         private readonly Queue<Vector3Int> dirtyChunkQueue = new Queue<Vector3Int>();
+        private readonly Dictionary<Vector3Int, int> hiddenChunkVisibilityCooldowns = new Dictionary<Vector3Int, int>();
         private readonly HashSet<Vector3Int> chunksPendingVisibilityOverride = new HashSet<Vector3Int>();
         private readonly Dictionary<Vector3Int, MeshJobHandleData> runningMeshJobs = new Dictionary<Vector3Int, MeshJobHandleData>();
         private readonly Dictionary<Vector3Int, VoxelGenJobHandleData> runningGenJobs = new Dictionary<Vector3Int, VoxelGenJobHandleData>();
@@ -1634,7 +1639,8 @@ namespace TerrainSystem
             // Step 3: Clear all internal state
             chunks.Clear();
             dirtyChunkQueue.Clear();
-            
+            hiddenChunkVisibilityCooldowns.Clear();
+
             // Step 4: Store the current settings values
             previousVoxelSize = voxelSize;
             previousChunkWorldSize = chunkWorldSize;
@@ -1853,6 +1859,7 @@ namespace TerrainSystem
                 return;
             }
 
+            hiddenChunkVisibilityCooldowns.Remove(position);
             Vector3 worldPos = ChunkToWorldPosition(position);
             TerrainChunk chunk = GetChunkFromPool(worldPos, out bool reusedFromPool);
             GameObject chunkObject = chunk.gameObject;
@@ -2029,6 +2036,7 @@ namespace TerrainSystem
                 }
             }
 
+            hiddenChunkVisibilityCooldowns.Remove(chunkPos);
             chunksPendingVisibilityOverride.Remove(chunkPos);
         }
 
@@ -2697,6 +2705,20 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
         {
             if (isRegenerating) return;
 
+            int currentFrame = Time.frameCount;
+            int requeuedFromCooldown;
+
+            if (enableFrustumCulling)
+            {
+                requeuedFromCooldown = RequeueChunksWhoseVisibilityCooldownExpired(currentFrame);
+            }
+            else
+            {
+                requeuedFromCooldown = hiddenChunkVisibilityCooldowns.Count > 0
+                    ? RequeueChunksWhoseVisibilityCooldownExpired(int.MaxValue)
+                    : 0;
+            }
+
             int chunkBudget = Mathf.Max(0, maxChunksPerFrame);
             if (chunkBudget <= 0)
             {
@@ -2704,20 +2726,41 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             }
 
             int processedCount = 0;
-            List<Vector3Int> skippedChunks = null;
+            int visibilityChecks = 0;
+            int culledHiddenChunks = 0;
+            int cooldownSkips = 0;
+            int bypassedChunks = 0;
+
+            float processingStartTime = Time.realtimeSinceStartup;
+            int initialQueueCount = dirtyChunkQueue.Count;
 
             while (processedCount < chunkBudget && dirtyChunkQueue.Count > 0)
             {
                 Vector3Int chunkPos = dirtyChunkQueue.Dequeue();
                 bool bypassCulling = chunksPendingVisibilityOverride.Contains(chunkPos);
+                if (bypassCulling)
+                {
+                    bypassedChunks++;
+                }
 
-                // Skip if voxel generation is still running for this chunk
                 if (runningGenJobs.ContainsKey(chunkPos))
+                {
                     continue;
+                }
 
                 if (!chunks.TryGetValue(chunkPos, out var chunkData) || chunkData.chunk == null)
                 {
                     chunksPendingVisibilityOverride.Remove(chunkPos);
+                    hiddenChunkVisibilityCooldowns.Remove(chunkPos);
+                    continue;
+                }
+
+                if (enableFrustumCulling
+                    && hiddenChunkVisibilityCooldowns.TryGetValue(chunkPos, out int nextCheckFrame)
+                    && currentFrame < nextCheckFrame
+                    && !bypassCulling)
+                {
+                    cooldownSkips++;
                     continue;
                 }
 
@@ -2727,12 +2770,19 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     continue;
                 }
 
-                if (enableFrustumCulling && !IsChunkVisible(chunkPos, chunkData.lodLevel) && !bypassCulling)
+                if (enableFrustumCulling && !bypassCulling)
                 {
-                    skippedChunks ??= new List<Vector3Int>();
-                    skippedChunks.Add(chunkPos);
-                    continue;
+                    visibilityChecks++;
+                    if (!IsChunkVisible(chunkPos, chunkData.lodLevel))
+                    {
+                        culledHiddenChunks++;
+                        hiddenChunkVisibilityCooldowns[chunkPos] =
+                            currentFrame + Mathf.Max(1, hiddenChunkVisibilityCooldownFrames);
+                        continue;
+                    }
                 }
+
+                hiddenChunkVisibilityCooldowns.Remove(chunkPos);
 
                 bool jobScheduled = false;
 
@@ -2755,13 +2805,48 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 processedCount++;
             }
 
-            if (skippedChunks != null)
+            if (logChunkQueueProfiling && (processedCount > 0 || visibilityChecks > 0 || culledHiddenChunks > 0 || cooldownSkips > 0 || requeuedFromCooldown > 0))
             {
-                for (int i = 0; i < skippedChunks.Count; i++)
+                float elapsedMs = (Time.realtimeSinceStartup - processingStartTime) * 1000f;
+                int remainingQueueCount = dirtyChunkQueue.Count;
+                LogStructured(
+                    "ChunkQueue",
+                    $"frame={currentFrame} culling={(enableFrustumCulling ? 1 : 0)} queuedStart={initialQueueCount} queuedEnd={remainingQueueCount} processed={processedCount} visibilityTests={visibilityChecks} culled={culledHiddenChunks} cooldownSkips={cooldownSkips} requeued={requeuedFromCooldown} bypass={bypassedChunks} durationMs={elapsedMs:F3}"
+                );
+            }
+        }
+
+        private int RequeueChunksWhoseVisibilityCooldownExpired(int currentFrame)
+        {
+            if (hiddenChunkVisibilityCooldowns.Count == 0)
+            {
+                return 0;
+            }
+
+            List<Vector3Int> readyChunks = null;
+
+            foreach (var kvp in hiddenChunkVisibilityCooldowns)
+            {
+                if (currentFrame >= kvp.Value)
                 {
-                    dirtyChunkQueue.Enqueue(skippedChunks[i]);
+                    readyChunks ??= new List<Vector3Int>();
+                    readyChunks.Add(kvp.Key);
                 }
             }
+
+            if (readyChunks == null)
+            {
+                return 0;
+            }
+
+            for (int i = 0; i < readyChunks.Count; i++)
+            {
+                Vector3Int chunkPos = readyChunks[i];
+                hiddenChunkVisibilityCooldowns.Remove(chunkPos);
+                QueueChunkForUpdate(chunkPos);
+            }
+
+            return readyChunks.Count;
         }
 
         private void UpdateAdaptiveChunkBudget()
@@ -3724,6 +3809,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             if (isRegenerating) return;
 
             bool chunkExists = chunks.ContainsKey(chunkPos);
+            bool bypassCulling = allowCullingBypass && chunkExists;
 
             if (allowCullingBypass)
             {
@@ -3735,9 +3821,27 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 {
                     chunksPendingVisibilityOverride.Remove(chunkPos);
                 }
+
+                hiddenChunkVisibilityCooldowns.Remove(chunkPos);
             }
 
-            if (chunkExists
+            bool chunkOnCooldown = false;
+            if (enableFrustumCulling && chunkExists && !bypassCulling &&
+                hiddenChunkVisibilityCooldowns.TryGetValue(chunkPos, out int nextCheckFrame))
+            {
+                if (Time.frameCount < nextCheckFrame)
+                {
+                    chunkOnCooldown = true;
+                }
+                else
+                {
+                    hiddenChunkVisibilityCooldowns.Remove(chunkPos);
+                }
+            }
+
+            bool shouldAttemptEnqueue = chunkExists && (!chunkOnCooldown || bypassCulling);
+
+            if (shouldAttemptEnqueue
                 && !dirtyChunkQueue.Contains(chunkPos)
                 && !runningMeshJobs.ContainsKey(chunkPos)
                 && !runningGenJobs.ContainsKey(chunkPos))
