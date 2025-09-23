@@ -2,14 +2,14 @@ using UnityEngine;
 using Zenject;
 
 /// <summary>
-/// ??????????? ???????? ??? ?????????? ????? ?????????? UI, ?????? ??? ???? ? ??????.
+/// Universal manager for all user interface management, such as menus and windows.
 /// </summary>
 public class UIManager : MonoBehaviour
 {
-    [Tooltip("?????? ?????????, ??????? ????? ???????????/???????????.")]
+    [Tooltip("Inventory canvas that will be shown/hidden.")]
     [SerializeField] private Canvas inventoryCanvas;
 
-    [Tooltip("?????? ???? ?????????????, ??????? ????? ???????????/???????????.")]
+    [Tooltip("Building menu canvas that will be shown/hidden.")]
     [SerializeField] private Canvas buildingCanvas;
 
     private InputManager _inputManager;
@@ -26,7 +26,7 @@ public class UIManager : MonoBehaviour
 
     private void Start()
     {
-        // ????????, ??? ? ?????? ??? ???? ???????
+        // Ensure all windows are closed at start
         if (inventoryCanvas != null) inventoryCanvas.gameObject.SetActive(false);
         if (buildingCanvas != null) buildingCanvas.gameObject.SetActive(false);
         UpdateCursorAndCameraState();
@@ -46,23 +46,23 @@ public class UIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ќткрывает указанное окно и закрывает все остальные.
+    /// Open a specific window and close all others.
     /// </summary>
     public void OpenWindow(Canvas canvasToOpen)
     {
         if (canvasToOpen == null) return;
 
-        // —начала закрываем все окна
+        // First close all other windows
         CloseAllWindows();
 
-        // ќткрываем нужное
+        // Open the target window
         canvasToOpen.gameObject.SetActive(true);
         UpdateCursorAndCameraState();
     }
 
     /// <summary>
-    /// ѕереключает состо€ние видимости указанного окна.
-    /// ≈сли окно было открыто, оно закроетс€. ≈сли было закрыто, оно откроетс€, а другие закроютс€.
+    /// Toggle the visibility of a specific window.
+    /// If the window is open, it closes. If the window is closed, it opens (and closes other windows).
     /// </summary>
     private void ToggleWindow(Canvas canvasToToggle)
     {
@@ -70,8 +70,8 @@ public class UIManager : MonoBehaviour
 
         bool isCurrentlyVisible = canvasToToggle.gameObject.activeSelf;
 
-        // ≈сли окно уже видно, просто закрываем все.
-        // »наче, открываем его (а другие закроютс€ внутри OpenWindow).
+        // If the window is already open, just close it.
+        // Otherwise, open it (and close others through OpenWindow).
         if (isCurrentlyVisible)
         {
             CloseAllWindows();
@@ -83,17 +83,17 @@ public class UIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// «акрывает все управл€емые окна и обновл€ет состо€ние курсора.
+    /// Close all open windows and update cursor state.
     /// </summary>
     public void CloseAllWindows()
     {
         if (inventoryCanvas != null) inventoryCanvas.gameObject.SetActive(false);
         if (buildingCanvas != null) buildingCanvas.gameObject.SetActive(false);
-        UpdateCursorAndCameraState(); // ќбновл€ем состо€ние после закрыти€
+        UpdateCursorAndCameraState(); // Update cursor state after closing
     }
 
     /// <summary>
-    /// ќбновл€ет состо€ние курсора и управлени€ камерой в зависимости от того, открыто ли какое-либо окно.
+    /// Update cursor and camera movement state depending on whether any window is open.
     /// </summary>
     private void UpdateCursorAndCameraState()
     {
@@ -104,13 +104,13 @@ public class UIManager : MonoBehaviour
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            _playerController.cameraCanMove = false; // ????????? ???????? ??????
+            _playerController.cameraCanMove = false; // Disable camera movement
         }
         else
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            if (_playerController != null) _playerController.cameraCanMove = true; // –азблокируем вращение камеры
+            if (_playerController != null) _playerController.cameraCanMove = true; // Enable camera movement
         }
     }
 }

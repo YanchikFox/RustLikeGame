@@ -3,7 +3,7 @@ using Zenject;
 
 public class InputManager : MonoBehaviour
 {
-    // “еперь PlayerInput внедр€етс€ через Zenject
+    // PlayerInput instance is injected via Zenject
     [Inject]
     public PlayerInput PlayerInput { get; private set; }
 
@@ -16,11 +16,11 @@ public class InputManager : MonoBehaviour
     public KeyCode toggleBuildingUIKey = KeyCode.B;
     public KeyCode toggleInventoryUIKey = KeyCode.E;
 
-    // ћетод Awake() больше не нужен, так как PlayerInput создаетс€ инсталл€тором
+    // Awake() method is not needed since PlayerInput is injected automatically
 
     void Update()
     {
-        // ѕровер€ем, что PlayerInput был успешно внедрен, прежде чем его использовать
+        // Check that PlayerInput is already initialized, since it's injected
         if (PlayerInput == null)
         {
             return;

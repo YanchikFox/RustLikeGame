@@ -12,7 +12,7 @@ public class ConstructionHealth : MonoBehaviour
     public BuildingTier currentTier;
     public float currentHealth;
     public float maxHealth { get; private set; }
-    private TierAppearance _currentAppearance; // Кэшированные данные о текущем уровне
+    private TierAppearance _currentAppearance; // Current appearance object with mesh and materials
 
     public void Initialize(Construction owner, BuildingTier startingTier)
     {
@@ -30,7 +30,7 @@ public class ConstructionHealth : MonoBehaviour
             return;
         }
 
-        // Находим и кэшируем данные о внешнем виде для нового уровня
+        // Find and set appearance for the current tier from the factory
         _currentAppearance = owner.sourceFactory.appearances.FirstOrDefault(a => a.tier == newTier);
 
         if (_currentAppearance == null)
@@ -41,9 +41,9 @@ public class ConstructionHealth : MonoBehaviour
 
         currentTier = newTier;
         maxHealth = _currentAppearance.maxHealth;
-        currentHealth = maxHealth; // Полностью лечим при смене уровня
+        currentHealth = maxHealth; // Start with full health when setting a tier
 
-        // Обновляем визуал из кэшированных данных
+        // Update mesh from appearance
         var meshFilter = GetComponent<MeshFilter>();
         var meshRenderer = GetComponent<Renderer>();
 
@@ -58,7 +58,7 @@ public class ConstructionHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// Наносит урон этому объекту с учетом модификаторов.
+    /// Apply damage to the object considering damage resistances.
     /// </summary>
     public void TakeDamage(List<DamageInfo> damageInfos)
     {
@@ -68,10 +68,10 @@ public class ConstructionHealth : MonoBehaviour
 
         foreach (var damageInfo in damageInfos)
         {
-            // Ищем модификатор для данного типа урона
+            // Find damage modifier for current damage type
             DamageModifier modifier = _currentAppearance.damageModifiers?.FirstOrDefault(m => m.type == damageInfo.type);
             
-            float multiplier = modifier?.multiplier ?? 1f; // Если модификатор не найден, урон обычный (x1)
+            float multiplier = modifier?.multiplier ?? 1f; // If no modifier found, use default (x1)
             float finalDamage = damageInfo.amount * multiplier;
             totalDamage += finalDamage;
             
@@ -84,32 +84,32 @@ public class ConstructionHealth : MonoBehaviour
         if (currentHealth <= 0)
         {
             currentHealth = 0;
-            // TODO: ???????? ?????? ?????????? ??????? (????????, ? ????????? ? ?????????)
+            // TODO: Handle object destruction logic (drop items, notify neighbors)
             Destroy(gameObject);
         }
     }
 
     /// <summary>
-    /// ??????????? ??????, ???????? ???????????????? ?????????? ????????.
+    /// Restore health by consuming appropriate repair resources.
     /// </summary>
-    /// <param name="amountToHeal">?????????? ???????? ??? ??????????????.</param>
-    /// <param name="inventoryManager">???????? ????????? ??? ???????? ????????.</param>
+    /// <param name="amountToHeal">Amount of health to restore.</param>
+    /// <param name="inventoryManager">Inventory manager for resource consumption.</param>
     public void Repair(float amountToHeal, InventoryManager inventoryManager)
     {
         if (currentHealth >= maxHealth) return;
 
-        // Используем кэшированные данные, чтобы найти стоимость ремонта
+        // Find appearance to calculate repair costs
         if (_currentAppearance == null)
         {
             Debug.LogError($"[Health] Appearance for tier '{currentTier.name}' not found. Cannot determine repair cost.", gameObject);
             return;
         }
 
-        // Не лечим больше, чем максимальное здоровье
+        // Don't heal more than the maximum health
         float actualHealAmount = Mathf.Min(amountToHeal, maxHealth - currentHealth);
         if (actualHealAmount <= 0) return;
 
-        // Рассчитываем пропорциональную стоимость
+        // Calculate proportional repair cost
         var repairCost = new List<ResourceCost>();
         float healRatio = actualHealAmount / maxHealth;
 
@@ -126,7 +126,7 @@ public class ConstructionHealth : MonoBehaviour
             repairCost.Add(new ResourceCost { resourceItem = cost.resourceItem, amount = requiredAmount });
         }
 
-        // ???????? ??????? ???????
+        // Check and consume resources
         if (inventoryManager.ConsumeItems(repairCost))
         {
             currentHealth = Mathf.Min(currentHealth + actualHealAmount, maxHealth);
@@ -146,7 +146,7 @@ public class ConstructionHealth : MonoBehaviour
             return;
         }
 
-        // Используем кэшированные данные, чтобы найти стоимость улучшения
+        // Find appearance to calculate upgrade costs
         if (_currentAppearance == null)
         {
             Debug.LogError($"[Health] Appearance for tier '{currentTier.name}' not found. Cannot determine upgrade cost.", gameObject);
@@ -168,20 +168,20 @@ public class ConstructionHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// ?????????, ????? ?? ???? ?????? ???? ??????? ? ?????? ??????.
+    /// Check if this object can be upgraded at the current moment.
     /// </summary>
     public bool CanUpgrade()
     {
-        // TODO: ???????? ?????? ???????? (????????, ?? ?????????? ? ?????)
+        // TODO: Add other conditions (e.g., not in combat)
         return true;
     }
 
     /// <summary>
-    /// ?????????, ????? ?? ???? ?????? ???? ?????????????? ? ?????? ??????.
+    /// Check if this object can be repaired at the current moment.
     /// </summary>
     public bool CanRepair()
     {
-        // TODO: ???????? ?????? ???????? (????????, ?? ????-????)
+        // TODO: Add other conditions (e.g., not in cooldown)
         return true;
     }
 

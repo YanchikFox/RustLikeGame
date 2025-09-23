@@ -2,24 +2,24 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// ??????????? ?????????? ?????????? "????????" ??? ??????? ? ?????? ?????????????.
+/// Manages the "ghost" visual state for objects in building mode.
 /// </summary>
 public class GhostModeController : MonoBehaviour
 {
     [Header("Ghost Materials")]
-    [Tooltip("???????? ??? ???????????, ????? ????????? ???????? (?????, ??????????????).")]
+    [Tooltip("Material for visualization when placement is valid (green, transparent).")]
     public Material ghostMaterialValid;
 
-    [Tooltip("???????? ??? ???????????, ????? ????????? ?????????? (???????, ??????????????).")]
+    [Tooltip("Material for visualization when placement is invalid (red, transparent).")]
     public Material ghostMaterialInvalid;
 
     private Renderer[] _renderers;
     private List<Material[]> _originalMaterials = new List<Material[]>();
     private bool _isGhostModeActive = false;
-    private int _originalLayer; // НОВОЕ: Поле для хранения оригинального слоя
+    private int _originalLayer; // Cache: Store for restoring original layer
 
     /// <summary>
-    /// Включает режим "призрака", сохраняя оригинальные материалы и делая объект неинтерактивным.
+    /// Enable "ghost" mode, change materials and move to ignore raycast layer.
     /// </summary>
     public void EnableGhostMode()
     {
@@ -40,14 +40,14 @@ public class GhostModeController : MonoBehaviour
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
-        _originalLayer = gameObject.layer; // Сохраняем оригинальный слой
-        SetObjectPhysics(false, LayerMask.NameToLayer("Ignore Raycast")); // Переключаем на Ignore Raycast
+        _originalLayer = gameObject.layer; // Save original layer
+        SetObjectPhysics(false, LayerMask.NameToLayer("Ignore Raycast")); // Move to Ignore Raycast
         _isGhostModeActive = true;
         SetPlacementValid(false);
     }
 
     /// <summary>
-    /// Выключает режим "призрака", восстанавливая оригинальные материалы и физические свойства.
+    /// Disable "ghost" mode, restore original materials and enable physics.
     /// </summary>
     public void DisableGhostMode()
     {
@@ -62,12 +62,12 @@ public class GhostModeController : MonoBehaviour
             }
         }
 
-        SetObjectPhysics(true, _originalLayer); // Восстанавливаем сохраненный слой
+        SetObjectPhysics(true, _originalLayer); // Restore original layer
         _isGhostModeActive = false;
     }
 
     /// <summary>
-    /// ????????????? ?????????? ????????? ? ??????????? ?? ????, ??????? ?? ??????? ??????? ??? ?????????.
+    /// Switch visual materials depending on whether placement is valid or invalid.
     /// </summary>
     public void SetPlacementValid(bool isValid)
     {
@@ -86,7 +86,7 @@ public class GhostModeController : MonoBehaviour
     }
 
     /// <summary>
-    /// Управляет коллайдерами и слоями объекта.
+    /// Configure physics and object layer.
     /// </summary>
     private void SetObjectPhysics(bool isTangible, int layer)
     {

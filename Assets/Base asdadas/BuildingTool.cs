@@ -79,7 +79,7 @@ public class BuildingTool : MonoBehaviour
 
         Ray ray = _mainCamera.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0));
         
-        // ќѕ“»ћ»«ј÷»я: Raycast теперь использует LayerMask, чтобы провер€ть только объекты на слое "Buildable"
+        // Improvement: Raycast now accepts LayerMask to check only objects on the "Buildable" layer
         if (Physics.Raycast(ray, out RaycastHit hit, _raycastDistance, buildableLayer))
         {
             var health = hit.collider.GetComponentInParent<ConstructionHealth>();
