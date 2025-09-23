@@ -609,6 +609,7 @@ namespace TerrainSystem
                     LogDensitySummary("GpuReadback", "readbackComplete", "GPU", chunkPos, chunkData.lodLevel, voxelDimensions, summary, requestInfo.BufferCount, requestThreadGroups);
 
                     chunkData.chunk.ApplyDensities(densities);
+                    QueueAdjacentChunksForUpdate(chunkPos, true);
                     QueueChunkForUpdate(chunkPos, true);
                 }
 
@@ -3231,6 +3232,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     chunkData.chunk.ApplyDensities(data.densities);
                     if (!isRegenerating)
                     {
+                        QueueAdjacentChunksForUpdate(pos, true);
                         chunksToQueue.Add(pos);
                     }
                 }
@@ -3801,6 +3803,35 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 LogStructured("System", $"Terrain settings changed ({changeDescription}). Regenerating world...");
                 InvalidateChunkWorldSizeCache();
                 RegenerateWorld();
+            }
+        }
+
+        private static readonly Vector3Int[] FaceNeighborOffsets =
+        {
+            Vector3Int.right,
+            Vector3Int.left,
+            Vector3Int.up,
+            Vector3Int.down,
+            Vector3Int.forward,
+            Vector3Int.back
+        };
+
+        private void QueueAdjacentChunksForUpdate(Vector3Int chunkPos, bool allowCullingBypass = true)
+        {
+            foreach (Vector3Int offset in FaceNeighborOffsets)
+            {
+                Vector3Int neighborPos = chunkPos + offset;
+                if (!chunks.ContainsKey(neighborPos))
+                {
+                    continue;
+                }
+
+                if (runningGenJobs.ContainsKey(neighborPos) || runningMeshJobs.ContainsKey(neighborPos))
+                {
+                    continue;
+                }
+
+                QueueChunkForUpdate(neighborPos, allowCullingBypass);
             }
         }
 
