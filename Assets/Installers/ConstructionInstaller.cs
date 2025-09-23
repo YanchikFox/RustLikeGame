@@ -9,7 +9,7 @@ public class ConstructionInstaller : MonoInstaller
 
     public override void InstallBindings()
     {
-        // Привязываем конкретный список фабрик из инспектора как одиночный экземпляр
+        // Bind the specific list of factories from inspector as a singleton instance
         Container.Bind<List<ConstructionFactory>>().FromInstance(_constructionFactories).AsSingle();
     }
 }

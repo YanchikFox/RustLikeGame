@@ -9,9 +9,9 @@ public class TierAppearance
     public List<DamageModifier> damageModifiers;
     
     [Header("Costs")]
-    [Tooltip("Стоимость улучшения до СЛЕДУЮЩЕГО уровня, определенного в BuildingTier.")]
+    [Tooltip("Cost for upgrading to the next tier, configured in BuildingTier.")]
     public List<ResourceCost> upgradeCost;
-    [Tooltip("Стоимость ПОЛНОГО ремонта объекта с 0 до максимального здоровья для этого уровня.")]
+    [Tooltip("Cost for full repair from 0 to maximum health for this tier.")]
     public List<ResourceCost> fullRepairCost;
 
     [Header("Visuals")]

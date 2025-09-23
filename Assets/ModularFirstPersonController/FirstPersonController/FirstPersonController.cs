@@ -38,12 +38,12 @@ public class FirstPersonController : MonoBehaviour
     public Sprite crosshairImage;
     public Color crosshairColor = Color.white;
     [Tooltip("The Image component for the crosshair.")]
-    public Image crosshairObject; // Сделали публичным
+    public Image crosshairObject; // Made public
 
     // Internal Variables
     private float yaw = 0.0f;
     private float pitch = 0.0f;
-    // private Image crosshairObject; // Больше не нужно
+    // private Image crosshairObject; // No longer needed
 
     #region Camera Zoom Variables
 
@@ -86,10 +86,10 @@ public class FirstPersonController : MonoBehaviour
     public float sprintBarWidthPercent = .3f;
     public float sprintBarHeightPercent = .015f;
     [Tooltip("The CanvasGroup for the sprint bar.")]
-    public CanvasGroup sprintBarCG; // Сделали публичным
+    public CanvasGroup sprintBarCG; // Made public
 
     // Internal Variables
-    // private CanvasGroup sprintBarCG; // Больше не нужно
+    // private CanvasGroup sprintBarCG; // No longer needed
     private bool isSprinting = false;
     private float sprintRemaining;
     private float sprintBarWidth;
@@ -142,7 +142,7 @@ public class FirstPersonController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
-        // crosshairObject = GetComponentInChildren<Image>(); // УДАЛЕНО: Опасный поиск
+        // crosshairObject = GetComponentInChildren<Image>(); // REMOVED: Unsafe search
 
         // Set internal variables
         playerCamera.fieldOfView = fov;
@@ -175,7 +175,7 @@ public class FirstPersonController : MonoBehaviour
 
         #region Sprint Bar
 
-        // sprintBarCG = GetComponentInChildren<CanvasGroup>(); // УДАЛЕНО: Опасный поиск
+        // sprintBarCG = GetComponentInChildren<CanvasGroup>(); // REMOVED: Unsafe search
 
         if(useSprintBar)
         {

@@ -15,12 +15,12 @@ public class Placer : MonoBehaviour
     private PlayerInput _playerInput;
     private InventoryManager _inventoryManager;
 
-    // --- ?????: ???? ??? ??????????????? ???????? ---
+    // --- Cache: Variables for optimization purposes ---
     private float _nextPlacementCheckTime;
-    private const float PlacementCheckInterval = 0.1f; // ????????? 10 ??? ? ???????
+    private const float PlacementCheckInterval = 0.1f; // Check 10 times per second
     private bool _lastPlacementCheckResult;
     private bool _lastResourceCheckResult; 
-    private bool _isFirstPlacementFrame; // ?????: ???? ??? ??????? ?????
+    private bool _isFirstPlacementFrame; // Cache: Flag for first frame
 
     [Inject]
     public void Construct(PlayerInput playerInput, InventoryManager inventoryManager)
@@ -39,13 +39,13 @@ public class Placer : MonoBehaviour
         player = gameObject;
         currentConstruction.OnInstantiate();
 
-        // ???????? ????? ????????
+        // Enable ghost mode
         var ghostController = currentConstruction.objectInScene.GetComponent<GhostModeController>();
         if (ghostController != null)
         {
             ghostController.EnableGhostMode();
         }
-        // ?????????? ?????? ? ?????????? ???????? ??? ?????? ??????????
+        // Initialize cache values for placement checks
         _nextPlacementCheckTime = Time.time;
         _lastPlacementCheckResult = false;
         _lastResourceCheckResult = false;
@@ -104,18 +104,18 @@ public class Placer : MonoBehaviour
         
         Physics.Raycast(ray, out RaycastHit hit, maxDistance, ~LayerMask.GetMask("Ignore Raycast"));
         
-        // --- ИСПРАВЛЕННЫЙ ПОРЯДОК ---
-        // 1. СНАЧАЛА ПОЗИЦИОНИРУЕМ ОБЪЕКТ
+        // --- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ ---
+        // 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         
-        // Пытаемся привязаться к другому объекту
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         currentConstruction.wasConnected = currentConstruction.Connect(hit);
 
-        // Если привязки не было, ставим объект по лучу
+        // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ
         if (!currentConstruction.wasConnected)
         {
             currentConstruction.objectInScene.transform.position = ray.GetPoint(distanceFromPlayer);
             
-            // И ориентируем его лицом к игроку
+            // пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
             if (player != null)
             {
                 Vector3 playerPosition = player.transform.position;
@@ -129,12 +129,12 @@ public class Placer : MonoBehaviour
             }
         }
 
-        // 2. ТЕПЕРЬ, КОГДА ОБЪЕКТ НА МЕСТЕ, ВЫПОЛНЯЕМ ПРОВЕРКУ
+        // 2. пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         bool isPlacementValid;
         
         if (_isFirstPlacementFrame)
         {
-            // В первом кадре выполняем полную, принудительную проверку
+            // пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             _lastPlacementCheckResult = currentConstruction.Place(true);
             _lastResourceCheckResult = _inventoryManager.HasItems(currentConstruction.sourceFactory.placementCost);
             isPlacementValid = _lastPlacementCheckResult && _lastResourceCheckResult;
@@ -144,7 +144,7 @@ public class Placer : MonoBehaviour
         }
         else
         {
-            // В последующих кадрах используем "дросселированную" проверку
+            // пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             if (Time.time >= _nextPlacementCheckTime)
             {
                 _nextPlacementCheckTime = Time.time + PlacementCheckInterval;
@@ -154,7 +154,7 @@ public class Placer : MonoBehaviour
             isPlacementValid = _lastPlacementCheckResult && _lastResourceCheckResult;
         }
 
-        // 3. УСТАНАВЛИВАЕМ ЦВЕТ
+        // 3. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
         var ghostController = currentConstruction.objectInScene.GetComponent<GhostModeController>();
         if (ghostController != null)
         {
