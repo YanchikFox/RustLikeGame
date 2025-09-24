@@ -1071,6 +1071,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1838620251}
   m_SourcePrefab: {fileID: 100100000, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
+--- !u!1 &516426703 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6034699542644256208, guid: d55aab6c5205a8349be9e0329910553e, type: 3}
+  m_PrefabInstance: {fileID: 2993779241049886738}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &542290674
 GameObject:
   m_ObjectHideFlags: 0
@@ -1326,13 +1331,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 182a494420094bd0b346e2c612423ac3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chunkSize: {x: 16, y: 16, z: 16}
+  chunkWorldSize: {x: 16, y: 16, z: 16}
   voxelSize: 1
   playerTransform: {fileID: 1838620252}
   loadDistance: 64
-  chunkPrefab: {fileID: 6034699542644256208, guid: d55aab6c5205a8349be9e0329910553e, type: 3}
+  useLOD: 0
+  lodDistanceThresholds:
+  - 32
+  - 64
+  - 96
+  maxLODLevel: 2
+  transitionLODs: 1
+  chunkPrefab: {fileID: 516426703}
   meshGenerator: {fileID: 669232048}
+  voxelTerrainShader: {fileID: 7200000, guid: 925a92db9deb32245969976074c7b77d, type: 3}
+  processingMode: 2
+  biomeNoiseScale: 0.0011
+  biomeBlendRange: 0.08
+  biomeDefinitions:
+  - {fileID: 11400000, guid: 26dcdc359d2de554aa9733c982c6daab, type: 2}
+  temperatureNoiseScale: 0.002
+  humidityNoiseScale: 0.003
+  riverNoiseScale: 0.008
+  riverThreshold: 0.035
+  riverDepth: 7
   maxChunksPerFrame: 4
+  verticalLoadRadius: 1
+  targetCamera: {fileID: 895400926}
+  enableFrustumCulling: 1
+  frustumCullingBoundsPaddingVoxels: 1
+  hiddenChunkVisibilityCooldownFrames: 5
+  useOcclusionRayTest: 0
+  occlusionLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  occlusionRayPadding: 0.25
+  adaptiveChunkBudget: 1
+  minChunksPerFrame: 1
+  maxAdaptiveChunksPerFrame: 12
+  targetFrameRate: 60
+  frameRateBuffer: 5
+  adaptationInterval: 0.5
+  frameTimeSmoothing: 0.1
+  isRegenerating: 0
+  showLODLevels: 0
+  logChunkQueueProfiling: 1
 --- !u!64 &669232045
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1595,7 +1638,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Version: 3
+  m_Version: 4
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
   m_LightLayerMask: 1
@@ -1617,6 +1660,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!20 &895400926 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 4459864851310106426, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
+  m_PrefabInstance: {fileID: 459074332}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &897371298
 GameObject:
   m_ObjectHideFlags: 0
