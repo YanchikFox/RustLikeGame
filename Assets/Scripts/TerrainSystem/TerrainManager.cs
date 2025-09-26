@@ -156,6 +156,15 @@ namespace TerrainSystem
             public long CubeCount;
         }
 
+        private struct ModificationGpuReadbackRequest
+        {
+            public AsyncGPUReadbackRequest Request;
+            public ComputeBuffer DensityBuffer;
+            public int ExpectedVersion;
+            public int LodLevel;
+            public Vector3Int VoxelDimensions;
+        }
+
         private struct DensitySummary
         {
             public int SampleCount;
@@ -341,6 +350,8 @@ namespace TerrainSystem
             new Dictionary<Vector3Int, ComputeBuffer>();
         private readonly Dictionary<Vector3Int, NativeArray<float>> densityUploadCache =
             new Dictionary<Vector3Int, NativeArray<float>>();
+        private readonly Dictionary<Vector3Int, ModificationGpuReadbackRequest> runningGpuModificationRequests =
+            new Dictionary<Vector3Int, ModificationGpuReadbackRequest>();
         private readonly Dictionary<Vector3Int, GpuGenerationRequestInfo> gpuGenerationRequestsInfo =
             new Dictionary<Vector3Int, GpuGenerationRequestInfo>();
         private readonly Dictionary<Vector3Int, MeshGpuReadbackRequest> runningGpuMeshRequests =
@@ -1686,6 +1697,39 @@ namespace TerrainSystem
             }
             runningGenJobs.Clear();
 
+            foreach (var kvp in runningGpuGenRequests)
+            {
+                AsyncGPUReadbackRequest request = kvp.Value;
+                if (!request.done)
+                {
+                    request.WaitForCompletion();
+                }
+
+                if (densityBuffers.TryGetValue(kvp.Key, out var buffer))
+                {
+                    ComputeBufferManager.Instance.ReleaseBuffer(buffer);
+                    densityBuffers.Remove(kvp.Key);
+                }
+
+                gpuGenerationRequestsInfo.Remove(kvp.Key);
+            }
+            runningGpuGenRequests.Clear();
+
+            foreach (var kvp in runningGpuModificationRequests)
+            {
+                ModificationGpuReadbackRequest modificationRequest = kvp.Value;
+                if (!modificationRequest.Request.done)
+                {
+                    modificationRequest.Request.WaitForCompletion();
+                }
+
+                if (modificationRequest.DensityBuffer != null)
+                {
+                    ComputeBufferManager.Instance.ReleaseBuffer(modificationRequest.DensityBuffer);
+                }
+            }
+            runningGpuModificationRequests.Clear();
+
             foreach (var kvp in runningGpuMeshRequests)
             {
                 MeshGpuReadbackRequest meshRequest = kvp.Value;
@@ -1996,6 +2040,24 @@ namespace TerrainSystem
                 ComputeBufferManager.Instance.ReleaseBuffer(buffer);
                 densityBuffers.Remove(chunkPos);
                 gpuGenerationRequestsInfo.Remove(chunkPos);
+            }
+
+            if (runningGpuModificationRequests.TryGetValue(chunkPos, out var modificationRequest))
+            {
+                if (!modificationRequest.Request.done)
+                {
+                    modificationRequest.Request.WaitForCompletion();
+                }
+
+                if (runningGpuModificationRequests.TryGetValue(chunkPos, out modificationRequest))
+                {
+                    if (modificationRequest.DensityBuffer != null)
+                    {
+                        ComputeBufferManager.Instance.ReleaseBuffer(modificationRequest.DensityBuffer);
+                    }
+
+                    runningGpuModificationRequests.Remove(chunkPos);
+                }
             }
 
             if (runningGpuMeshRequests.TryGetValue(chunkPos, out var meshRequest))
@@ -3349,10 +3411,6 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                             modifiedChunks.Add(modified);
                         }
                     }
-                    else
-                    {
-                        modifiedChunks.Add(chunkPos);
-                    }
                 }
             }
             else
@@ -3458,6 +3516,13 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 return false;
             }
 
+            Vector3Int chunkPos = chunk.ChunkPosition;
+
+            if (runningGpuModificationRequests.ContainsKey(chunkPos))
+            {
+                return false;
+            }
+
             if (chunk.DensityVersion != expectedVersion)
             {
                 versionMismatch = true;
@@ -3469,11 +3534,12 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
             ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
+            bool requestScheduled = false;
 
             try
             {
-                float[] densities = new float[voxelCount];
-                chunk.CopyVoxelDataTo(densities);
+                NativeArray<float> uploadBuffer = GetDensityUploadArray(voxelDimensions);
+                chunk.CopyVoxelDataTo(uploadBuffer);
 
                 if (chunk.DensityVersion != expectedVersion)
                 {
@@ -3481,7 +3547,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                     return false;
                 }
 
-                densityBuffer.SetData(densities);
+                densityBuffer.SetData(uploadBuffer);
 
                 voxelTerrainShader.SetBuffer(kernelIndex, "_ModifiedDensities", densityBuffer);
                 voxelTerrainShader.SetVector("_ChunkWorldOrigin", chunk.WorldPosition);
@@ -3492,26 +3558,74 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 voxelTerrainShader.SetFloat("_ModificationRadius", radius);
                 voxelTerrainShader.SetFloat("_ModificationStrength", lodAdjustedStrength);
 
-                int threadGroupsX = Mathf.CeilToInt((voxelDimensions.x + 1) / 8.0f);
-                int threadGroupsY = Mathf.CeilToInt((voxelDimensions.y + 1) / 8.0f);
-                int threadGroupsZ = Mathf.CeilToInt((voxelDimensions.z + 1) / 8.0f);
-                voxelTerrainShader.Dispatch(kernelIndex, threadGroupsX, threadGroupsY, threadGroupsZ);
+                Vector3Int threadGroups = CalculateThreadGroups(voxelDimensions);
+                voxelTerrainShader.Dispatch(kernelIndex, threadGroups.x, threadGroups.y, threadGroups.z);
 
-                densityBuffer.GetData(densities);
-
-                if (chunk.DensityVersion != expectedVersion)
+                ModificationGpuReadbackRequest requestData = new ModificationGpuReadbackRequest
                 {
-                    versionMismatch = true;
-                    return false;
-                }
+                    DensityBuffer = densityBuffer,
+                    ExpectedVersion = expectedVersion,
+                    LodLevel = lodLevel,
+                    VoxelDimensions = voxelDimensions
+                };
 
-                chunk.ApplyDensities(densities);
+                AsyncGPUReadbackRequest request = AsyncGPUReadback.Request(
+                    densityBuffer,
+                    0,
+                    r => OnGpuModifyDensityReadbackComplete(chunkPos, r)
+                );
+
+                requestData.Request = request;
+                runningGpuModificationRequests[chunkPos] = requestData;
+                requestScheduled = true;
                 return true;
             }
             finally
             {
-                ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
+                if (!requestScheduled)
+                {
+                    ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
+                }
             }
+        }
+
+        private void OnGpuModifyDensityReadbackComplete(Vector3Int chunkPos, AsyncGPUReadbackRequest request)
+        {
+            if (!runningGpuModificationRequests.TryGetValue(chunkPos, out ModificationGpuReadbackRequest requestData))
+            {
+                return;
+            }
+
+            runningGpuModificationRequests.Remove(chunkPos);
+
+            if (requestData.DensityBuffer != null)
+            {
+                ComputeBufferManager.Instance.ReleaseBuffer(requestData.DensityBuffer);
+            }
+
+            if (request.hasError)
+            {
+                LogError(
+                    "GpuReadback",
+                    $"stage=readbackComplete mode=GPU {FormatChunkId(chunkPos, requestData.LodLevel)} result=error"
+                );
+                return;
+            }
+
+            if (!chunks.TryGetValue(chunkPos, out var chunkData) || chunkData.chunk == null)
+            {
+                return;
+            }
+
+            if (chunkData.chunk.DensityVersion != requestData.ExpectedVersion)
+            {
+                return;
+            }
+
+            NativeArray<float> densities = request.GetData<float>();
+            chunkData.chunk.ApplyDensities(densities);
+            QueueChunkForUpdate(chunkPos, true);
+            QueueAdjacentChunksForUpdate(chunkPos, true);
         }
 
         #endregion
