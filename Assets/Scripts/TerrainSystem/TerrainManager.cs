@@ -96,6 +96,8 @@ namespace TerrainSystem
         [SerializeField] private bool showLODLevels = false;
         [SerializeField, Tooltip("When enabled, logs per-frame profiling information for dirty chunk processing.")]
         private bool logChunkQueueProfiling = false;
+        [SerializeField, Tooltip("Enables verbose diagnostics and structured logging for profiling sessions.")]
+        private bool enableDiagnostics = false;
         #endregion
 
         #region Private Fields
@@ -358,6 +360,7 @@ namespace TerrainSystem
             new Dictionary<Vector3Int, MeshGpuReadbackRequest>();
         private readonly Dictionary<Vector3Int, ChunkData> chunks = new Dictionary<Vector3Int, ChunkData>();
         private readonly Queue<Vector3Int> dirtyChunkQueue = new Queue<Vector3Int>();
+        private readonly HashSet<Vector3Int> dirtyChunkSet = new();
         private readonly Dictionary<Vector3Int, int> hiddenChunkVisibilityCooldowns = new Dictionary<Vector3Int, int>();
         private readonly HashSet<Vector3Int> chunksPendingVisibilityOverride = new HashSet<Vector3Int>();
         private readonly Dictionary<Vector3Int, MeshJobHandleData> runningMeshJobs = new Dictionary<Vector3Int, MeshJobHandleData>();
@@ -1651,6 +1654,7 @@ namespace TerrainSystem
             // Step 3: Clear all internal state
             chunks.Clear();
             dirtyChunkQueue.Clear();
+            dirtyChunkSet.Clear();
             hiddenChunkVisibilityCooldowns.Clear();
 
             // Step 4: Store the current settings values
@@ -2080,7 +2084,7 @@ namespace TerrainSystem
                 gpuGenerationRequestsInfo.Remove(chunkPos);
             }
 
-            if (dirtyChunkQueue.Contains(chunkPos))
+            if (dirtyChunkSet.Remove(chunkPos))
             {
                 int count = dirtyChunkQueue.Count;
                 var filteredQueue = new Queue<Vector3Int>(count);
@@ -2800,6 +2804,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             while (processedCount < chunkBudget && dirtyChunkQueue.Count > 0)
             {
                 Vector3Int chunkPos = dirtyChunkQueue.Dequeue();
+                dirtyChunkSet.Remove(chunkPos);
                 bool bypassCulling = chunksPendingVisibilityOverride.Contains(chunkPos);
                 if (bypassCulling)
                 {
@@ -3631,8 +3636,42 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
         #endregion
 
         #region Debug Logging Helpers
+        public bool EnableDiagnostics
+        {
+            get => enableDiagnostics;
+            set
+            {
+                if (enableDiagnostics == value)
+                {
+                    return;
+                }
+
+                enableDiagnostics = value;
+
+                if (enableDiagnostics)
+                {
+                    AnnounceLogFile();
+                }
+                else
+                {
+                    CloseLogWriter();
+                }
+            }
+        }
+
+        [ContextMenu("Toggle Terrain Diagnostics Logging")]
+        private void ToggleDiagnosticsLogging()
+        {
+            EnableDiagnostics = !EnableDiagnostics;
+        }
+
         private void LogStructured(string category, string message)
         {
+            if (!enableDiagnostics)
+            {
+                return;
+            }
+
             string formattedMessage = FormatLog(category, message);
             TerrainLogger.Log(LogType.Log, (object)formattedMessage, (UnityEngine.Object)this);
             WriteLogToFile("INFO", formattedMessage);
@@ -3640,6 +3679,11 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
         private void LogWarning(string category, string message)
         {
+            if (!enableDiagnostics)
+            {
+                return;
+            }
+
             string formattedMessage = FormatLog(category, message);
             TerrainLogger.Log(LogType.Warning, (object)formattedMessage, (UnityEngine.Object)this);
             WriteLogToFile("WARN", formattedMessage);
@@ -3649,11 +3693,22 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
         {
             string formattedMessage = FormatLog(category, message);
             TerrainLogger.Log(LogType.Error, (object)formattedMessage, (UnityEngine.Object)this);
+
+            if (!enableDiagnostics)
+            {
+                return;
+            }
+
             WriteLogToFile("ERROR", formattedMessage);
         }
 
         private void WriteLogToFile(string severity, string message)
         {
+            if (!enableDiagnostics)
+            {
+                return;
+            }
+
             lock (logLock)
             {
                 EnsureLogWriter();
@@ -3670,6 +3725,11 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
         private void EnsureLogWriter()
         {
+            if (!enableDiagnostics)
+            {
+                return;
+            }
+
             if (logWriter != null)
             {
                 return;
@@ -3716,6 +3776,11 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
         private void AnnounceLogFile()
         {
+            if (!enableDiagnostics)
+            {
+                return;
+            }
+
             string path = null;
             lock (logLock)
             {
@@ -3987,11 +4052,12 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             bool shouldAttemptEnqueue = chunkExists && (!chunkOnCooldown || bypassCulling);
 
             if (shouldAttemptEnqueue
-                && !dirtyChunkQueue.Contains(chunkPos)
+                && !dirtyChunkSet.Contains(chunkPos)
                 && !runningMeshJobs.ContainsKey(chunkPos)
                 && !runningGenJobs.ContainsKey(chunkPos))
             {
                 dirtyChunkQueue.Enqueue(chunkPos);
+                dirtyChunkSet.Add(chunkPos);
                 MarkTransitionsDirtyForChunk(chunkPos);
             }
             else if (chunkExists)
