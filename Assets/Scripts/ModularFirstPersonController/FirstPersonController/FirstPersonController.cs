@@ -350,6 +350,8 @@ public class FirstPersonController : MonoBehaviour
         }
     }
 
+// file: Assets/Scripts/ModularFirstPersonController/FirstPersonController/FirstPersonController.cs
+// ...исправленный метод целиком...
     void FixedUpdate()
     {
         #region Movement
@@ -361,7 +363,7 @@ public class FirstPersonController : MonoBehaviour
 
             // Checks if player is walking and isGrounded
             // Will allow head bob
-            if (targetVelocity.x != 0 || targetVelocity.z != 0 && isGrounded)
+            if ((targetVelocity.x != 0 || targetVelocity.z != 0) && isGrounded)
             {
                 isWalking = true;
             }
@@ -426,6 +428,7 @@ public class FirstPersonController : MonoBehaviour
 
         #endregion
     }
+
 
     // Sets isGrounded based on a raycast sent straigth down from the player object
     private void CheckGround()

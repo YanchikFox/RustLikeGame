@@ -361,6 +361,7 @@ namespace TerrainSystem
         private readonly Dictionary<Vector3Int, ChunkData> chunks = new Dictionary<Vector3Int, ChunkData>();
         private readonly Queue<Vector3Int> dirtyChunkQueue = new Queue<Vector3Int>();
         private readonly HashSet<Vector3Int> dirtyChunkSet = new();
+        private readonly List<Vector3Int> reusableChunksToUnload = new();
         private readonly Dictionary<Vector3Int, int> hiddenChunkVisibilityCooldowns = new Dictionary<Vector3Int, int>();
         private readonly HashSet<Vector3Int> chunksPendingVisibilityOverride = new HashSet<Vector3Int>();
         private readonly Dictionary<Vector3Int, MeshJobHandleData> runningMeshJobs = new Dictionary<Vector3Int, MeshJobHandleData>();
@@ -1772,18 +1773,20 @@ namespace TerrainSystem
 
             Vector3 chunkWorldPos = ChunkToWorldPosition(chunkPosition);
             Vector3 baseChunkSize = GetActualChunkWorldSizeForLOD(0);
-            float distance = Vector3.Distance(playerTransform.position, chunkWorldPos + baseChunkSize * 0.5f);
-            
-            // Determine LOD level based on distance
+            Vector3 chunkCenter = chunkWorldPos + baseChunkSize * 0.5f;
+            Vector3 offset = playerTransform.position - chunkCenter;
+            float distanceSqr = offset.sqrMagnitude;
+
             for (int i = 0; i < lodDistanceThresholds.Length; i++)
             {
-                if (distance <= lodDistanceThresholds[i])
+                float threshold = lodDistanceThresholds[i];
+                if (distanceSqr <= threshold * threshold)
                     return i;
             }
-            
-            // If beyond all thresholds, return the maximum LOD level
+
             return Mathf.Min(maxLODLevel, lodDistanceThresholds.Length);
         }
+
         
         /// <summary>
         /// Calculates the adjusted voxel size based on LOD level
@@ -1834,17 +1837,21 @@ namespace TerrainSystem
             Vector3 baseChunkSize = GetActualChunkWorldSizeForLOD(0);
             float chunkSizeX = Mathf.Approximately(baseChunkSize.x, 0f) ? 1f : baseChunkSize.x;
             int loadRadius = Mathf.CeilToInt(loadDistance / chunkSizeX);
+            int unloadRadius = loadRadius + 2;
+            int unloadRadiusSqr = unloadRadius * unloadRadius;
 
-            // Step 1: Identify chunks to unload (too far from player)
-            var chunksToUnload = new List<Vector3Int>();
+            reusableChunksToUnload.Clear();
             foreach (var chunkPos in chunks.Keys)
             {
-                if (Vector3Int.Distance(chunkPos, playerChunkPos) > loadRadius + 2)
-                    chunksToUnload.Add(chunkPos);
+                Vector3Int delta = chunkPos - playerChunkPos;
+                int distanceSqr = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+                if (distanceSqr > unloadRadiusSqr)
+                {
+                    reusableChunksToUnload.Add(chunkPos);
+                }
             }
-            
-            // Step 2: Unload distant chunks
-            foreach (var pos in chunksToUnload)
+
+            foreach (var pos in reusableChunksToUnload)
             {
                 if (chunks.TryGetValue(pos, out var chunkData))
                 {
@@ -1855,14 +1862,12 @@ namespace TerrainSystem
                 }
             }
 
-            // Step 3: Load or update chunks within load radius
             for (int x = -loadRadius; x <= loadRadius; x++)
             for (int z = -loadRadius; z <= loadRadius; z++)
             for (int y = -verticalLoadRadius; y <= verticalLoadRadius; y++)
             {
                 Vector3Int chunkPos = playerChunkPos + new Vector3Int(x, y, z);
 
-                // Calculate LOD level based on distance
                 int lodLevel = CalculateLODLevel(chunkPos);
                 bool chunkVisible = IsChunkVisible(chunkPos, lodLevel);
 
@@ -1900,6 +1905,7 @@ namespace TerrainSystem
                 ClearTransitionMeshes();
             }
         }
+
 
         private void CreateChunk(Vector3Int position, int lodLevel)
         {
@@ -1997,7 +2003,7 @@ namespace TerrainSystem
                 $"action=recycle {FormatChunkId(chunk.ChunkPosition, chunk.LODLevel)} poolSize={chunkPool.Count}"
             );
         }
-
+        
         private void CancelChunkProcessing(Vector3Int chunkPos)
         {
             if (runningMeshJobs.TryGetValue(chunkPos, out var meshJob))
@@ -2084,28 +2090,11 @@ namespace TerrainSystem
                 gpuGenerationRequestsInfo.Remove(chunkPos);
             }
 
-            if (dirtyChunkSet.Remove(chunkPos))
-            {
-                int count = dirtyChunkQueue.Count;
-                var filteredQueue = new Queue<Vector3Int>(count);
-                while (dirtyChunkQueue.Count > 0)
-                {
-                    Vector3Int dequeued = dirtyChunkQueue.Dequeue();
-                    if (dequeued != chunkPos)
-                    {
-                        filteredQueue.Enqueue(dequeued);
-                    }
-                }
-
-                while (filteredQueue.Count > 0)
-                {
-                    dirtyChunkQueue.Enqueue(filteredQueue.Dequeue());
-                }
-            }
-
+            dirtyChunkSet.Remove(chunkPos);
             hiddenChunkVisibilityCooldowns.Remove(chunkPos);
             chunksPendingVisibilityOverride.Remove(chunkPos);
         }
+
 
         #region Visibility Checks
         private Camera GetActiveCamera()
@@ -2760,7 +2749,6 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             densityBuffer.GetData(densities);
             
             // Convert to VoxelData and apply to chunk
-            // ...
             
             // Release the buffer back to the pool
             ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
@@ -3511,7 +3499,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
             return modifiedChunks;
         }
-
+        
         private bool DispatchModifyDensityGPU(TerrainChunk chunk, int lodLevel, Vector3 modificationPosition, float radius, float lodAdjustedStrength, int expectedVersion, out bool versionMismatch)
         {
             versionMismatch = false;
@@ -3576,7 +3564,6 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
                 AsyncGPUReadbackRequest request = AsyncGPUReadback.Request(
                     densityBuffer,
-                    0,
                     r => OnGpuModifyDensityReadbackComplete(chunkPos, r)
                 );
 
@@ -3593,6 +3580,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 }
             }
         }
+
 
         private void OnGpuModifyDensityReadbackComplete(Vector3Int chunkPos, AsyncGPUReadbackRequest request)
         {
