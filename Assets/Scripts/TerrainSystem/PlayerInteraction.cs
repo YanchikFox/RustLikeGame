@@ -1,5 +1,6 @@
 using UnityEngine;
 using TerrainSystem;
+using Zenject;
 
 public class PlayerInteraction : MonoBehaviour
 {
@@ -11,6 +12,12 @@ public class PlayerInteraction : MonoBehaviour
     private Camera mainCamera;
     private TerrainManager terrainManager;
 
+    [Inject]
+    public void Construct(TerrainManager terrainManager)
+    {
+        this.terrainManager = terrainManager;
+    }
+
     private void Start()
     {
         mainCamera = Camera.main;
@@ -21,10 +28,9 @@ public class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        terrainManager = FindObjectOfType<TerrainManager>();
         if (terrainManager == null)
         {
-            Debug.LogError("PlayerInteraction: TerrainManager not found in the scene!", this);
+            Debug.LogError("PlayerInteraction: TerrainManager dependency was not injected!", this);
             enabled = false;
             return;
         }
@@ -36,7 +42,7 @@ public class PlayerInteraction : MonoBehaviour
         {
             HandleInteraction(modificationStrength);
         }
-        
+
         if (Input.GetMouseButtonDown(1)) // Right-click to add
         {
             HandleInteraction(-modificationStrength); // Invert strength to add terrain
@@ -48,7 +54,6 @@ public class PlayerInteraction : MonoBehaviour
         Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         if (Physics.Raycast(ray, out RaycastHit hit, interactionDistance))
         {
-            // Use the new centralized API on TerrainManager
             terrainManager.RequestTerrainModification(
                 hit.point,
                 modificationRadius,
@@ -60,12 +65,12 @@ public class PlayerInteraction : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         if (mainCamera == null) return;
-        
+
         Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        
+
         Gizmos.color = Color.red;
         Gizmos.DrawRay(ray.origin, ray.direction * interactionDistance);
-        
+
         if (Physics.Raycast(ray, out RaycastHit hit, interactionDistance))
         {
             Gizmos.color = Color.yellow;

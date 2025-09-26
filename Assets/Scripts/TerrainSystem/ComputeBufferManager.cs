@@ -7,7 +7,7 @@ namespace TerrainSystem
     /// <summary>
     /// Manages a pool of ComputeBuffer objects to avoid creating them every frame.
     /// </summary>
-    public class ComputeBufferManager : MonoBehaviour
+    public class ComputeBufferManager : MonoBehaviour, IComputeBufferPool
     {
         #region Singleton Pattern
         private static ComputeBufferManager _instance;

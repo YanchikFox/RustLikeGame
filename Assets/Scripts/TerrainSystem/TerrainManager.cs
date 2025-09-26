@@ -8,6 +8,7 @@ using Unity.Jobs;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine.Rendering;
+using Zenject;
 
 namespace TerrainSystem
 {
@@ -69,6 +70,10 @@ namespace TerrainSystem
         [Header("Performance")]
         [SerializeField] private int maxChunksPerFrame = 4;
         [SerializeField] private int verticalLoadRadius = 1;
+        [SerializeField, Tooltip("Maximum number of GPU readback requests allowed to run simultaneously.")]
+        private int maxConcurrentGpuReadbacks = 4;
+        [SerializeField, Tooltip("Maximum number of chunks that can start GPU density generation in a single frame (0 = unlimited).")]
+        private int maxGpuGenerationsPerFrame = 2;
 
         [Header("Culling Settings")]
         [SerializeField] private Camera targetCamera;
@@ -344,10 +349,8 @@ namespace TerrainSystem
         private TerrainProcessingMode runtimeProcessingMode = TerrainProcessingMode.CPU;
         private bool hasLoggedModeFallback;
 
-// Ñëîâàðü äëÿ îòñëåæèâàíèÿ àñèíõðîííûõ çàïðîñîâ ê GPU
         private readonly Dictionary<Vector3Int, AsyncGPUReadbackRequest> runningGpuGenRequests =
             new Dictionary<Vector3Int, AsyncGPUReadbackRequest>();
-// Ñëîâàðü äëÿ õðàíåíèÿ áóôåðà ïëîòíîñòåé âî âðåìÿ ãåíåðàöèè
         private readonly Dictionary<Vector3Int, ComputeBuffer> densityBuffers =
             new Dictionary<Vector3Int, ComputeBuffer>();
         private readonly Dictionary<Vector3Int, NativeArray<float>> densityUploadCache =
@@ -366,7 +369,12 @@ namespace TerrainSystem
         private readonly HashSet<Vector3Int> chunksPendingVisibilityOverride = new HashSet<Vector3Int>();
         private readonly Dictionary<Vector3Int, MeshJobHandleData> runningMeshJobs = new Dictionary<Vector3Int, MeshJobHandleData>();
         private readonly Dictionary<Vector3Int, VoxelGenJobHandleData> runningGenJobs = new Dictionary<Vector3Int, VoxelGenJobHandleData>();
-
+        
+        private IComputeBufferPool computeBufferPool;
+        private ITerrainLogger terrainLogger;
+        
+        private int lastGpuGenerationFrame = -1;
+        private int gpuGenerationsThisFrame;
         private readonly Dictionary<int, Vector3> cachedChunkWorldSizesByLod = new Dictionary<int, Vector3>();
         private readonly Queue<TerrainChunk> chunkPool = new Queue<TerrainChunk>();
         private Camera cachedCamera;
@@ -578,6 +586,7 @@ namespace TerrainSystem
             if (runningGpuGenRequests.Count > 0)
             {
                 List<Vector3Int> completedRequests = null;
+                List<Vector3Int> fallbackToCpu = null;
 
                 foreach (var kvp in runningGpuGenRequests)
                 {
@@ -606,6 +615,14 @@ namespace TerrainSystem
                             errorMessage = $"{errorMessage} threadGroups={FormatThreadGroups(errorThreadGroups.x, errorThreadGroups.y, errorThreadGroups.z)}";
                         }
                         LogError("GpuReadback", errorMessage);
+
+                        if (chunks.TryGetValue(chunkPos, out var chunkData) && chunkData.chunk != null)
+                        {
+                            fallbackToCpu ??= new List<Vector3Int>();
+                            fallbackToCpu.Add(chunkPos);
+                        }
+
+                        gpuGenerationRequestsInfo.Remove(chunkPos);
                         continue;
                     }
 
@@ -634,7 +651,7 @@ namespace TerrainSystem
                     {
                         if (densityBuffers.TryGetValue(pos, out ComputeBuffer buffer))
                         {
-                            ComputeBufferManager.Instance.ReleaseBuffer(buffer);
+                            ReleaseBufferSafe(buffer);
                             densityBuffers.Remove(pos);
                         }
 
@@ -642,11 +659,23 @@ namespace TerrainSystem
                         gpuGenerationRequestsInfo.Remove(pos);
                     }
                 }
+
+                if (fallbackToCpu != null)
+                {
+                    foreach (var pos in fallbackToCpu)
+                    {
+                        if (chunks.TryGetValue(pos, out var chunkData) && chunkData.chunk != null)
+                        {
+                            ScheduleGenerateVoxelDataJob(chunkData.chunk, chunkData.lodLevel);
+                        }
+                    }
+                }
             }
 
             if (runningGpuMeshRequests.Count > 0)
             {
                 List<Vector3Int> completedMeshRequests = null;
+                List<Vector3Int> fallbackMeshJobs = null;
 
                 foreach (var kvp in runningGpuMeshRequests)
                 {
@@ -670,6 +699,9 @@ namespace TerrainSystem
                         );
                         ReleaseMeshRequestBuffers(requestData);
                         gpuGenerationRequestsInfo.Remove(chunkPos);
+
+                        fallbackMeshJobs ??= new List<Vector3Int>();
+                        fallbackMeshJobs.Add(chunkPos);
                         continue;
                     }
 
@@ -757,6 +789,17 @@ namespace TerrainSystem
                     foreach (var pos in completedMeshRequests)
                     {
                         runningGpuMeshRequests.Remove(pos);
+                    }
+                }
+
+                if (fallbackMeshJobs != null)
+                {
+                    foreach (var pos in fallbackMeshJobs)
+                    {
+                        if (chunks.TryGetValue(pos, out var chunkData) && chunkData.chunk != null)
+                        {
+                            ScheduleMarchingCubesJob(chunkData.chunk, chunkData.lodLevel);
+                        }
                     }
                 }
             }
@@ -1231,10 +1274,7 @@ namespace TerrainSystem
         {
             ClearDensityUploadCache();
 
-            if (ComputeBufferManager.TryGetInstance(out ComputeBufferManager bufferManager))
-            {
-                bufferManager.ReleaseStructuredBuffers();
-            }
+            computeBufferPool?.ReleaseStructuredBuffers();
         }
 
         private BiomeSettings[] GetActiveBiomes(bool logWarningIfFallback)
@@ -2036,7 +2076,7 @@ namespace TerrainSystem
 
                 if (densityBuffers.TryGetValue(chunkPos, out var buffer))
                 {
-                    ComputeBufferManager.Instance.ReleaseBuffer(buffer);
+                    ReleaseBufferSafe(buffer);
                     densityBuffers.Remove(chunkPos);
                 }
                 else
@@ -2047,7 +2087,7 @@ namespace TerrainSystem
             else if (densityBuffers.TryGetValue(chunkPos, out var buffer))
             {
                 LogWarning("GpuBuffers", $"CancelChunkProcessing found a density buffer for chunk {chunkPos} without a matching GPU request. Releasing buffer defensively.");
-                ComputeBufferManager.Instance.ReleaseBuffer(buffer);
+                ReleaseBufferSafe(buffer);
                 densityBuffers.Remove(chunkPos);
                 gpuGenerationRequestsInfo.Remove(chunkPos);
             }
@@ -2059,15 +2099,12 @@ namespace TerrainSystem
                     modificationRequest.Request.WaitForCompletion();
                 }
 
-                if (runningGpuModificationRequests.TryGetValue(chunkPos, out modificationRequest))
+                if (modificationRequest.DensityBuffer != null)
                 {
-                    if (modificationRequest.DensityBuffer != null)
-                    {
-                        ComputeBufferManager.Instance.ReleaseBuffer(modificationRequest.DensityBuffer);
-                    }
-
-                    runningGpuModificationRequests.Remove(chunkPos);
+                    ReleaseBufferSafe(modificationRequest.DensityBuffer);
                 }
+
+                runningGpuModificationRequests.Remove(chunkPos);
             }
 
             if (runningGpuMeshRequests.TryGetValue(chunkPos, out var meshRequest))
@@ -2549,9 +2586,15 @@ namespace TerrainSystem
             );
         }
         
-        private void ScheduleGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
+                private void ScheduleGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
         {
             if (!ShouldUseGpuForVoxelGeneration || voxelTerrainShader == null || chunk == null)
+            {
+                ScheduleGenerateVoxelDataJob(chunk, lodLevel);
+                return;
+            }
+
+            if (!HasGpuCapacityForRequest() || !TryConsumeGpuGenerationBudget())
             {
                 ScheduleGenerateVoxelDataJob(chunk, lodLevel);
                 return;
@@ -2568,7 +2611,7 @@ namespace TerrainSystem
             Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
             int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
-            ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
+            ComputeBuffer densityBuffer = computeBufferPool.GetBuffer(voxelCount, sizeof(float));
             densityBuffers.Add(chunkPos, densityBuffer);
 
             voxelTerrainShader.SetBuffer(kernel, "_DensityValues", densityBuffer);
@@ -2581,62 +2624,62 @@ namespace TerrainSystem
             int biomeCount = activeBiomes.Length;
             voxelTerrainShader.SetFloat("_BiomeNoiseScale", biomeNoiseScale);
             voxelTerrainShader.SetInt("_BiomeCount", biomeCount);
-                if (biomeCount > 0)
-                {
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeThresholds", biomeThresholdsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeGroundLevels", biomeGroundLevelsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightImpacts", biomeHeightImpactsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightScales", biomeHeightScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveImpacts", biomeCaveImpactsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveScales", biomeCaveScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeOctaves", biomeOctavesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeLacunarity", biomeLacunarityBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomePersistence", biomePersistenceBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpEnabled", biomeHeightWarpEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpStrengths", biomeHeightWarpStrengthsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpScales", biomeHeightWarpScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpRidged", biomeHeightWarpRidgedBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryHeightWarpEnabled", biomeSecondaryHeightWarpEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryHeightWarpStrengths", biomeSecondaryHeightWarpStrengthsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryHeightWarpScales", biomeSecondaryHeightWarpScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryHeightWarpRidged", biomeSecondaryHeightWarpRidgedBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpEnabled", biomeCaveWarpEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpStrengths", biomeCaveWarpStrengthsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpScales", biomeCaveWarpScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpRidged", biomeCaveWarpRidgedBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryCaveWarpEnabled", biomeSecondaryCaveWarpEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryCaveWarpStrengths", biomeSecondaryCaveWarpStrengthsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryCaveWarpScales", biomeSecondaryCaveWarpScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryCaveWarpRidged", biomeSecondaryCaveWarpRidgedBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightLayerEnabled", biomeExtraHeightLayerEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightOctaves", biomeExtraHeightOctavesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightScales", biomeExtraHeightScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightLacunarity", biomeExtraHeightLacunarityBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightPersistence", biomeExtraHeightPersistenceBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightImpact", biomeExtraHeightImpactBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveLayerEnabled", biomeExtraCaveLayerEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveOctaves", biomeExtraCaveOctavesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveScales", biomeExtraCaveScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveLacunarity", biomeExtraCaveLacunarityBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCavePersistence", biomeExtraCavePersistenceBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveImpact", biomeExtraCaveImpactBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffLayerEnabled", biomeCliffLayerEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffScales", biomeCliffScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffImpacts", biomeCliffImpactsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffThresholds", biomeCliffThresholdsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffSharpness", biomeCliffSharpnessBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauLayerEnabled", biomePlateauLayerEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauScales", biomePlateauScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauStepHeights", biomePlateauStepHeightsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauStrengths", biomePlateauStrengthsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauThresholds", biomePlateauThresholdsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauSharpness", biomePlateauSharpnessBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskEnabled", biomeSurfaceCaveMaskEnabledBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskScales", biomeSurfaceCaveMaskScalesBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskThresholds", biomeSurfaceCaveMaskThresholdsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskStrengths", biomeSurfaceCaveMaskStrengthsBuffer);
-                    voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskFalloffs", biomeSurfaceCaveMaskFalloffsBuffer);
-                }
+            if (biomeCount > 0)
+            {
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeThresholds", biomeThresholdsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeGroundLevels", biomeGroundLevelsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightImpacts", biomeHeightImpactsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightScales", biomeHeightScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveImpacts", biomeCaveImpactsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveScales", biomeCaveScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeOctaves", biomeOctavesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeLacunarity", biomeLacunarityBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomePersistence", biomePersistenceBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpEnabled", biomeHeightWarpEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpStrengths", biomeHeightWarpStrengthsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpScales", biomeHeightWarpScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeHeightWarpRidged", biomeHeightWarpRidgedBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryHeightWarpEnabled", biomeSecondaryHeightWarpEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryHeightWarpStrengths", biomeSecondaryHeightWarpStrengthsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryHeightWarpScales", biomeSecondaryHeightWarpScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryHeightWarpRidged", biomeSecondaryHeightWarpRidgedBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpEnabled", biomeCaveWarpEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpStrengths", biomeCaveWarpStrengthsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpScales", biomeCaveWarpScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCaveWarpRidged", biomeCaveWarpRidgedBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryCaveWarpEnabled", biomeSecondaryCaveWarpEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryCaveWarpStrengths", biomeSecondaryCaveWarpStrengthsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryCaveWarpScales", biomeSecondaryCaveWarpScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSecondaryCaveWarpRidged", biomeSecondaryCaveWarpRidgedBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightLayerEnabled", biomeExtraHeightLayerEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightOctaves", biomeExtraHeightOctavesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightScales", biomeExtraHeightScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightLacunarity", biomeExtraHeightLacunarityBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightPersistence", biomeExtraHeightPersistenceBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraHeightImpact", biomeExtraHeightImpactBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveLayerEnabled", biomeExtraCaveLayerEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveOctaves", biomeExtraCaveOctavesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveScales", biomeExtraCaveScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveLacunarity", biomeExtraCaveLacunarityBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCavePersistence", biomeExtraCavePersistenceBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeExtraCaveImpact", biomeExtraCaveImpactBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffLayerEnabled", biomeCliffLayerEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffScales", biomeCliffScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffImpacts", biomeCliffImpactsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffThresholds", biomeCliffThresholdsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeCliffSharpness", biomeCliffSharpnessBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauLayerEnabled", biomePlateauLayerEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauScales", biomePlateauScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauStepHeights", biomePlateauStepHeightsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauStrengths", biomePlateauStrengthsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauThresholds", biomePlateauThresholdsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomePlateauSharpness", biomePlateauSharpnessBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskEnabled", biomeSurfaceCaveMaskEnabledBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskScales", biomeSurfaceCaveMaskScalesBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskThresholds", biomeSurfaceCaveMaskThresholdsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskStrengths", biomeSurfaceCaveMaskStrengthsBuffer);
+                voxelTerrainShader.SetBuffer(kernel, "_BiomeSurfaceCaveMaskFalloffs", biomeSurfaceCaveMaskFalloffsBuffer);
+            }
 
             voxelTerrainShader.SetFloat("_TemperatureNoiseScale", temperatureNoiseScale);
             voxelTerrainShader.SetFloat("_HumidityNoiseScale", humidityNoiseScale);
@@ -2666,93 +2709,7 @@ namespace TerrainSystem
                 $"stage=queued mode=GPU {FormatChunkId(chunkPos, lodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} sampleCount={voxelCount} bufferCount={densityBuffer.count} threadGroups={FormatThreadGroups(threadGroups.x, threadGroups.y, threadGroups.z)} biomeCount={biomeCount}"
             );
         }
-
-// --- Äîáàâüòå ýòîò íîâûé ìåòîä â TerrainManager.cs ---
-private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
-{
-    if (request.hasError)
-    {
-        LogError("GpuReadback", "GPU readback error.");
-        return;
-    }
-
-    // Íàõîäèì, êàêîìó ÷àíêó ïðèíàäëåæàò ýòè äàííûå
-    Vector3Int? chunkPos = null;
-    foreach (var pair in runningGpuGenRequests)
-    {
-        if (pair.Value.Equals(request))
-        {
-            chunkPos = pair.Key;
-            break;
-        }
-    }
-
-    if (chunkPos.HasValue)
-    {
-        Vector3Int pos = chunkPos.Value;
-        
-        // Ïîëó÷àåì äàííûå
-        NativeArray<float> densities = request.GetData<float>();
-        
-        if (chunks.TryGetValue(pos, out var chunkData))
-        {
-            // Ïðèìåíÿåì äàííûå ê ÷àíêó
-            chunkData.chunk.ApplyDensities(densities);
-            
-            // Ñòàâèì ÷àíê â î÷åðåäü íà ñîçäàíèå ìåøà (ïîêà ÷òî ÷åðåç CPU Job)
-            QueueChunkForUpdate(pos, true);
-        }
-        
-        // Îñâîáîæäàåì áóôåð ïëîòíîñòåé îáðàòíî â ïóë
-        if (densityBuffers.TryGetValue(pos, out ComputeBuffer buffer))
-        {
-            ComputeBufferManager.Instance.ReleaseBuffer(buffer);
-            densityBuffers.Remove(pos);
-        }
-        
-        runningGpuGenRequests.Remove(pos);
-    }
-}
-        
-        private void DispatchGenerateVoxelDataGPU(TerrainChunk chunk, int lodLevel)
-        {
-            if (!ShouldUseGpuForVoxelGeneration || voxelTerrainShader == null || chunk == null) return;
-            
-            // Get kernel index
-            int kernelIndex = voxelTerrainShader.FindKernel("GenerateVoxelData");
-            
-            // Get the actual voxel dimensions for this LOD level
-            Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
-            float adjustedVoxelSize = GetVoxelSizeForLOD(lodLevel);
-            
-            // Create or get buffer for densities from pool
-            int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
-            ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
-            
-            // Set shader parameters
-            voxelTerrainShader.SetBuffer(kernelIndex, "_DensityValues", densityBuffer);
-            voxelTerrainShader.SetVector("_ChunkWorldOrigin", chunk.WorldPosition);
-            voxelTerrainShader.SetInts("_ChunkSize", voxelDimensions.x, voxelDimensions.y, voxelDimensions.z);
-            voxelTerrainShader.SetFloat("_VoxelSize", voxelSize); // Base voxel size
-            voxelTerrainShader.SetInt("_LODLevel", lodLevel);     // LOD level for adjustment in shader
-            
-            // Set other terrain generation parameters...
-            
-            // Dispatch the shader
-            int threadGroupsX = Mathf.CeilToInt((voxelDimensions.x + 1) / 8.0f);
-            int threadGroupsY = Mathf.CeilToInt((voxelDimensions.y + 1) / 8.0f);
-            int threadGroupsZ = Mathf.CeilToInt((voxelDimensions.z + 1) / 8.0f);
-            voxelTerrainShader.Dispatch(kernelIndex, threadGroupsX, threadGroupsY, threadGroupsZ);
-            
-            // Get results and apply to chunk
-            float[] densities = new float[voxelCount];
-            densityBuffer.GetData(densities);
-            
-            // Convert to VoxelData and apply to chunk
-            
-            // Release the buffer back to the pool
-            ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
-        }
+                
         #endregion
 
         #region Job-Based Mesh Generation
@@ -3087,6 +3044,11 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 return true;
             }
 
+            if (!HasGpuCapacityForRequest())
+            {
+                return false;
+            }
+
             ComputeBuffer densityBuffer = null;
             ComputeBuffer gradientDensityBuffer = null;
             ComputeBuffer vertexBuffer = null;
@@ -3096,21 +3058,20 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 
             try
             {
-                ComputeBufferManager bufferManager = ComputeBufferManager.Instance;
                 int kernelIndex = voxelTerrainShader.FindKernel("MarchingCubes");
 
                 Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
                 long cubeCount = (long)voxelDimensions.x * voxelDimensions.y * voxelDimensions.z;
                 int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
-                densityBuffer = bufferManager.GetBuffer(voxelCount, sizeof(float));
+                densityBuffer = computeBufferPool.GetBuffer(voxelCount, sizeof(float));
 
                 NativeArray<float> densities = GetDensityUploadArray(voxelDimensions);
                 chunk.CopyVoxelDataTo(densities);
                 densityBuffer.SetData(densities, 0, 0, voxelCount);
 
                 int gradientCount = (voxelDimensions.x + 3) * (voxelDimensions.y + 3) * (voxelDimensions.z + 3);
-                gradientDensityBuffer = bufferManager.GetBuffer(gradientCount, sizeof(float), ComputeBufferType.Structured);
+                gradientDensityBuffer = computeBufferPool.GetBuffer(gradientCount, sizeof(float), ComputeBufferType.Structured);
                 using (var gradientNative = new NativeArray<float>(gradientCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
                 {
                     FillGradientDensities(chunk, lodLevel, gradientNative);
@@ -3135,11 +3096,11 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                     vertexCapacity = (int)requestedVertexCapacity;
                 }
 
-                vertexBuffer = bufferManager.GetBuffer(vertexCapacity, sizeof(float) * 3, ComputeBufferType.Structured);
-                normalBuffer = bufferManager.GetBuffer(vertexCapacity, sizeof(float) * 3, ComputeBufferType.Structured);
-                counterBuffer = bufferManager.GetBuffer(1, sizeof(uint), ComputeBufferType.Structured);
+                vertexBuffer = computeBufferPool.GetBuffer(vertexCapacity, sizeof(float) * 3, ComputeBufferType.Structured);
+                normalBuffer = computeBufferPool.GetBuffer(vertexCapacity, sizeof(float) * 3, ComputeBufferType.Structured);
+                counterBuffer = computeBufferPool.GetBuffer(1, sizeof(uint), ComputeBufferType.Structured);
 
-                bufferManager.ResetCounterBuffer(counterBuffer);
+                computeBufferPool.ResetCounterBuffer(counterBuffer);
 
                 voxelTerrainShader.SetBuffer(kernelIndex, "_DensitiesForMC", densityBuffer);
                 voxelTerrainShader.SetBuffer(kernelIndex, "_GradientDensities", gradientDensityBuffer);
@@ -3152,6 +3113,7 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
                 voxelTerrainShader.SetFloat("_VoxelSize", voxelSize);
                 voxelTerrainShader.SetInt("_LODLevel", lodLevel);
                 voxelTerrainShader.SetFloat("_SurfaceLevel", meshGenerator.surfaceLevel);
+                voxelTerrainShader.SetInt("_MaxVertexCount", vertexCapacity);
 
                 int threadGroupsX = Mathf.CeilToInt(Mathf.Max(1f, voxelDimensions.x) / 8.0f);
                 int threadGroupsY = Mathf.CeilToInt(Mathf.Max(1f, voxelDimensions.y) / 8.0f);
@@ -3212,22 +3174,11 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
             {
                 if (!requestQueued)
                 {
-                    if (ComputeBufferManager.TryGetInstance(out ComputeBufferManager bufferManager))
-                    {
-                        bufferManager.ReleaseBuffer(densityBuffer);
-                        bufferManager.ReleaseBuffer(gradientDensityBuffer);
-                        bufferManager.ReleaseBuffer(vertexBuffer);
-                        bufferManager.ReleaseBuffer(normalBuffer);
-                        bufferManager.ReleaseBuffer(counterBuffer);
-                    }
-                    else
-                    {
-                        densityBuffer?.Release();
-                        gradientDensityBuffer?.Release();
-                        vertexBuffer?.Release();
-                        normalBuffer?.Release();
-                        counterBuffer?.Release();
-                    }
+                    ReleaseBufferSafe(densityBuffer);
+                    ReleaseBufferSafe(gradientDensityBuffer);
+                    ReleaseBufferSafe(vertexBuffer);
+                    ReleaseBufferSafe(normalBuffer);
+                    ReleaseBufferSafe(counterBuffer);
                 }
             }
         }
@@ -3245,22 +3196,11 @@ private void OnVoxelDataReceived(AsyncGPUReadbackRequest request)
 
         private void ReleaseMeshRequestBuffers(in MeshGpuReadbackRequest request)
         {
-            if (ComputeBufferManager.TryGetInstance(out ComputeBufferManager bufferManager))
-            {
-                bufferManager.ReleaseBuffer(request.DensityBuffer);
-                bufferManager.ReleaseBuffer(request.GradientBuffer);
-                bufferManager.ReleaseBuffer(request.VertexBuffer);
-                bufferManager.ReleaseBuffer(request.NormalBuffer);
-                bufferManager.ReleaseBuffer(request.CounterBuffer);
-            }
-            else
-            {
-                request.DensityBuffer?.Release();
-                request.GradientBuffer?.Release();
-                request.VertexBuffer?.Release();
-                request.NormalBuffer?.Release();
-                request.CounterBuffer?.Release();
-            }
+            ReleaseBufferSafe(request.DensityBuffer);
+            ReleaseBufferSafe(request.GradientBuffer);
+            ReleaseBufferSafe(request.VertexBuffer);
+            ReleaseBufferSafe(request.NormalBuffer);
+            ReleaseBufferSafe(request.CounterBuffer);
         }
 
         private void CompleteGenerationJobs()
@@ -3593,7 +3533,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
             if (requestData.DensityBuffer != null)
             {
-                ComputeBufferManager.Instance.ReleaseBuffer(requestData.DensityBuffer);
+                ReleaseBufferSafe(requestData.DensityBuffer);
             }
 
             if (request.hasError)
@@ -3602,6 +3542,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                     "GpuReadback",
                     $"stage=readbackComplete mode=GPU {FormatChunkId(chunkPos, requestData.LodLevel)} result=error"
                 );
+                QueueChunkForUpdate(chunkPos, true);
                 return;
             }
 
@@ -3661,7 +3602,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             }
 
             string formattedMessage = FormatLog(category, message);
-            TerrainLogger.Log(LogType.Log, (object)formattedMessage, (UnityEngine.Object)this);
+            terrainLogger?.Log(LogType.Log, formattedMessage, this);
             WriteLogToFile("INFO", formattedMessage);
         }
 
@@ -3673,14 +3614,14 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             }
 
             string formattedMessage = FormatLog(category, message);
-            TerrainLogger.Log(LogType.Warning, (object)formattedMessage, (UnityEngine.Object)this);
+            terrainLogger?.Log(LogType.Warning, formattedMessage, this);
             WriteLogToFile("WARN", formattedMessage);
         }
 
         private void LogError(string category, string message)
         {
             string formattedMessage = FormatLog(category, message);
-            TerrainLogger.Log(LogType.Error, (object)formattedMessage, (UnityEngine.Object)this);
+            terrainLogger?.Log(LogType.Error, formattedMessage, this);
 
             if (!enableDiagnostics)
             {
@@ -4150,6 +4091,105 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             }
         }
         #endregion
+        [Inject]
+        public void Construct(
+            IComputeBufferPool bufferPool,
+            ITerrainLogger logger,
+            [InjectOptional] ITerrainSettings settings = null)
+        {
+            computeBufferPool = bufferPool ?? throw new ArgumentNullException(nameof(bufferPool));
+            terrainLogger = logger ?? new UnityTerrainLogger();
+
+            if (settings != null)
+            {
+                ApplySettings(settings);
+            }
+        }
+
+        private void ApplySettings(ITerrainSettings settings)
+        {
+            chunkWorldSize = settings.ChunkWorldSize;
+            voxelSize = settings.VoxelSize;
+            loadDistance = settings.LoadDistance;
+            useLOD = settings.UseLod;
+
+            var thresholds = settings.LodDistanceThresholds;
+            if (thresholds != null)
+            {
+                if (lodDistanceThresholds == null || lodDistanceThresholds.Length != thresholds.Count)
+                {
+                    lodDistanceThresholds = new float[thresholds.Count];
+                }
+
+                for (int i = 0; i < thresholds.Count; i++)
+                {
+                    lodDistanceThresholds[i] = thresholds[i];
+                }
+            }
+
+            maxLODLevel = settings.MaxLodLevel;
+            transitionLODs = settings.TransitionLods;
+            processingMode = settings.ProcessingMode;
+            maxChunksPerFrame = settings.MaxChunksPerFrame;
+            verticalLoadRadius = settings.VerticalLoadRadius;
+            adaptiveChunkBudget = settings.AdaptiveChunkBudget;
+            minChunksPerFrame = settings.MinChunksPerFrame;
+            maxAdaptiveChunksPerFrame = settings.MaxAdaptiveChunksPerFrame;
+            targetFrameRate = settings.TargetFrameRate;
+            frameRateBuffer = settings.FrameRateBuffer;
+            adaptationInterval = settings.AdaptationInterval;
+            frameTimeSmoothing = settings.FrameTimeSmoothing;
+        }
+
+        private int ActiveGpuRequestCount =>
+            runningGpuGenRequests.Count + runningGpuMeshRequests.Count + runningGpuModificationRequests.Count;
+
+        private bool HasGpuCapacityForRequest()
+        {
+            int limit = Mathf.Max(1, maxConcurrentGpuReadbacks);
+            return ActiveGpuRequestCount < limit;
+        }
+
+        private bool TryConsumeGpuGenerationBudget()
+        {
+            int budget = Mathf.Max(0, maxGpuGenerationsPerFrame);
+            if (budget == 0)
+            {
+                return true;
+            }
+
+            int currentFrame = Time.frameCount;
+            if (currentFrame != lastGpuGenerationFrame)
+            {
+                lastGpuGenerationFrame = currentFrame;
+                gpuGenerationsThisFrame = 0;
+            }
+
+            if (gpuGenerationsThisFrame >= budget)
+            {
+                return false;
+            }
+
+            gpuGenerationsThisFrame++;
+            return true;
+        }
+
+        private void ReleaseBufferSafe(ComputeBuffer buffer)
+        {
+            if (buffer == null)
+            {
+                return;
+            }
+
+            if (computeBufferPool != null)
+            {
+                computeBufferPool.ReleaseBuffer(buffer);
+            }
+            else
+            {
+                buffer.Release();
+            }
+        }
     }
 
     [System.Serializable]

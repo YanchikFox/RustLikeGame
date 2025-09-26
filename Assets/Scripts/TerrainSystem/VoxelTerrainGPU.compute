@@ -82,6 +82,7 @@ StructuredBuffer<int> _TriangleTable;
 StructuredBuffer<int> _EdgeConnections;
 float _SurfaceLevel;
 RWStructuredBuffer<uint> _VertexCountBuffer;
+int _MaxVertexCount;
 
 RWStructuredBuffer<float> _ModifiedDensities;
 float3 _ModificationPosition;
@@ -668,6 +669,19 @@ void MarchingCubes(uint3 id : SV_DispatchThreadID)
 
         uint baseIndex;
         InterlockedAdd(_VertexCountBuffer[0], 3, baseIndex);
+
+        uint maxCount = (uint)_MaxVertexCount;
+        if (maxCount == 0)
+        {
+            return;
+        }
+
+        if (baseIndex >= maxCount || baseIndex + 2 >= maxCount)
+        {
+            uint ignored;
+            InterlockedMax(_VertexCountBuffer[0], maxCount, ignored);
+            return;
+        }
 
         _VertexBuffer[baseIndex + 0] = v1;
         _NormalBuffer[baseIndex + 0] = n1;
