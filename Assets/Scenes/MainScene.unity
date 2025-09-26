@@ -2486,7 +2486,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1838620231}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a915b96f948a4f16ae699ba1d663f26d, type: 3}
   m_Name: 
@@ -4748,6 +4748,14 @@ PrefabInstance:
     - target: {fileID: 6034699542644256208, guid: d55aab6c5205a8349be9e0329910553e, type: 3}
       propertyPath: m_Name
       value: GameObject (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6034699542644256208, guid: d55aab6c5205a8349be9e0329910553e, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6034699542644256208, guid: d55aab6c5205a8349be9e0329910553e, type: 3}
+      propertyPath: m_TagString
+      value: Ground
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
