@@ -616,7 +616,7 @@ namespace TerrainSystem
                         }
                         LogError("GpuReadback", errorMessage);
 
-                        if (chunks.TryGetValue(chunkPos, out var chunkData) && chunkData.chunk != null)
+                        if (chunks.TryGetValue(chunkPos, out var existingChunkData) && existingChunkData.chunk != null)
                         {
                             fallbackToCpu ??= new List<Vector3Int>();
                             fallbackToCpu.Add(chunkPos);

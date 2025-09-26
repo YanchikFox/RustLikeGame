@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a55800be2d8d482fb5a0ea557e8e383e, type: 3}
+  m_Name: TerrainSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainSystem.TerrainSettingsAsset
+  chunkWorldSize: {x: 16, y: 16, z: 16}
+  voxelSize: 1
+  loadDistance: 64
+  useLOD: 1
+  lodDistanceThresholds:
+  - 32
+  - 64
+  - 96
+  maxLODLevel: 2
+  transitionLODs: 1
+  processingMode: 2
+  maxChunksPerFrame: 4
+  verticalLoadRadius: 1
+  adaptiveChunkBudget: 1
+  minChunksPerFrame: 1
+  maxAdaptiveChunksPerFrame: 12
+  targetFrameRate: 60
+  frameRateBuffer: 5
+  adaptationInterval: 0.5
+  frameTimeSmoothing: 0.1

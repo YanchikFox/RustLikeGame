@@ -14,15 +14,10 @@ namespace TerrainSystem
                 throw new System.InvalidOperationException("ComputeBufferManager prefab is not assigned.");
             }
 
-            Container.Bind<ComputeBufferManager>()
+            Container.BindInterfacesAndSelfTo<ComputeBufferManager>()
                 .FromComponentInNewPrefab(computeBufferManagerPrefab)
                 .AsSingle()
                 .NonLazy();
-
-            Container.Bind<IComputeBufferPool>()
-                .To<ComputeBufferManager>()
-                .FromResolve()
-                .AsSingle();
         }
     }
 }
