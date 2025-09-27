@@ -159,7 +159,10 @@ namespace TerrainSystem
         }
     }
 
-    public readonly struct DensitySampler
+
+
+    public class MarchingCubesMeshGenerator : MonoBehaviour
+    {        public readonly struct DensitySampler
     {
         public readonly struct Source
         {
@@ -257,9 +260,6 @@ namespace TerrainSystem
             return false;
         }
     }
-
-    public class MarchingCubesMeshGenerator : MonoBehaviour
-    {
         [Header("Mesh Generation Settings")]
         [SerializeField] private bool calculateTangents = true;
 
