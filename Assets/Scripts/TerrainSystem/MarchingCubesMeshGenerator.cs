@@ -171,6 +171,13 @@ namespace TerrainSystem
         private float _surfaceLevel = 0.0f;
         public float surfaceLevel => _surfaceLevel;
 
+        [Header("Transition Settings")]
+        [Tooltip("World-space depth of the seam skirt extruded from high-detail chunk edges when stitching to lower LODs.")]
+        [Min(0f)]
+        [SerializeField]
+        private float transitionSkirtDepth = 0.25f;
+        public float TransitionSkirtDepth => Mathf.Max(0f, transitionSkirtDepth);
+
         private NativeArray<int> nativeTriangleTable;
         private NativeArray<int> nativeEdgeConnections;
 
@@ -647,7 +654,6 @@ private static readonly int[] flatTriangleTable =
             DetermineAxes(clampedDir, out mainAxis, out axisU, out axisV);
 
             Vector3Int highDims = highDetailChunk.VoxelDimensions;
-            Vector3Int lowDims = lowDetailChunk.VoxelDimensions;
 
             int resU = GetComponent(highDims, axisU);
             int resV = GetComponent(highDims, axisV);
@@ -665,13 +671,17 @@ private static readonly int[] flatTriangleTable =
                 ? Mathf.Max(boundaryIndexHigh - 1, 0)
                 : Mathf.Clamp(1, 0, GetComponent(highDims, mainAxis));
 
-            int boundaryIndexLow = positiveDirection ? 0 : GetComponent(lowDims, mainAxis);
-            int insideIndexLow = positiveDirection
-                ? Mathf.Clamp(boundaryIndexLow + 1, 0, GetComponent(lowDims, mainAxis))
-                : Mathf.Max(boundaryIndexLow - 1, 0);
-
             Vector3[,] highSurface = new Vector3[resU + 1, resV + 1];
-            Vector3[,] lowSurface = new Vector3[resU + 1, resV + 1];
+
+            float skirtDepth = TransitionSkirtDepth;
+            if (skirtDepth <= 0f)
+            {
+                targetMesh.Clear();
+                return false;
+            }
+
+            Vector3 normalizedDirection = ((Vector3)clampedDir).normalized;
+            Vector3 skirtOffsetLocal = normalizedDirection * skirtDepth;
 
             for (int u = 0; u <= resU; u++)
             {
@@ -695,24 +705,7 @@ private static readonly int[] flatTriangleTable =
 
                     Vector3 highSurfaceWorld = InterpolateSurface(worldInsideHigh, densityInsideHigh, worldBoundaryHigh, densityBoundaryHigh);
 
-                    Vector3 neighborBoundaryCoord = (worldBoundaryHigh - lowDetailChunk.WorldPosition) / lowDetailChunk.VoxelSize;
-                    SetComponent(ref neighborBoundaryCoord, axisU, Mathf.Clamp(GetComponent(neighborBoundaryCoord, axisU), 0f, GetComponent(lowDims, axisU)));
-                    SetComponent(ref neighborBoundaryCoord, axisV, Mathf.Clamp(GetComponent(neighborBoundaryCoord, axisV), 0f, GetComponent(lowDims, axisV)));
-                    SetComponent(ref neighborBoundaryCoord, mainAxis, boundaryIndexLow);
-
-                    Vector3 neighborInsideCoord = neighborBoundaryCoord;
-                    SetComponent(ref neighborInsideCoord, mainAxis, insideIndexLow);
-
-                    float densityBoundaryLow = SampleDensityAtLocal(lowDetailChunk, neighborBoundaryCoord);
-                    float densityInsideLow = SampleDensityAtLocal(lowDetailChunk, neighborInsideCoord);
-
-                    Vector3 worldBoundaryLow = ToWorld(lowDetailChunk, neighborBoundaryCoord);
-                    Vector3 worldInsideLow = ToWorld(lowDetailChunk, neighborInsideCoord);
-
-                    Vector3 lowSurfaceWorld = InterpolateSurface(worldBoundaryLow, densityBoundaryLow, worldInsideLow, densityInsideLow);
-
                     highSurface[u, v] = highSurfaceWorld - highDetailChunk.WorldPosition;
-                    lowSurface[u, v] = lowSurfaceWorld - highDetailChunk.WorldPosition;
                 }
             }
 
@@ -730,10 +723,10 @@ private static readonly int[] flatTriangleTable =
                     Vector3 h01 = highSurface[u, v + 1];
                     Vector3 h11 = highSurface[u + 1, v + 1];
 
-                    Vector3 l00 = lowSurface[u, v];
-                    Vector3 l10 = lowSurface[u + 1, v];
-                    Vector3 l01 = lowSurface[u, v + 1];
-                    Vector3 l11 = lowSurface[u + 1, v + 1];
+                    Vector3 l00 = h00 + skirtOffsetLocal;
+                    Vector3 l10 = h10 + skirtOffsetLocal;
+                    Vector3 l01 = h01 + skirtOffsetLocal;
+                    Vector3 l11 = h11 + skirtOffsetLocal;
 
                     AddQuad(h00, h10, l10, l00, normalHint, vertices, triangles, normals);
                     AddQuad(h00, l00, l01, h01, normalHint, vertices, triangles, normals);
