@@ -60,12 +60,12 @@ namespace TerrainSystem
                     cubeIndex |= (1 << i);
                 }
             }
-            
+
             if (cubeIndex == 0 || cubeIndex == 255)
             {
                 return;
             }
-            
+
             // Reset cached edge vertices
             for (int i = 0; i < 12; i++)
             {
@@ -94,7 +94,7 @@ namespace TerrainSystem
             {
                 return edgeVertexIndices[edgeIndex];
             }
-            
+
             int cornerIdx1 = edgeConnections[edgeIndex * 2 + 0];
             int cornerIdx2 = edgeConnections[edgeIndex * 2 + 1];
 
@@ -172,11 +172,6 @@ namespace TerrainSystem
         public float surfaceLevel => _surfaceLevel;
 
         [Header("Transition Settings")]
-        [Tooltip("Depth of the transition skirt in voxel units. The final offset scales with the chunk's voxel size.")]
-        [SerializeField, Min(0f)]
-        private float transitionSkirtDepth = 0.25f;
-
-        [Header("Transition Settings")]
         [Tooltip("World-space depth of the seam skirt extruded from high-detail chunk edges when stitching to lower LODs.")]
         [Min(0f)]
         [SerializeField]
@@ -189,10 +184,10 @@ namespace TerrainSystem
         // ????????? ????????, ????? TerrainManager ??? ???????? ? ??? ??????
         public NativeArray<int> NativeTriangleTable => nativeTriangleTable;
         public NativeArray<int> NativeEdgeConnections => nativeEdgeConnections;
-        
+
         #region Marching Cubes Tables (Static data accessible by jobs)
-        
-        private static readonly int[] flatEdgeConnections = 
+
+        private static readonly int[] flatEdgeConnections =
         {
             0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4,
             0, 4, 1, 5, 2, 6, 3, 7
@@ -203,8 +198,8 @@ namespace TerrainSystem
             new Vector3Int(0, 0, 0), new Vector3Int(1, 0, 0), new Vector3Int(1, 0, 1), new Vector3Int(0, 0, 1),
             new Vector3Int(0, 1, 0), new Vector3Int(1, 1, 0), new Vector3Int(1, 1, 1), new Vector3Int(0, 1, 1)
         };
-        
-private static readonly int[] flatTriangleTable = 
+
+        private static readonly int[] flatTriangleTable =
 {
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -463,9 +458,9 @@ private static readonly int[] flatTriangleTable =
     0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
 };
-        
+
         #endregion
-        
+
         private void Awake()
         {
             EnsureTablesInitialized();
@@ -676,18 +671,6 @@ private static readonly int[] flatTriangleTable =
                 ? Mathf.Max(boundaryIndexHigh - 1, 0)
                 : Mathf.Clamp(1, 0, GetComponent(highDims, mainAxis));
 
-            int lowResU = GetComponent(lowDims, axisU);
-            int lowResV = GetComponent(lowDims, axisV);
-            int lowMainRes = GetComponent(lowDims, mainAxis);
-
-            float scaleU = resU > 0 ? (float)lowResU / resU : 0f;
-            float scaleV = resV > 0 ? (float)lowResV / resV : 0f;
-
-            int boundaryIndexLow = positiveDirection ? 0 : lowMainRes;
-            int insideIndexLow = positiveDirection
-                ? (lowMainRes > 0 ? 1 : 0)
-                : Mathf.Max(lowMainRes - 1, 0);
-
             Vector3[,] highSurface = new Vector3[resU + 1, resV + 1];
 
             float skirtDepth = TransitionSkirtDepth;
@@ -699,9 +682,6 @@ private static readonly int[] flatTriangleTable =
 
             Vector3 normalizedDirection = ((Vector3)clampedDir).normalized;
             Vector3 skirtOffsetLocal = normalizedDirection * skirtDepth;
-
-            float skirtDepthWorld = Mathf.Max(0f, transitionSkirtDepth) * highDetailChunk.VoxelSize;
-            Vector3 fallbackOffsetWorld = ((Vector3)clampedDir).normalized * -skirtDepthWorld;
 
             for (int u = 0; u <= resU; u++)
             {
@@ -724,38 +704,6 @@ private static readonly int[] flatTriangleTable =
                     Vector3 worldBoundaryHigh = ToWorld(highDetailChunk, boundaryCoordHigh);
 
                     Vector3 highSurfaceWorld = InterpolateSurface(worldInsideHigh, densityInsideHigh, worldBoundaryHigh, densityBoundaryHigh);
-
-                    float scaledU = Mathf.Clamp(u * scaleU, 0f, lowResU);
-                    float scaledV = Mathf.Clamp(v * scaleV, 0f, lowResV);
-
-                    Vector3 insideCoordLow = Vector3.zero;
-                    Vector3 boundaryCoordLow = Vector3.zero;
-
-                    SetComponent(ref insideCoordLow, axisU, scaledU);
-                    SetComponent(ref insideCoordLow, axisV, scaledV);
-                    SetComponent(ref insideCoordLow, mainAxis, insideIndexLow);
-
-                    boundaryCoordLow = insideCoordLow;
-                    SetComponent(ref boundaryCoordLow, mainAxis, boundaryIndexLow);
-
-                    float densityInsideLow = SampleDensityAtLocal(lowDetailChunk, insideCoordLow);
-                    float densityBoundaryLow = SampleDensityAtLocal(lowDetailChunk, boundaryCoordLow);
-
-                    Vector3 worldInsideLow = ToWorld(lowDetailChunk, insideCoordLow);
-                    Vector3 worldBoundaryLow = ToWorld(lowDetailChunk, boundaryCoordLow);
-
-                    Vector3 lowSurfaceWorld = InterpolateSurface(worldInsideLow, densityInsideLow, worldBoundaryLow, densityBoundaryLow);
-
-                    if (!IsFinite(highSurfaceWorld))
-                    {
-                        highSurfaceWorld = worldBoundaryHigh;
-                    }
-
-                    if (!IsFinite(lowSurfaceWorld))
-                    {
-                        Vector3 fallbackBase = IsFinite(highSurfaceWorld) ? highSurfaceWorld : worldBoundaryHigh;
-                        lowSurfaceWorld = fallbackBase + fallbackOffsetWorld;
-                    }
 
                     highSurface[u, v] = highSurfaceWorld - highDetailChunk.WorldPosition;
                 }
@@ -924,12 +872,6 @@ private static readonly int[] flatTriangleTable =
             triangles.Add(startIndex);
             triangles.Add(startIndex + 2);
             triangles.Add(startIndex + 3);
-        }
-
-        private static bool IsFinite(Vector3 value)
-        {
-            return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z)
-                || float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
         }
 
         private static int GetComponent(Vector3Int value, int axis)
