@@ -9,6 +9,8 @@ public class InventorySlot : MonoBehaviour, IDropHandler
     public Image image;
     public Color selectedColor, notSelectedColor;
 
+    private InventoryItem _cachedInventoryItem;
+
     private void Awake() {
         Deselect();
     }
@@ -27,5 +29,20 @@ public class InventorySlot : MonoBehaviour, IDropHandler
             InventoryItem inventoryItem = eventData.pointerDrag.GetComponent<InventoryItem>();
             inventoryItem.parentAfterDrag = transform;
         }
+    }
+
+    public InventoryItem GetInventoryItem()
+    {
+        if (_cachedInventoryItem == null)
+        {
+            _cachedInventoryItem = GetComponentInChildren<InventoryItem>();
+        }
+
+        return _cachedInventoryItem;
+    }
+
+    private void OnTransformChildrenChanged()
+    {
+        _cachedInventoryItem = null;
     }
 }

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
-using System.Linq; // Required for LINQ queries
 
 public class InventoryManager : MonoBehaviour
 {
@@ -71,10 +70,20 @@ public class InventoryManager : MonoBehaviour
     /// <returns>Общее количество предметов.</returns>
     private int GetTotalItemCount(Item item)
     {
-        return inventorySlots
-            .Select(slot => slot.GetComponentInChildren<InventoryItem>())
-            .Where(itemInSlot => itemInSlot != null && itemInSlot.item == item)
-            .Sum(itemInSlot => itemInSlot.count);
+        int total = 0;
+
+        for (int i = 0; i < inventorySlots.Length; i++)
+        {
+            InventorySlot slot = inventorySlots[i];
+            InventoryItem itemInSlot = slot.GetInventoryItem();
+
+            if (itemInSlot != null && itemInSlot.item == item)
+            {
+                total += itemInSlot.count;
+            }
+        }
+
+        return total;
     }
 
     /// <summary>
@@ -87,7 +96,7 @@ public class InventoryManager : MonoBehaviour
             if (amountToRemove <= 0) break;
 
             InventorySlot slot = inventorySlots[i];
-            InventoryItem itemInSlot = slot.GetComponentInChildren<InventoryItem>();
+            InventoryItem itemInSlot = slot.GetInventoryItem();
 
             if (itemInSlot != null && itemInSlot.item == item)
             {
@@ -141,7 +150,7 @@ public class InventoryManager : MonoBehaviour
         // Check if any slot has the same item with count lower than max
         for (int i = 0; i < inventorySlots.Length; i++) {
             InventorySlot slot = inventorySlots[i];
-            InventoryItem itemInSlot = slot.GetComponentInChildren<InventoryItem>();
+            InventoryItem itemInSlot = slot.GetInventoryItem();
             if (itemInSlot != null &&
                 itemInSlot.item == item &&
                 itemInSlot.count < maxStackedItems &&
@@ -156,7 +165,7 @@ public class InventoryManager : MonoBehaviour
         // Find any empty slot
         for (int i = 0; i < inventorySlots.Length; i++) {
             InventorySlot slot = inventorySlots[i];
-            InventoryItem itemInSlot = slot.GetComponentInChildren<InventoryItem>();
+            InventoryItem itemInSlot = slot.GetInventoryItem();
             if (itemInSlot == null) {
                 SpawnNewItem(item, slot);
                 return true;
@@ -174,7 +183,7 @@ public class InventoryManager : MonoBehaviour
 
     public Item GetSelectedItem(bool use) {
         InventorySlot slot = inventorySlots[selectedSlot];
-        InventoryItem itemInSlot = slot.GetComponentInChildren<InventoryItem>();
+        InventoryItem itemInSlot = slot.GetInventoryItem();
         if (itemInSlot != null) {
             Item item = itemInSlot.item;
             if (use == true) {
