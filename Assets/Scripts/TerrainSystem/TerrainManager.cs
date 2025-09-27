@@ -1755,7 +1755,7 @@ namespace TerrainSystem
 
                 if (densityBuffers.TryGetValue(kvp.Key, out var buffer))
                 {
-                    ComputeBufferManager.Instance.ReleaseBuffer(buffer);
+                    computeBufferPool.ReleaseBuffer(buffer);
                     densityBuffers.Remove(kvp.Key);
                 }
 
@@ -1773,7 +1773,7 @@ namespace TerrainSystem
 
                 if (modificationRequest.DensityBuffer != null)
                 {
-                    ComputeBufferManager.Instance.ReleaseBuffer(modificationRequest.DensityBuffer);
+                    computeBufferPool.ReleaseBuffer(modificationRequest.DensityBuffer);
                 }
             }
             runningGpuModificationRequests.Clear();

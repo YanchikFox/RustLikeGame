@@ -9,28 +9,6 @@ namespace TerrainSystem
     /// </summary>
     public class ComputeBufferManager : MonoBehaviour, IComputeBufferPool
     {
-        #region Singleton Pattern
-        private static ComputeBufferManager _instance;
-        public static ComputeBufferManager Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    GameObject go = new GameObject("ComputeBufferManager");
-                    _instance = go.AddComponent<ComputeBufferManager>();
-                    DontDestroyOnLoad(go);
-                }
-                return _instance;
-            }
-        }
-
-        public static bool TryGetInstance(out ComputeBufferManager manager)
-        {
-            manager = _instance;
-            return manager != null;
-        }
-        #endregion
 
         #region Buffer Key Structure
         /// <summary>
