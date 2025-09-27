@@ -227,6 +227,7 @@ namespace TerrainSystem
             public int HighLod;
             public int LowLod;
             public bool Dirty;
+            public float SkirtDepth;
         }
         private ComputeBuffer biomeThresholdsBuffer;
         private ComputeBuffer biomeGroundLevelsBuffer;
@@ -2357,14 +2358,19 @@ namespace TerrainSystem
                     Direction = direction,
                     HighLod = highChunk.LODLevel,
                     LowLod = lowChunk.LODLevel,
-                    Dirty = true
+                    Dirty = true,
+                    SkirtDepth = meshGenerator.TransitionSkirtDepth
                 };
 
                 transitionMeshes[key] = data;
             }
             else
             {
-                data.Direction = direction;
+                if (data.Direction != direction)
+                {
+                    data.Direction = direction;
+                    data.Dirty = true;
+                }
 
                 if (data.MeshFilter.transform.parent != highChunk.transform)
                 {
@@ -2379,6 +2385,13 @@ namespace TerrainSystem
                     data.LowLod = lowChunk.LODLevel;
                     data.Dirty = true;
                 }
+
+                float generatorSkirtDepth = meshGenerator.TransitionSkirtDepth;
+                if (!Mathf.Approximately(data.SkirtDepth, generatorSkirtDepth))
+                {
+                    data.SkirtDepth = generatorSkirtDepth;
+                    data.Dirty = true;
+                }
             }
 
             if (!transitionLODs)
@@ -2388,6 +2401,15 @@ namespace TerrainSystem
 
             if (data.Dirty)
             {
+                float skirtDepth = meshGenerator.TransitionSkirtDepth;
+                if (skirtDepth <= 0f)
+                {
+                    data.Mesh.Clear();
+                    data.Dirty = false;
+                    data.SkirtDepth = skirtDepth;
+                    return;
+                }
+
                 if (highChunk.IsDirty || lowChunk.IsDirty
                     || runningMeshJobs.ContainsKey(highChunk.ChunkPosition)
                     || runningMeshJobs.ContainsKey(lowChunk.ChunkPosition))
@@ -2401,6 +2423,7 @@ namespace TerrainSystem
                     data.Mesh.Clear();
                 }
 
+                data.SkirtDepth = meshGenerator.TransitionSkirtDepth;
                 data.Dirty = false;
             }
         }
