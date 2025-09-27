@@ -3504,6 +3504,11 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
                 return false;
             }
 
+            if (computeBufferPool == null)
+            {
+                return false;
+            }
+
             Vector3Int chunkPos = chunk.ChunkPosition;
 
             if (runningGpuModificationRequests.ContainsKey(chunkPos))
@@ -3521,7 +3526,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             Vector3Int voxelDimensions = GetChunkVoxelDimensionsForLOD(lodLevel);
             int voxelCount = (voxelDimensions.x + 1) * (voxelDimensions.y + 1) * (voxelDimensions.z + 1);
 
-            ComputeBuffer densityBuffer = ComputeBufferManager.Instance.GetBuffer(voxelCount, sizeof(float));
+            ComputeBuffer densityBuffer = computeBufferPool.GetBuffer(voxelCount, sizeof(float));
             bool requestScheduled = false;
 
             try
@@ -3571,7 +3576,7 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             {
                 if (!requestScheduled)
                 {
-                    ComputeBufferManager.Instance.ReleaseBuffer(densityBuffer);
+                    computeBufferPool.ReleaseBuffer(densityBuffer);
                 }
             }
         }
@@ -3586,9 +3591,9 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
             runningGpuModificationRequests.Remove(chunkPos);
 
-            if (requestData.DensityBuffer != null)
+            if (requestData.DensityBuffer != null && computeBufferPool != null)
             {
-                ReleaseBufferSafe(requestData.DensityBuffer);
+                computeBufferPool.ReleaseBuffer(requestData.DensityBuffer);
             }
 
             if (request.hasError)
