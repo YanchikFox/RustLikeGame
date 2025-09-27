@@ -159,6 +159,105 @@ namespace TerrainSystem
         }
     }
 
+    public readonly struct DensitySampler
+    {
+        public readonly struct Source
+        {
+            public readonly TerrainChunk Chunk;
+            public readonly Vector3Int OriginVoxel;
+            public readonly Vector3Int VoxelDimensions;
+            public readonly int LodLevel;
+
+            public Source(TerrainChunk chunk, Vector3Int originVoxel, Vector3Int voxelDimensions, int lodLevel)
+            {
+                Chunk = chunk;
+                OriginVoxel = originVoxel;
+                VoxelDimensions = voxelDimensions;
+                LodLevel = lodLevel;
+            }
+
+            public bool TrySample(Vector3Int worldVoxel, out float density)
+            {
+                density = 0f;
+
+                var chunk = Chunk;
+                if (chunk == null)
+                {
+                    return false;
+                }
+
+                int step = 1 << LodLevel;
+                Vector3Int relative = worldVoxel - OriginVoxel;
+
+                if (relative.x < 0 || relative.y < 0 || relative.z < 0)
+                {
+                    return false;
+                }
+
+                int maxX = VoxelDimensions.x * step;
+                int maxY = VoxelDimensions.y * step;
+                int maxZ = VoxelDimensions.z * step;
+                if (relative.x > maxX || relative.y > maxY || relative.z > maxZ)
+                {
+                    return false;
+                }
+
+                if ((relative.x % step) != 0 || (relative.y % step) != 0 || (relative.z % step) != 0)
+                {
+                    return false;
+                }
+
+                int ix = relative.x / step;
+                int iy = relative.y / step;
+                int iz = relative.z / step;
+
+                if (ix < 0 || iy < 0 || iz < 0
+                    || ix > VoxelDimensions.x
+                    || iy > VoxelDimensions.y
+                    || iz > VoxelDimensions.z)
+                {
+                    return false;
+                }
+
+                density = chunk.GetVoxel(ix, iy, iz).density;
+                return true;
+            }
+        }
+
+        private readonly Source[] sources;
+
+        public DensitySampler(Source[] sources)
+        {
+            this.sources = sources;
+        }
+
+        public bool TrySample(int lodLevel, Vector3Int worldVoxel, out float density)
+        {
+            density = 0f;
+
+            if (sources == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < sources.Length; i++)
+            {
+                Source source = sources[i];
+                if (source.LodLevel != lodLevel)
+                {
+                    continue;
+                }
+
+                if (source.TrySample(worldVoxel, out density))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     public class MarchingCubesMeshGenerator : MonoBehaviour
     {
         [Header("Mesh Generation Settings")]
@@ -800,10 +899,569 @@ namespace TerrainSystem
             targetMesh.SetVertices(vertices);
             targetMesh.SetNormals(normals);
             targetMesh.SetTriangles(triangles, 0, true);
+            targetMesh.SetTriangles(triangles, 0, true);
             targetMesh.RecalculateBounds();
             return true;
         }
 
+        public bool GenerateLodStitchMesh(
+            DensitySampler sampler,
+            Vector3Int highChunkOriginVoxel,
+            Vector3Int lowChunkOriginVoxel,
+            Vector3 chunkWorldSize,
+            float voxelSize,
+            int mainAxis,
+            int direction,
+            int highLodLevel,
+            int lowLodLevel,
+            Mesh targetMesh,
+            float isoLevel = 0f)
+        {
+            if (targetMesh == null)
+            {
+                return false;
+            }
+
+            if (direction != -1 && direction != 1)
+            {
+                targetMesh.Clear();
+                return false;
+            }
+
+            int axisU;
+            int axisV;
+            DetermineAxesFromMainAxis(mainAxis, out axisU, out axisV);
+
+            if (!TryCalculateVoxelCounts(chunkWorldSize, voxelSize, highLodLevel, lowLodLevel, mainAxis, axisU, axisV,
+                    out int highNu, out int highNv, out int highWCount,
+                    out int lowNu, out int lowNv, out int lowWCount))
+            {
+                targetMesh.Clear();
+                return false;
+            }
+
+            int highInsideIndex = Mathf.Clamp(direction > 0 ? highWCount - 1 : 1, 0, highWCount);
+            int highBoundaryIndex = direction > 0 ? highWCount : 0;
+
+            int lowBoundaryIndex = direction > 0 ? 0 : lowWCount;
+            int lowInsideIndex = Mathf.Clamp(lowBoundaryIndex + direction, 0, lowWCount);
+
+            Vector3 highChunkWorldOrigin = new Vector3(
+                highChunkOriginVoxel.x * voxelSize,
+                highChunkOriginVoxel.y * voxelSize,
+                highChunkOriginVoxel.z * voxelSize);
+
+            Vector3 lowChunkWorldOrigin = new Vector3(
+                lowChunkOriginVoxel.x * voxelSize,
+                lowChunkOriginVoxel.y * voxelSize,
+                lowChunkOriginVoxel.z * voxelSize);
+
+            Vector3Int highStepU = GetAxisStep(axisU, 1 << highLodLevel);
+            Vector3Int highStepV = GetAxisStep(axisV, 1 << highLodLevel);
+            Vector3Int highStepW = GetAxisStep(mainAxis, 1 << highLodLevel);
+
+            Vector3Int lowStepU = GetAxisStep(axisU, 1 << lowLodLevel);
+            Vector3Int lowStepV = GetAxisStep(axisV, 1 << lowLodLevel);
+            Vector3Int lowStepW = GetAxisStep(mainAxis, 1 << lowLodLevel);
+
+            Vector3[,] highSurface = new Vector3[highNu, highNv];
+            bool[,] highValid = new bool[highNu, highNv];
+
+            int highValidCount = SampleFaceSurface(
+                sampler,
+                highLodLevel,
+                highChunkOriginVoxel,
+                highStepU,
+                highStepV,
+                highStepW,
+                highInsideIndex,
+                highBoundaryIndex,
+                highNu,
+                highNv,
+                voxelSize,
+                highChunkWorldOrigin,
+                isoLevel,
+                highSurface,
+                highValid);
+
+            if (highValidCount == 0)
+            {
+                targetMesh.Clear();
+                return false;
+            }
+
+            Vector3[,] lowSurface = new Vector3[lowNu, lowNv];
+            bool[,] lowValid = new bool[lowNu, lowNv];
+
+            int lowValidCount = SampleFaceSurface(
+                sampler,
+                lowLodLevel,
+                lowChunkOriginVoxel,
+                lowStepU,
+                lowStepV,
+                lowStepW,
+                lowInsideIndex,
+                lowBoundaryIndex,
+                lowNu,
+                lowNv,
+                voxelSize,
+                highChunkWorldOrigin,
+                isoLevel,
+                lowSurface,
+                lowValid);
+
+            if (lowValidCount == 0)
+            {
+                targetMesh.Clear();
+                return false;
+            }
+
+            Vector3[,] lowUpsampled = new Vector3[highNu, highNv];
+            bool[,] lowUpsampledValid = new bool[highNu, highNv];
+            UpsampleLowSurface(lowSurface, lowValid, lowNu, lowNv, lowUpsampled, lowUpsampledValid);
+
+            var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
+            var triangles = new List<int>();
+
+            int[,] topIndices = new int[highNu, highNv];
+            int[,] bottomIndices = new int[highNu, highNv];
+            for (int u = 0; u < highNu; u++)
+            {
+                for (int v = 0; v < highNv; v++)
+                {
+                    topIndices[u, v] = -1;
+                    bottomIndices[u, v] = -1;
+                }
+            }
+
+            for (int u = 0; u < highNu; u++)
+            {
+                for (int v = 0; v < highNv; v++)
+                {
+                    if (!highValid[u, v])
+                    {
+                        continue;
+                    }
+
+                    if (!lowUpsampledValid[u, v])
+                    {
+                        continue;
+                    }
+
+                    int topIndex = vertices.Count;
+                    vertices.Add(highSurface[u, v]);
+                    normals.Add(Vector3.zero);
+                    topIndices[u, v] = topIndex;
+
+                    int bottomIndex = vertices.Count;
+                    vertices.Add(lowUpsampled[u, v]);
+                    normals.Add(Vector3.zero);
+                    bottomIndices[u, v] = bottomIndex;
+                }
+            }
+
+            if (!BuildStitchTriangles(topIndices, bottomIndices, vertices, normals, triangles))
+            {
+                targetMesh.Clear();
+                return false;
+            }
+
+            NormalizeNormals(normals);
+
+            targetMesh.Clear();
+            targetMesh.indexFormat = vertices.Count > 65535
+                ? IndexFormat.UInt32
+                : IndexFormat.UInt16;
+            targetMesh.SetVertices(vertices);
+            targetMesh.SetNormals(normals);
+            targetMesh.SetTriangles(triangles, 0, true);
+            targetMesh.RecalculateBounds();
+            return true;
+        }
+private static bool BuildStitchTriangles(int[,] topIndices, int[,] bottomIndices, List<Vector3> vertices, List<Vector3> normals, List<int> triangles)
+        {
+            int width = topIndices.GetLength(0);
+            int height = topIndices.GetLength(1);
+            bool any = false;
+
+            for (int u = 0; u < width - 1; u++)
+            {
+                for (int v = 0; v < height - 1; v++)
+                {
+                    int t00 = topIndices[u, v];
+                    int t10 = topIndices[u + 1, v];
+                    int t01 = topIndices[u, v + 1];
+                    int t11 = topIndices[u + 1, v + 1];
+
+                    int b00 = bottomIndices[u, v];
+                    int b10 = bottomIndices[u + 1, v];
+                    int b01 = bottomIndices[u, v + 1];
+                    int b11 = bottomIndices[u + 1, v + 1];
+
+                    if (t00 < 0 || t10 < 0 || t01 < 0 || t11 < 0
+                        || b00 < 0 || b10 < 0 || b01 < 0 || b11 < 0)
+                    {
+                        continue;
+                    }
+
+                    AddTriangle(triangles, vertices, normals, t00, t10, b11);
+                    AddTriangle(triangles, vertices, normals, t00, b11, t01);
+                    AddTriangle(triangles, vertices, normals, b00, b10, t11);
+                    AddTriangle(triangles, vertices, normals, b00, t11, b01);
+                    any = true;
+                }
+            }
+
+            return any;
+        }
+
+        private static void AddTriangle(List<int> triangles, List<Vector3> vertices, List<Vector3> normals, int a, int b, int c)
+        {
+            triangles.Add(a);
+            triangles.Add(b);
+            triangles.Add(c);
+
+            Vector3 ab = vertices[b] - vertices[a];
+            Vector3 ac = vertices[c] - vertices[a];
+            Vector3 normal = Vector3.Cross(ab, ac);
+            if (normal.sqrMagnitude > 1e-12f)
+            {
+                normal.Normalize();
+            }
+
+            normals[a] += normal;
+            normals[b] += normal;
+            normals[c] += normal;
+        }
+
+        private static void NormalizeNormals(List<Vector3> normals)
+        {
+            for (int i = 0; i < normals.Count; i++)
+            {
+                Vector3 n = normals[i];
+                if (n.sqrMagnitude > 1e-12f)
+                {
+                    normals[i] = n.normalized;
+                }
+                else
+                {
+                    normals[i] = Vector3.up;
+                }
+            }
+        }
+
+        private static void DetermineAxesFromMainAxis(int mainAxis, out int axisU, out int axisV)
+        {
+            switch (mainAxis)
+            {
+                case 0:
+                    axisU = 1;
+                    axisV = 2;
+                    break;
+                case 1:
+                    axisU = 0;
+                    axisV = 2;
+                    break;
+                default:
+                    axisU = 0;
+                    axisV = 1;
+                    break;
+            }
+        }
+
+        private static bool TryCalculateVoxelCounts(
+            Vector3 chunkWorldSize,
+            float voxelSize,
+            int highLodLevel,
+            int lowLodLevel,
+            int mainAxis,
+            int axisU,
+            int axisV,
+            out int highNu,
+            out int highNv,
+            out int highWCount,
+            out int lowNu,
+            out int lowNv,
+            out int lowWCount)
+        {
+            highNu = highNv = highWCount = lowNu = lowNv = lowWCount = 0;
+
+            int baseU = Mathf.RoundToInt(GetComponent(chunkWorldSize, axisU) / voxelSize);
+            int baseV = Mathf.RoundToInt(GetComponent(chunkWorldSize, axisV) / voxelSize);
+            int baseW = Mathf.RoundToInt(GetComponent(chunkWorldSize, mainAxis) / voxelSize);
+
+            if (!IsDivisibleByLod(baseU, highLodLevel) || !IsDivisibleByLod(baseV, highLodLevel) || !IsDivisibleByLod(baseW, highLodLevel))
+            {
+                return false;
+            }
+
+            if (!IsDivisibleByLod(baseU, lowLodLevel) || !IsDivisibleByLod(baseV, lowLodLevel) || !IsDivisibleByLod(baseW, lowLodLevel))
+            {
+                return false;
+            }
+
+            int highUCount = baseU >> highLodLevel;
+            int highVCount = baseV >> highLodLevel;
+            highWCount = baseW >> highLodLevel;
+
+            int lowUCount = baseU >> lowLodLevel;
+            int lowVCount = baseV >> lowLodLevel;
+            lowWCount = baseW >> lowLodLevel;
+
+            highNu = highUCount + 1;
+            highNv = highVCount + 1;
+            lowNu = lowUCount + 1;
+            lowNv = lowVCount + 1;
+
+            return true;
+        }
+
+        private static bool IsDivisibleByLod(int value, int lodLevel)
+        {
+            if (lodLevel <= 0)
+            {
+                return true;
+            }
+
+            int divisor = 1 << lodLevel;
+            return (value % divisor) == 0;
+        }
+
+        private static Vector3Int GetAxisStep(int axis, int magnitude)
+        {
+            switch (axis)
+            {
+                case 0:
+                    return new Vector3Int(magnitude, 0, 0);
+                case 1:
+                    return new Vector3Int(0, magnitude, 0);
+                default:
+                    return new Vector3Int(0, 0, magnitude);
+            }
+        }
+
+        private static int SampleFaceSurface(
+            DensitySampler sampler,
+            int lodLevel,
+            Vector3Int chunkOriginVoxel,
+            Vector3Int stepU,
+            Vector3Int stepV,
+            Vector3Int stepW,
+            int insideIndex,
+            int boundaryIndex,
+            int countU,
+            int countV,
+            float voxelSize,
+            Vector3 referenceOrigin,
+            float isoLevel,
+            Vector3[,] surface,
+            bool[,] valid)
+        {
+            int validCount = 0;
+
+            for (int u = 0; u < countU; u++)
+            {
+                for (int v = 0; v < countV; v++)
+                {
+                    Vector3Int baseVoxel = chunkOriginVoxel + stepU * u + stepV * v;
+                    Vector3Int insideVoxel = baseVoxel + stepW * insideIndex;
+                    Vector3Int boundaryVoxel = baseVoxel + stepW * boundaryIndex;
+
+                    if (!sampler.TrySample(lodLevel, insideVoxel, out float densityInside)
+                        || !sampler.TrySample(lodLevel, boundaryVoxel, out float densityBoundary))
+                    {
+                        valid[u, v] = false;
+                        continue;
+                    }
+
+                    float insideDelta = densityInside - isoLevel;
+                    float boundaryDelta = densityBoundary - isoLevel;
+                    if (insideDelta * boundaryDelta > 0f)
+                    {
+                        valid[u, v] = false;
+                        continue;
+                    }
+
+                    Vector3 insideWorld = (Vector3)insideVoxel * voxelSize;
+                    Vector3 boundaryWorld = (Vector3)boundaryVoxel * voxelSize;
+                    Vector3 point = InterpolateSurface(isoLevel, insideWorld, densityInside, boundaryWorld, densityBoundary) - referenceOrigin;
+                    surface[u, v] = point;
+                    valid[u, v] = true;
+                    validCount++;
+                }
+            }
+
+            return validCount;
+        }
+
+        private static Vector3 InterpolateSurface(float isoLevel, Vector3 start, float densityStart, Vector3 end, float densityEnd)
+        {
+            float denominator = densityEnd - densityStart;
+            float t = Mathf.Abs(denominator) > 1e-5f
+                ? (isoLevel - densityStart) / denominator
+                : 0.5f;
+            t = Mathf.Clamp01(t);
+            return Vector3.Lerp(start, end, t);
+        }
+
+        private static void UpsampleLowSurface(
+            Vector3[,] lowSurface,
+            bool[,] lowValid,
+            int lowNu,
+            int lowNv,
+            Vector3[,] result,
+            bool[,] resultValid)
+        {
+            int highNu = result.GetLength(0);
+            int highNv = result.GetLength(1);
+
+            for (int u = 0; u < highNu; u++)
+            {
+                for (int v = 0; v < highNv; v++)
+                {
+                    if (TrySampleUpsampledLow(lowSurface, lowValid, lowNu, lowNv, u, v, out Vector3 sample))
+                    {
+                        result[u, v] = sample;
+                        resultValid[u, v] = true;
+                    }
+                    else
+                    {
+                        resultValid[u, v] = false;
+                    }
+                }
+            }
+        }
+
+        private static bool TrySampleUpsampledLow(
+            Vector3[,] lowSurface,
+            bool[,] lowValid,
+            int lowNu,
+            int lowNv,
+            int highU,
+            int highV,
+            out Vector3 sample)
+        {
+            float scaledU = highU * 0.5f;
+            float scaledV = highV * 0.5f;
+
+            int u0 = Mathf.Clamp(Mathf.FloorToInt(scaledU), 0, lowNu - 1);
+            int v0 = Mathf.Clamp(Mathf.FloorToInt(scaledV), 0, lowNv - 1);
+            int u1 = Mathf.Clamp(u0 + 1, 0, lowNu - 1);
+            int v1 = Mathf.Clamp(v0 + 1, 0, lowNv - 1);
+
+            float fu = scaledU - u0;
+            float fv = scaledV - v0;
+
+            bool v00 = lowValid[u0, v0];
+            bool v10 = lowValid[u1, v0];
+            bool v01 = lowValid[u0, v1];
+            bool v11 = lowValid[u1, v1];
+
+            if (Mathf.Approximately(fu, 0f) && Mathf.Approximately(fv, 0f))
+            {
+                if (v00)
+                {
+                    sample = lowSurface[u0, v0];
+                    return true;
+                }
+
+                sample = default;
+                return false;
+            }
+
+            if (Mathf.Approximately(fv, 0f))
+            {
+                if (v00 && v10)
+                {
+                    sample = Vector3.Lerp(lowSurface[u0, v0], lowSurface[u1, v0], fu);
+                    return true;
+                }
+
+                if (v00)
+                {
+                    sample = lowSurface[u0, v0];
+                    return true;
+                }
+
+                if (v10)
+                {
+                    sample = lowSurface[u1, v0];
+                    return true;
+                }
+
+                sample = default;
+                return false;
+            }
+
+            if (Mathf.Approximately(fu, 0f))
+            {
+                if (v00 && v01)
+                {
+                    sample = Vector3.Lerp(lowSurface[u0, v0], lowSurface[u0, v1], fv);
+                    return true;
+                }
+
+                if (v00)
+                {
+                    sample = lowSurface[u0, v0];
+                    return true;
+                }
+
+                if (v01)
+                {
+                    sample = lowSurface[u0, v1];
+                    return true;
+                }
+
+                sample = default;
+                return false;
+            }
+
+            if (v00 && v10 && v01 && v11)
+            {
+                Vector3 a = Vector3.Lerp(lowSurface[u0, v0], lowSurface[u1, v0], fu);
+                Vector3 b = Vector3.Lerp(lowSurface[u0, v1], lowSurface[u1, v1], fu);
+                sample = Vector3.Lerp(a, b, fv);
+                return true;
+            }
+
+            Vector3 accumulator = Vector3.zero;
+            float weight = 0f;
+
+            if (v00)
+            {
+                accumulator += lowSurface[u0, v0];
+                weight += 1f;
+            }
+
+            if (v10)
+            {
+                accumulator += lowSurface[u1, v0];
+                weight += 1f;
+            }
+
+            if (v01)
+            {
+                accumulator += lowSurface[u0, v1];
+                weight += 1f;
+            }
+
+            if (v11)
+            {
+                accumulator += lowSurface[u1, v1];
+                weight += 1f;
+            }
+
+            if (weight > 0f)
+            {
+                sample = accumulator / weight;
+                return true;
+            }
+
+            sample = default;
+            return false;
+        }
         private static void DetermineAxes(Vector3Int direction, out int mainAxis, out int axisU, out int axisV)
         {
             if (Mathf.Abs(direction.x) > 0)

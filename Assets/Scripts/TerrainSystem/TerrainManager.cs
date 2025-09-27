@@ -229,9 +229,6 @@ namespace TerrainSystem
             public int HighLod;
             public int LowLod;
             public bool Dirty;
-            public float SkirtDepth;
-            public bool HighEmpty;
-            public bool LowEmpty;
         }
         private ComputeBuffer biomeThresholdsBuffer;
         private ComputeBuffer biomeGroundLevelsBuffer;
@@ -2126,8 +2123,6 @@ namespace TerrainSystem
             {
                 ScheduleGenerateVoxelDataJob(chunk, lodLevel);
             }
-
-            MarkTransitionsDirtyForChunk(position);
         }
 
         private TerrainChunk GetChunkFromPool(Vector3 worldPosition, out bool reused)
@@ -2165,6 +2160,8 @@ namespace TerrainSystem
             {
                 return;
             }
+
+            MarkTransitionsDirtyForChunk(chunk.ChunkPosition);
 
             chunk.PrepareForReuse();
             Transform chunkTransform = chunk.transform;
@@ -2405,9 +2402,10 @@ namespace TerrainSystem
 
             foreach (var entry in chunks)
             {
-                var chunkPos = entry.Key;
-                var chunkData = entry.Value;
-                if (chunkData.chunk == null)
+                Vector3Int chunkPos = entry.Key;
+                ChunkData chunkData = entry.Value;
+                TerrainChunk chunk = chunkData.chunk;
+                if (chunk == null)
                 {
                     continue;
                 }
@@ -2415,7 +2413,13 @@ namespace TerrainSystem
                 foreach (var direction in NeighborDirections)
                 {
                     Vector3Int neighborPos = chunkPos + direction;
-                    if (!chunks.TryGetValue(neighborPos, out var neighborData) || neighborData.chunk == null)
+                    if (!chunks.TryGetValue(neighborPos, out var neighborData))
+                    {
+                        continue;
+                    }
+
+                    TerrainChunk neighborChunk = neighborData.chunk;
+                    if (neighborChunk == null)
                     {
                         continue;
                     }
@@ -2430,9 +2434,16 @@ namespace TerrainSystem
                         continue;
                     }
 
-                    var key = new TransitionKey(chunkData.chunk.ChunkPosition, neighborData.chunk.ChunkPosition);
+                    int lodHigh = chunkData.lodLevel;
+                    int lodLow = neighborData.lodLevel;
+                    if (lodLow != lodHigh + 1)
+                    {
+                        continue;
+                    }
+
+                    var key = new TransitionKey(chunk.ChunkPosition, neighborChunk.ChunkPosition);
                     requiredTransitions.Add(key);
-                    EnsureTransitionMesh(key, chunkData.chunk, neighborData.chunk, direction);
+                    EnsureTransitionMesh(key, chunk, neighborChunk, direction);
                 }
             }
 
@@ -2468,6 +2479,46 @@ namespace TerrainSystem
             return mesh == null || mesh.vertexCount == 0;
         }
 
+        private bool IsChunkReadyForTransition(Vector3Int chunkPos, TerrainChunk chunk)
+        {
+            if (chunk == null)
+            {
+                return false;
+            }
+
+            if (chunk.IsDirty)
+            {
+                return false;
+            }
+
+            if (runningMeshJobs.ContainsKey(chunkPos)
+                || runningGenJobs.ContainsKey(chunkPos)
+                || runningGpuGenRequests.ContainsKey(chunkPos)
+                || runningGpuMeshRequests.ContainsKey(chunkPos)
+                || runningGpuModificationRequests.ContainsKey(chunkPos))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private Vector3Int GetChunkOriginVoxel(TerrainChunk chunk)
+        {
+            if (chunk == null)
+            {
+                return Vector3Int.zero;
+            }
+
+            float invVoxel = Mathf.Approximately(voxelSize, 0f) ? 0f : 1f / voxelSize;
+            Vector3 worldPosition = chunk.WorldPosition;
+            return new Vector3Int(
+                Mathf.RoundToInt(worldPosition.x * invVoxel),
+                Mathf.RoundToInt(worldPosition.y * invVoxel),
+                Mathf.RoundToInt(worldPosition.z * invVoxel));
+        }
+
+        
         private void EnsureTransitionMesh(TransitionKey key, TerrainChunk highChunk, TerrainChunk lowChunk, Vector3Int direction)
         {
             if (!transitionLODs || meshGenerator == null || highChunk == null || lowChunk == null)
@@ -2511,8 +2562,7 @@ namespace TerrainSystem
                     Direction = direction,
                     HighLod = highChunk.LODLevel,
                     LowLod = lowChunk.LODLevel,
-                    Dirty = true,
-                    SkirtDepth = meshGenerator.TransitionSkirtDepth
+                    Dirty = true
                 };
 
                 transitionMeshes[key] = data;
@@ -2538,35 +2588,22 @@ namespace TerrainSystem
                     data.LowLod = lowChunk.LODLevel;
                     data.Dirty = true;
                 }
-
-                float generatorSkirtDepth = meshGenerator.TransitionSkirtDepth;
-                if (!Mathf.Approximately(data.SkirtDepth, generatorSkirtDepth))
-                {
-                    data.SkirtDepth = generatorSkirtDepth;
-                    data.Dirty = true;
-                }
             }
 
-            if (!transitionLODs)
+            if (!data.Dirty)
             {
                 return;
             }
 
-            bool highEmpty = IsChunkSurfaceEmpty(highChunk);
-            bool lowEmpty = IsChunkSurfaceEmpty(lowChunk);
-
-            if (data.HighEmpty != highEmpty || data.LowEmpty != lowEmpty)
+            if (!IsChunkReadyForTransition(highChunk.ChunkPosition, highChunk)
+                || !IsChunkReadyForTransition(lowChunk.ChunkPosition, lowChunk))
             {
-                data.Dirty = true;
+                return;
             }
 
-            data.HighEmpty = highEmpty;
-            data.LowEmpty = lowEmpty;
-
-            if (highEmpty || lowEmpty)
+            if (IsChunkSurfaceEmpty(highChunk) || IsChunkSurfaceEmpty(lowChunk))
             {
                 data.Mesh.Clear();
-                data.SkirtDepth = meshGenerator.TransitionSkirtDepth;
                 data.Dirty = false;
                 if (data.MeshRenderer != null)
                 {
@@ -2575,45 +2612,71 @@ namespace TerrainSystem
                 return;
             }
 
-            if (data.Dirty)
+            Vector3Int highOriginVoxel = GetChunkOriginVoxel(highChunk);
+            Vector3Int lowOriginVoxel = GetChunkOriginVoxel(lowChunk);
+
+            var sources = new MarchingCubesMeshGenerator.DensitySampler.Source[2];
+            sources[0] = new MarchingCubesMeshGenerator.DensitySampler.Source(
+                highChunk,
+                highOriginVoxel,
+                highChunk.VoxelDimensions,
+                highChunk.LODLevel);
+            sources[1] = new MarchingCubesMeshGenerator.DensitySampler.Source(
+                lowChunk,
+                lowOriginVoxel,
+                lowChunk.VoxelDimensions,
+                lowChunk.LODLevel);
+
+            var sampler = new MarchingCubesMeshGenerator.DensitySampler(sources);
+
+            int mainAxis;
+            int directionSign;
+            if (Mathf.Abs(direction.x) == 1)
             {
-                float skirtDepth = meshGenerator.TransitionSkirtDepth;
-                if (skirtDepth <= 0f)
-                {
-                    data.Mesh.Clear();
-                    data.Dirty = false;
-                    data.SkirtDepth = skirtDepth;
-                    if (data.MeshRenderer != null)
-                    {
-                        data.MeshRenderer.enabled = false;
-                    }
-                    return;
-                }
+                mainAxis = 0;
+                directionSign = direction.x > 0 ? 1 : -1;
+            }
+            else if (Mathf.Abs(direction.y) == 1)
+            {
+                mainAxis = 1;
+                directionSign = direction.y > 0 ? 1 : -1;
+            }
+            else
+            {
+                mainAxis = 2;
+                directionSign = direction.z > 0 ? 1 : -1;
+            }
 
-                if (highChunk.IsDirty || lowChunk.IsDirty
-                    || runningMeshJobs.ContainsKey(highChunk.ChunkPosition)
-                    || runningMeshJobs.ContainsKey(lowChunk.ChunkPosition))
-                {
-                    return;
-                }
+            bool generated = meshGenerator.GenerateLodStitchMesh(
+                sampler,
+                highOriginVoxel,
+                lowOriginVoxel,
+                chunkWorldSize,
+                voxelSize,
+                mainAxis,
+                directionSign,
+                highChunk.LODLevel,
+                lowChunk.LODLevel,
+                data.Mesh,
+                meshGenerator.surfaceLevel);
 
-                bool generated = meshGenerator.GenerateTransitionMesh(highChunk, lowChunk, direction, data.Mesh);
-                if (!generated)
-                {
-                    data.Mesh.Clear();
-                    if (data.MeshRenderer != null)
-                    {
-                        data.MeshRenderer.enabled = false;
-                    }
-                }
-                else if (data.MeshRenderer != null)
+            if (generated)
+            {
+                if (data.MeshRenderer != null)
                 {
                     data.MeshRenderer.enabled = true;
                 }
-
-                data.SkirtDepth = meshGenerator.TransitionSkirtDepth;
-                data.Dirty = false;
             }
+            else
+            {
+                data.Mesh.Clear();
+                if (data.MeshRenderer != null)
+                {
+                    data.MeshRenderer.enabled = false;
+                }
+            }
+
+            data.Dirty = false;
         }
 
         private void MarkTransitionsDirtyForChunk(Vector3Int chunkPos)
@@ -4206,11 +4269,6 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             {
                 dirtyChunkQueue.Enqueue(chunkPos);
                 dirtyChunkSet.Add(chunkPos);
-                MarkTransitionsDirtyForChunk(chunkPos);
-            }
-            else if (chunkExists)
-            {
-                MarkTransitionsDirtyForChunk(chunkPos);
             }
         }
 
