@@ -679,7 +679,7 @@ void MarchingCubes(uint3 id : SV_DispatchThreadID)
         if (baseIndex >= maxCount || baseIndex + 2 >= maxCount)
         {
             uint ignored;
-            InterlockedMax(_VertexCountBuffer[0], maxCount, ignored);
+            InterlockedMin(_VertexCountBuffer[0], maxCount, ignored);
             return;
         }
 

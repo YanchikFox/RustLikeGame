@@ -171,6 +171,11 @@ namespace TerrainSystem
         private float _surfaceLevel = 0.0f;
         public float surfaceLevel => _surfaceLevel;
 
+        [Header("Transition Settings")]
+        [Tooltip("Depth of the transition skirt in voxel units. The final offset scales with the chunk's voxel size.")]
+        [SerializeField, Min(0f)]
+        private float transitionSkirtDepth = 0.25f;
+
         private NativeArray<int> nativeTriangleTable;
         private NativeArray<int> nativeEdgeConnections;
 
@@ -647,7 +652,6 @@ private static readonly int[] flatTriangleTable =
             DetermineAxes(clampedDir, out mainAxis, out axisU, out axisV);
 
             Vector3Int highDims = highDetailChunk.VoxelDimensions;
-            Vector3Int lowDims = lowDetailChunk.VoxelDimensions;
 
             int resU = GetComponent(highDims, axisU);
             int resV = GetComponent(highDims, axisV);
@@ -665,13 +669,11 @@ private static readonly int[] flatTriangleTable =
                 ? Mathf.Max(boundaryIndexHigh - 1, 0)
                 : Mathf.Clamp(1, 0, GetComponent(highDims, mainAxis));
 
-            int boundaryIndexLow = positiveDirection ? 0 : GetComponent(lowDims, mainAxis);
-            int insideIndexLow = positiveDirection
-                ? Mathf.Clamp(boundaryIndexLow + 1, 0, GetComponent(lowDims, mainAxis))
-                : Mathf.Max(boundaryIndexLow - 1, 0);
-
             Vector3[,] highSurface = new Vector3[resU + 1, resV + 1];
             Vector3[,] lowSurface = new Vector3[resU + 1, resV + 1];
+
+            float skirtDepthWorld = Mathf.Max(0f, transitionSkirtDepth) * highDetailChunk.VoxelSize;
+            Vector3 inwardOffsetWorld = ((Vector3)clampedDir).normalized * -skirtDepthWorld;
 
             for (int u = 0; u <= resU; u++)
             {
@@ -694,25 +696,10 @@ private static readonly int[] flatTriangleTable =
                     Vector3 worldBoundaryHigh = ToWorld(highDetailChunk, boundaryCoordHigh);
 
                     Vector3 highSurfaceWorld = InterpolateSurface(worldInsideHigh, densityInsideHigh, worldBoundaryHigh, densityBoundaryHigh);
-
-                    Vector3 neighborBoundaryCoord = (worldBoundaryHigh - lowDetailChunk.WorldPosition) / lowDetailChunk.VoxelSize;
-                    SetComponent(ref neighborBoundaryCoord, axisU, Mathf.Clamp(GetComponent(neighborBoundaryCoord, axisU), 0f, GetComponent(lowDims, axisU)));
-                    SetComponent(ref neighborBoundaryCoord, axisV, Mathf.Clamp(GetComponent(neighborBoundaryCoord, axisV), 0f, GetComponent(lowDims, axisV)));
-                    SetComponent(ref neighborBoundaryCoord, mainAxis, boundaryIndexLow);
-
-                    Vector3 neighborInsideCoord = neighborBoundaryCoord;
-                    SetComponent(ref neighborInsideCoord, mainAxis, insideIndexLow);
-
-                    float densityBoundaryLow = SampleDensityAtLocal(lowDetailChunk, neighborBoundaryCoord);
-                    float densityInsideLow = SampleDensityAtLocal(lowDetailChunk, neighborInsideCoord);
-
-                    Vector3 worldBoundaryLow = ToWorld(lowDetailChunk, neighborBoundaryCoord);
-                    Vector3 worldInsideLow = ToWorld(lowDetailChunk, neighborInsideCoord);
-
-                    Vector3 lowSurfaceWorld = InterpolateSurface(worldBoundaryLow, densityBoundaryLow, worldInsideLow, densityInsideLow);
+                    Vector3 innerSurfaceWorld = highSurfaceWorld + inwardOffsetWorld;
 
                     highSurface[u, v] = highSurfaceWorld - highDetailChunk.WorldPosition;
-                    lowSurface[u, v] = lowSurfaceWorld - highDetailChunk.WorldPosition;
+                    lowSurface[u, v] = innerSurfaceWorld - highDetailChunk.WorldPosition;
                 }
             }
 
