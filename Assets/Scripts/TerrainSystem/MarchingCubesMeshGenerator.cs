@@ -672,6 +672,7 @@ namespace TerrainSystem
                 : Mathf.Clamp(1, 0, GetComponent(highDims, mainAxis));
 
             Vector3[,] highSurface = new Vector3[resU + 1, resV + 1];
+            Vector3[,] lowSurface = new Vector3[resU + 1, resV + 1];
 
             float skirtDepth = TransitionSkirtDepth;
             if (skirtDepth <= 0f)
@@ -681,7 +682,7 @@ namespace TerrainSystem
             }
 
             Vector3 normalizedDirection = ((Vector3)clampedDir).normalized;
-            Vector3 skirtOffsetLocal = normalizedDirection * skirtDepth;
+            float stabiliserDistance = Mathf.Max(0.001f, highDetailChunk.VoxelSize * 0.05f);
 
             for (int u = 0; u <= resU; u++)
             {
@@ -704,8 +705,27 @@ namespace TerrainSystem
                     Vector3 worldBoundaryHigh = ToWorld(highDetailChunk, boundaryCoordHigh);
 
                     Vector3 highSurfaceWorld = InterpolateSurface(worldInsideHigh, densityInsideHigh, worldBoundaryHigh, densityBoundaryHigh);
+                    Vector3 highSurfaceLocal = highSurfaceWorld - highDetailChunk.WorldPosition;
 
-                    highSurface[u, v] = highSurfaceWorld - highDetailChunk.WorldPosition;
+                    Vector3 normalWorld = EstimateNormalWorld(highDetailChunk, highSurfaceWorld);
+                    if (normalWorld.sqrMagnitude <= 1e-12f)
+                    {
+                        normalWorld = normalizedDirection;
+                    }
+                    else
+                    {
+                        normalWorld.Normalize();
+                    }
+
+                    if (Vector3.Dot(normalWorld, normalizedDirection) < 0f)
+                    {
+                        normalWorld = -normalWorld;
+                    }
+
+                    Vector3 offsetWorld = normalWorld * skirtDepth + normalizedDirection * stabiliserDistance;
+
+                    highSurface[u, v] = highSurfaceLocal;
+                    lowSurface[u, v] = highSurfaceLocal + offsetWorld;
                 }
             }
 
@@ -723,10 +743,10 @@ namespace TerrainSystem
                     Vector3 h01 = highSurface[u, v + 1];
                     Vector3 h11 = highSurface[u + 1, v + 1];
 
-                    Vector3 l00 = h00 + skirtOffsetLocal;
-                    Vector3 l10 = h10 + skirtOffsetLocal;
-                    Vector3 l01 = h01 + skirtOffsetLocal;
-                    Vector3 l11 = h11 + skirtOffsetLocal;
+                    Vector3 l00 = lowSurface[u, v];
+                    Vector3 l10 = lowSurface[u + 1, v];
+                    Vector3 l01 = lowSurface[u, v + 1];
+                    Vector3 l11 = lowSurface[u + 1, v + 1];
 
                     AddQuad(h00, h10, l10, l00, normalHint, vertices, triangles, normals);
                     AddQuad(h00, l00, l01, h01, normalHint, vertices, triangles, normals);
@@ -818,6 +838,55 @@ namespace TerrainSystem
             float c1 = Mathf.Lerp(c01, c11, ty);
 
             return Mathf.Lerp(c0, c1, tz);
+        }
+
+        private float SampleDensityAtWorld(TerrainChunk chunk, Vector3 worldPosition)
+        {
+            if (chunk == null)
+            {
+                return 0f;
+            }
+
+            float voxelSize = chunk.VoxelSize;
+            if (voxelSize <= 0f)
+            {
+                return 0f;
+            }
+
+            Vector3 localCoord = (worldPosition - chunk.WorldPosition) / voxelSize;
+            return SampleDensityAtLocal(chunk, localCoord);
+        }
+
+        private Vector3 EstimateNormalWorld(TerrainChunk chunk, Vector3 worldPosition)
+        {
+            if (chunk == null)
+            {
+                return Vector3.zero;
+            }
+
+            float voxelSize = chunk.VoxelSize;
+            if (voxelSize <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            float sampleOffset = Mathf.Max(voxelSize * 0.5f, 1e-3f);
+            float invTwoOffset = 0.5f / sampleOffset;
+
+            float dx = SampleDensityAtWorld(chunk, worldPosition + new Vector3(sampleOffset, 0f, 0f))
+                - SampleDensityAtWorld(chunk, worldPosition - new Vector3(sampleOffset, 0f, 0f));
+            float dy = SampleDensityAtWorld(chunk, worldPosition + new Vector3(0f, sampleOffset, 0f))
+                - SampleDensityAtWorld(chunk, worldPosition - new Vector3(0f, sampleOffset, 0f));
+            float dz = SampleDensityAtWorld(chunk, worldPosition + new Vector3(0f, 0f, sampleOffset))
+                - SampleDensityAtWorld(chunk, worldPosition - new Vector3(0f, 0f, sampleOffset));
+
+            Vector3 normal = new Vector3(dx, dy, dz) * invTwoOffset;
+            if (normal.sqrMagnitude > 1e-12f)
+            {
+                return normal.normalized;
+            }
+
+            return Vector3.zero;
         }
 
         private Vector3 InterpolateSurface(Vector3 start, float densityStart, Vector3 end, float densityEnd)
