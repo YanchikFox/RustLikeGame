@@ -29,6 +29,7 @@ namespace TerrainSystem
         public float VoxelSize => voxelSize;
         public bool IsDirty { get; set; } = true;
         public int DensityVersion => densityVersion;
+        public Mesh Mesh => meshFilter != null ? meshFilter.sharedMesh : null;
         #endregion
 
         #region Unity Lifecycle

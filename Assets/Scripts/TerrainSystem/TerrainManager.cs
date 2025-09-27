@@ -228,6 +228,8 @@ namespace TerrainSystem
             public int LowLod;
             public bool Dirty;
             public float SkirtDepth;
+            public bool HighEmpty;
+            public bool LowEmpty;
         }
         private ComputeBuffer biomeThresholdsBuffer;
         private ComputeBuffer biomeGroundLevelsBuffer;
@@ -2316,6 +2318,17 @@ namespace TerrainSystem
             }
         }
 
+        private bool IsChunkSurfaceEmpty(TerrainChunk chunk)
+        {
+            if (chunk == null)
+            {
+                return true;
+            }
+
+            Mesh mesh = chunk.Mesh;
+            return mesh == null || mesh.vertexCount == 0;
+        }
+
         private void EnsureTransitionMesh(TransitionKey key, TerrainChunk highChunk, TerrainChunk lowChunk, Vector3Int direction)
         {
             if (!transitionLODs || meshGenerator == null || highChunk == null || lowChunk == null)
@@ -2396,6 +2409,25 @@ namespace TerrainSystem
 
             if (!transitionLODs)
             {
+                return;
+            }
+
+            bool highEmpty = IsChunkSurfaceEmpty(highChunk);
+            bool lowEmpty = IsChunkSurfaceEmpty(lowChunk);
+
+            if (data.HighEmpty != highEmpty || data.LowEmpty != lowEmpty)
+            {
+                data.Dirty = true;
+            }
+
+            data.HighEmpty = highEmpty;
+            data.LowEmpty = lowEmpty;
+
+            if (highEmpty || lowEmpty)
+            {
+                data.Mesh.Clear();
+                data.SkirtDepth = meshGenerator.TransitionSkirtDepth;
+                data.Dirty = false;
                 return;
             }
 
