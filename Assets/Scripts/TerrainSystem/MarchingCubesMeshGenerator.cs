@@ -672,7 +672,7 @@ namespace TerrainSystem
                 : Mathf.Clamp(1, 0, GetComponent(highDims, mainAxis));
 
             Vector3[,] highSurface = new Vector3[resU + 1, resV + 1];
-            Vector3[,] lowSurface = new Vector3[resU + 1, resV + 1];
+            bool[,] validSample = new bool[resU + 1, resV + 1];
 
             float skirtDepth = TransitionSkirtDepth;
             if (skirtDepth <= 0f)
@@ -682,7 +682,11 @@ namespace TerrainSystem
             }
 
             Vector3 normalizedDirection = ((Vector3)clampedDir).normalized;
-            float stabiliserDistance = Mathf.Max(0.001f, highDetailChunk.VoxelSize * 0.05f);
+            if (normalizedDirection.sqrMagnitude <= 1e-6f)
+            {
+                targetMesh.Clear();
+                return false;
+            }
 
             for (int u = 0; u <= resU; u++)
             {
@@ -701,63 +705,90 @@ namespace TerrainSystem
                     float densityInsideHigh = SampleDensityAtLocal(highDetailChunk, insideCoordHigh);
                     float densityBoundaryHigh = SampleDensityAtLocal(highDetailChunk, boundaryCoordHigh);
 
+                    float insideDelta = densityInsideHigh - surfaceLevel;
+                    float boundaryDelta = densityBoundaryHigh - surfaceLevel;
+                    bool intersects = (insideDelta <= 0f && boundaryDelta >= 0f) || (insideDelta >= 0f && boundaryDelta <= 0f);
+                    if (!intersects)
+                    {
+                        validSample[u, v] = false;
+                        continue;
+                    }
+
                     Vector3 worldInsideHigh = ToWorld(highDetailChunk, insideCoordHigh);
                     Vector3 worldBoundaryHigh = ToWorld(highDetailChunk, boundaryCoordHigh);
 
                     Vector3 highSurfaceWorld = InterpolateSurface(worldInsideHigh, densityInsideHigh, worldBoundaryHigh, densityBoundaryHigh);
                     Vector3 highSurfaceLocal = highSurfaceWorld - highDetailChunk.WorldPosition;
-
-                    Vector3 normalWorld = EstimateNormalWorld(highDetailChunk, highSurfaceWorld);
-                    if (normalWorld.sqrMagnitude <= 1e-12f)
-                    {
-                        normalWorld = normalizedDirection;
-                    }
-                    else
-                    {
-                        normalWorld.Normalize();
-                    }
-
-                    if (Vector3.Dot(normalWorld, normalizedDirection) < 0f)
-                    {
-                        normalWorld = -normalWorld;
-                    }
-
-                    Vector3 offsetWorld = normalWorld * skirtDepth + normalizedDirection * stabiliserDistance;
-
                     highSurface[u, v] = highSurfaceLocal;
-                    lowSurface[u, v] = highSurfaceLocal + offsetWorld;
+                    validSample[u, v] = true;
                 }
             }
 
             var vertices = new List<Vector3>();
-            var triangles = new List<int>();
             var normals = new List<Vector3>();
-            Vector3 normalHint = ((Vector3)clampedDir).normalized;
+            var triangles = new List<int>();
+            Vector3 normalHint = normalizedDirection;
+
+            int[,] topIndices = new int[resU + 1, resV + 1];
+            int[,] bottomIndices = new int[resU + 1, resV + 1];
+
+            for (int u = 0; u <= resU; u++)
+            {
+                for (int v = 0; v <= resV; v++)
+                {
+                    if (!validSample[u, v])
+                    {
+                        topIndices[u, v] = -1;
+                        bottomIndices[u, v] = -1;
+                        continue;
+                    }
+
+                    Vector3 top = highSurface[u, v];
+                    Vector3 bottom = top + normalHint * skirtDepth;
+
+                    int topIndex = vertices.Count;
+                    vertices.Add(top);
+                    normals.Add(normalHint);
+                    topIndices[u, v] = topIndex;
+
+                    int bottomIndex = vertices.Count;
+                    vertices.Add(bottom);
+                    normals.Add(normalHint);
+                    bottomIndices[u, v] = bottomIndex;
+                }
+            }
 
             for (int u = 0; u < resU; u++)
             {
                 for (int v = 0; v < resV; v++)
                 {
-                    Vector3 h00 = highSurface[u, v];
-                    Vector3 h10 = highSurface[u + 1, v];
-                    Vector3 h01 = highSurface[u, v + 1];
-                    Vector3 h11 = highSurface[u + 1, v + 1];
+                    int t00 = topIndices[u, v];
+                    int t10 = topIndices[u + 1, v];
+                    int t01 = topIndices[u, v + 1];
+                    int t11 = topIndices[u + 1, v + 1];
+                    int b00 = bottomIndices[u, v];
+                    int b10 = bottomIndices[u + 1, v];
+                    int b01 = bottomIndices[u, v + 1];
+                    int b11 = bottomIndices[u + 1, v + 1];
 
-                    Vector3 l00 = lowSurface[u, v];
-                    Vector3 l10 = lowSurface[u + 1, v];
-                    Vector3 l01 = lowSurface[u, v + 1];
-                    Vector3 l11 = lowSurface[u + 1, v + 1];
+                    if (t00 < 0 || t10 < 0 || t01 < 0 || t11 < 0 || b00 < 0 || b10 < 0 || b01 < 0 || b11 < 0)
+                    {
+                        continue;
+                    }
 
-                    AddQuad(h00, h10, l10, l00, normalHint, vertices, triangles, normals);
-                    AddQuad(h00, l00, l01, h01, normalHint, vertices, triangles, normals);
-                    AddQuad(h10, h11, l11, l10, normalHint, vertices, triangles, normals);
-                    AddQuad(h01, h11, l11, l01, normalHint, vertices, triangles, normals);
+                    triangles.Add(t00);
+                    triangles.Add(t10);
+                    triangles.Add(b11);
+
+                    triangles.Add(t00);
+                    triangles.Add(b11);
+                    triangles.Add(b01);
                 }
             }
 
             targetMesh.Clear();
 
-            if (vertices.Count == 0)
+            if (triangles.Count == 0 || vertices.Count == 0)
             {
                 return false;
             }
@@ -767,8 +798,8 @@ namespace TerrainSystem
                 : UnityEngine.Rendering.IndexFormat.UInt16;
 
             targetMesh.SetVertices(vertices);
-            targetMesh.SetTriangles(triangles, 0, true);
             targetMesh.SetNormals(normals);
+            targetMesh.SetTriangles(triangles, 0, true);
             targetMesh.RecalculateBounds();
             return true;
         }
@@ -903,44 +934,6 @@ namespace TerrainSystem
         {
             float vSize = chunk.VoxelSize;
             return chunk.WorldPosition + new Vector3(localCoord.x * vSize, localCoord.y * vSize, localCoord.z * vSize);
-        }
-
-        private static void AddQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normalHint,
-            List<Vector3> vertices, List<int> triangles, List<Vector3> normals)
-        {
-            Vector3 normal = Vector3.Cross(b - a, c - a);
-            if (normal.sqrMagnitude < 1e-12f)
-            {
-                return;
-            }
-
-            normal.Normalize();
-            if (Vector3.Dot(normal, normalHint) < 0f)
-            {
-                Vector3 tempB = b;
-                b = d;
-                d = tempB;
-                normal = -normal;
-            }
-
-            int startIndex = vertices.Count;
-            vertices.Add(a);
-            vertices.Add(b);
-            vertices.Add(c);
-            vertices.Add(d);
-
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-            normals.Add(normal);
-
-            triangles.Add(startIndex);
-            triangles.Add(startIndex + 1);
-            triangles.Add(startIndex + 2);
-
-            triangles.Add(startIndex);
-            triangles.Add(startIndex + 2);
-            triangles.Add(startIndex + 3);
         }
 
         private static int GetComponent(Vector3Int value, int axis)

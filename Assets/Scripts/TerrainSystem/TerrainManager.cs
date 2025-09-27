@@ -23,24 +23,25 @@ namespace TerrainSystem
     {
         #region Inspector Properties
         [Header("Terrain Settings")]
-        [SerializeField] private Vector3 chunkWorldSize = new Vector3(16, 16, 16);
-        
+        [SerializeField] private TerrainSettingsAsset settingsAsset;
+        [SerializeField] private Transform playerTransform;
+
+        private Vector3 chunkWorldSize = new Vector3(16, 16, 16);
+
         // WARNING: Halving voxelSize will now 8x the number of voxels per chunk,
         // which drastically increases memory usage and processing time.
         // Adjust loadDistance accordingly.
-        [SerializeField] private float voxelSize = 1f;
+        private float voxelSize = 1f;
         // Track previous values to detect changes in the Inspector
         private float previousVoxelSize;
         private Vector3 previousChunkWorldSize;
-        
-        [SerializeField] private Transform playerTransform;
-        [SerializeField] private float loadDistance = 64f;
 
-        [Header("LOD Settings")]
-        [SerializeField] private bool useLOD = true;
-        [SerializeField] private float[] lodDistanceThresholds = new float[] { 32f, 64f, 96f }; // Distance thresholds for each LOD level
-        [SerializeField] private int maxLODLevel = 2; // Maximum LOD level (0 = highest detail)
-        [SerializeField] private bool transitionLODs = true; // Whether to create transition chunks between LOD levels
+        private float loadDistance = 64f;
+
+        private bool useLOD = true;
+        private float[] lodDistanceThresholds = new float[] { 32f, 64f, 96f }; // Distance thresholds for each LOD level
+        private int maxLODLevel = 2; // Maximum LOD level (0 = highest detail)
+        private bool transitionLODs = true; // Whether to create transition chunks between LOD levels
 
         // This property now calculates the number of voxels per chunk dynamically
         public Vector3Int ChunkVoxelDimensions => new Vector3Int(
@@ -53,7 +54,7 @@ namespace TerrainSystem
         [SerializeField] private GameObject chunkPrefab;
         [SerializeField] private MarchingCubesMeshGenerator meshGenerator;
         [SerializeField] private ComputeShader voxelTerrainShader;
-        [SerializeField] private TerrainProcessingMode processingMode = TerrainProcessingMode.Hybrid;
+        private TerrainProcessingMode processingMode = TerrainProcessingMode.Hybrid;
 
         [Header("Biome Settings")]
         [SerializeField] private float biomeNoiseScale = 0.001f;
@@ -68,8 +69,8 @@ namespace TerrainSystem
         [SerializeField] private float riverDepth = 5.0f;
 
         [Header("Performance")]
-        [SerializeField] private int maxChunksPerFrame = 4;
-        [SerializeField] private int verticalLoadRadius = 1;
+        private int maxChunksPerFrame = 4;
+        private int verticalLoadRadius = 1;
         [SerializeField, Tooltip("Maximum number of GPU readback requests allowed to run simultaneously.")]
         private int maxConcurrentGpuReadbacks = 4;
         [SerializeField, Tooltip("Maximum number of chunks that can start GPU density generation in a single frame (0 = unlimited).")]
@@ -87,14 +88,14 @@ namespace TerrainSystem
         [SerializeField] private float occlusionRayPadding = 0.25f;
 
         [Header("Adaptive Generation")]
-        [SerializeField] private bool adaptiveChunkBudget = true;
-        [SerializeField] private int minChunksPerFrame = 1;
-        [SerializeField] private int maxAdaptiveChunksPerFrame = 12;
-        [SerializeField] private float targetFrameRate = 60f;
-        [SerializeField] private float frameRateBuffer = 5f;
-        [SerializeField] private float adaptationInterval = 0.5f;
+        private bool adaptiveChunkBudget = true;
+        private int minChunksPerFrame = 1;
+        private int maxAdaptiveChunksPerFrame = 12;
+        private float targetFrameRate = 60f;
+        private float frameRateBuffer = 5f;
+        private float adaptationInterval = 0.5f;
         [Range(0.01f, 1f)]
-        [SerializeField] private float frameTimeSmoothing = 0.1f;
+        private float frameTimeSmoothing = 0.1f;
 
         [Header("Debug Settings")]
         [SerializeField] private bool isRegenerating = false;
@@ -161,6 +162,7 @@ namespace TerrainSystem
             public Vector3Int ThreadGroups;
             public int VertexCapacity;
             public long CubeCount;
+            public int DensityVersion;
         }
 
         private struct ModificationGpuReadbackRequest
@@ -510,6 +512,14 @@ namespace TerrainSystem
             }
         }
 
+        private void Awake()
+        {
+            if (settingsAsset != null)
+            {
+                ApplySettings(settingsAsset);
+            }
+        }
+
         private void OnEnable()
         {
             AnnounceLogFile();
@@ -720,6 +730,7 @@ namespace TerrainSystem
                     }
 
                     int vertexCount = (int)rawVertexCount;
+                    int originalVertexCount = vertexCount;
 
                     if (vertexCount > requestData.VertexCapacity)
                     {
@@ -730,30 +741,66 @@ namespace TerrainSystem
                         vertexCount = requestData.VertexCapacity;
                     }
 
-                    Mesh mesh = null;
-                    if (vertexCount > 0)
+                    int alignedVertexCount = vertexCount - (vertexCount % 3);
+                    if (alignedVertexCount != vertexCount)
                     {
-                        NativeArray<Vector3> vertexData = requestData.VertexRequest.GetData<Vector3>();
-                        NativeArray<Vector3> normalData = requestData.NormalRequest.GetData<Vector3>();
-                        int availableCount = Mathf.Min(vertexCount, Mathf.Min(vertexData.Length, normalData.Length));
+                        LogWarning(
+                            "MeshGen",
+                            $"{FormatChunkId(chunkPos, requestData.LodLevel)} stage=readbackComplete mode=GPU warning=vertexAlignment original={vertexCount} adjusted={alignedVertexCount}"
+                        );
+                        vertexCount = alignedVertexCount;
+                    }
 
-                        if (availableCount < vertexCount)
+                    Mesh mesh = null;
+                    TerrainChunk targetChunk = null;
+                    int loggedLodLevel = requestData.LodLevel;
+                    Vector3Int voxelDimensions = requestData.VoxelDimensions;
+                    bool chunkValid = false;
+
+                    if (chunks.TryGetValue(chunkPos, out var chunkData) && chunkData.chunk != null)
+                    {
+                        targetChunk = chunkData.chunk;
+                        loggedLodLevel = chunkData.lodLevel;
+                        chunkValid =
+                            chunkData.lodLevel == requestData.LodLevel &&
+                            chunkData.chunk.VoxelDimensions == requestData.VoxelDimensions &&
+                            chunkData.chunk.DensityVersion == requestData.DensityVersion;
+                    }
+
+                    if (vertexCount > 0 && chunkValid)
+                    {
+                        if (meshGenerator != null)
                         {
-                            LogWarning(
-                                "MeshGen",
-                                $"{FormatChunkId(chunkPos, requestData.LodLevel)} stage=readbackComplete mode=GPU warning=dataClamped requested={vertexCount} available={availableCount}"
-                            );
-                            vertexCount = availableCount;
+                            NativeArray<Vector3> vertexData = requestData.VertexRequest.GetData<Vector3>();
+                            NativeArray<Vector3> normalData = requestData.NormalRequest.GetData<Vector3>();
+                            int availableCount = Mathf.Min(vertexCount, Mathf.Min(vertexData.Length, normalData.Length));
+
+                            if (availableCount < vertexCount)
+                            {
+                                LogWarning(
+                                    "MeshGen",
+                                    $"{FormatChunkId(chunkPos, requestData.LodLevel)} stage=readbackComplete mode=GPU warning=dataClamped requested={vertexCount} available={availableCount}"
+                                );
+                                vertexCount = availableCount - (availableCount % 3);
+                                if (vertexCount < 0)
+                                {
+                                    vertexCount = 0;
+                                }
+                            }
+
+                            if (vertexCount >= 3)
+                            {
+                                NativeSlice<Vector3> vertexSlice = vertexData.Slice(0, vertexCount);
+                                NativeSlice<Vector3> normalSlice = normalData.Slice(0, vertexCount);
+
+                                mesh = meshGenerator.CreateMeshFromNativeSlices(vertexSlice, default, normalSlice, useSequentialIndices: true, sequentialIndexCount: vertexCount);
+                            }
+                            else
+                            {
+                                vertexCount = 0;
+                            }
                         }
-
-                        NativeSlice<Vector3> vertexSlice = vertexData.Slice(0, vertexCount);
-                        NativeSlice<Vector3> normalSlice = normalData.Slice(0, vertexCount);
-
-                        mesh = meshGenerator != null
-                            ? meshGenerator.CreateMeshFromNativeSlices(vertexSlice, default, normalSlice, useSequentialIndices: true, sequentialIndexCount: vertexCount)
-                            : null;
-
-                        if (mesh == null && meshGenerator == null)
+                        else
                         {
                             LogError(
                                 "MeshGen",
@@ -761,17 +808,24 @@ namespace TerrainSystem
                             );
                         }
                     }
-                    else
+                    else if (vertexCount > 0 && !chunkValid)
                     {
-                        mesh = new Mesh();
+                        LogStructured(
+                            "MeshGen",
+                            $"stage=discarded mode=GPU {FormatChunkId(chunkPos, requestData.LodLevel)} reason=staleRequest originalVertices={originalVertexCount}"
+                        );
+                        vertexCount = 0;
                     }
 
-                    if (mesh != null && chunks.TryGetValue(chunkPos, out var chunkData) && chunkData.chunk != null)
+                    if (vertexCount == 0 && chunkValid)
                     {
-                        ApplyMesh(chunkData.chunk, mesh);
+                        mesh ??= new Mesh();
+                    }
 
-                        int lodForLog = chunkData.lodLevel;
-                        Vector3Int voxelDimensions = requestData.VoxelDimensions;
+                    if (mesh != null && chunkValid && targetChunk != null)
+                    {
+                        ApplyMesh(targetChunk, mesh);
+
                         Vector3Int tg = requestData.ThreadGroups;
                         int indexCount = vertexCount;
                         int triangleCount = vertexCount / 3;
@@ -779,8 +833,12 @@ namespace TerrainSystem
 
                         LogStructured(
                             "MeshGen",
-                            $"stage=completed mode=GPU {FormatChunkId(chunkPos, lodForLog)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={requestData.CubeCount} densitySamples={densitySamples} vertexCapacity={requestData.VertexCapacity} vertices={vertexCount} indices={indexCount} triangles={triangleCount} threadGroups={FormatThreadGroups(tg.x, tg.y, tg.z)}"
+                            $"stage=completed mode=GPU {FormatChunkId(chunkPos, loggedLodLevel)} voxels={FormatVoxelDimensions(voxelDimensions)} cubes={requestData.CubeCount} densitySamples={densitySamples} vertexCapacity={requestData.VertexCapacity} vertices={vertexCount} indices={indexCount} triangles={triangleCount} threadGroups={FormatThreadGroups(tg.x, tg.y, tg.z)}"
                         );
+                    }
+                    else if (mesh != null)
+                    {
+                        Destroy(mesh);
                     }
 
                     ReleaseMeshRequestBuffers(requestData);
@@ -1872,6 +1930,69 @@ namespace TerrainSystem
         #endregion
 
         #region Chunk Management
+        private bool IsChunkPendingProcessing(Vector3Int chunkPos)
+        {
+            return runningMeshJobs.ContainsKey(chunkPos)
+                || runningGpuMeshRequests.ContainsKey(chunkPos)
+                || runningGenJobs.ContainsKey(chunkPos)
+                || runningGpuGenRequests.ContainsKey(chunkPos);
+        }
+
+        private static bool IsChunkMeshReady(TerrainChunk chunk)
+        {
+            if (chunk == null)
+            {
+                return false;
+            }
+
+            Mesh mesh = chunk.Mesh;
+            return mesh != null && mesh.vertexCount > 0 && !chunk.IsDirty;
+        }
+
+        private bool CanDowngradeChunk(Vector3Int chunkPos, int currentLod, int _)
+        {
+            if (!transitionLODs)
+            {
+                return true;
+            }
+
+            foreach (var direction in NeighborDirections)
+            {
+                Vector3Int neighborPos = chunkPos + direction;
+                if (!chunks.TryGetValue(neighborPos, out var neighborData) || neighborData.chunk == null)
+                {
+                    continue;
+                }
+
+                if (!IsChunkMeshReady(neighborData.chunk) || IsChunkPendingProcessing(neighborPos))
+                {
+                    return false;
+                }
+
+                if (neighborData.lodLevel < currentLod)
+                {
+                    var key = new TransitionKey(neighborData.chunk.ChunkPosition, chunkPos);
+                    if (!transitionMeshes.TryGetValue(key, out var transitionData) || transitionData == null)
+                    {
+                        return false;
+                    }
+
+                    Mesh transitionMesh = transitionData.Mesh;
+                    if (transitionData.Dirty || transitionMesh == null || transitionMesh.vertexCount == 0)
+                    {
+                        return false;
+                    }
+
+                    if (transitionData.MeshRenderer != null && !transitionData.MeshRenderer.enabled)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         private void UpdateChunksAroundPlayer()
         {
             if (playerTransform == null || isRegenerating) return;
@@ -1926,6 +2047,19 @@ namespace TerrainSystem
                 if (existingData.lodLevel != lodLevel)
                 {
                     if (!chunkVisible && enableFrustumCulling)
+                    {
+                        continue;
+                    }
+
+                    if (lodLevel > existingData.lodLevel)
+                    {
+                        if (!IsChunkMeshReady(existingData.chunk) || IsChunkPendingProcessing(chunkPos) ||
+                            !CanDowngradeChunk(chunkPos, existingData.lodLevel, lodLevel))
+                        {
+                            continue;
+                        }
+                    }
+                    else if (IsChunkPendingProcessing(chunkPos))
                     {
                         continue;
                     }
@@ -2291,6 +2425,11 @@ namespace TerrainSystem
                         continue;
                     }
 
+                    if (IsChunkSurfaceEmpty(chunkData.chunk) || IsChunkSurfaceEmpty(neighborData.chunk))
+                    {
+                        continue;
+                    }
+
                     var key = new TransitionKey(chunkData.chunk.ChunkPosition, neighborData.chunk.ChunkPosition);
                     requiredTransitions.Add(key);
                     EnsureTransitionMesh(key, chunkData.chunk, neighborData.chunk, direction);
@@ -2355,6 +2494,7 @@ namespace TerrainSystem
                 {
                     meshRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
                 }
+                meshRenderer.enabled = false;
 
                 var mesh = new Mesh
                 {
@@ -2428,6 +2568,10 @@ namespace TerrainSystem
                 data.Mesh.Clear();
                 data.SkirtDepth = meshGenerator.TransitionSkirtDepth;
                 data.Dirty = false;
+                if (data.MeshRenderer != null)
+                {
+                    data.MeshRenderer.enabled = false;
+                }
                 return;
             }
 
@@ -2439,6 +2583,10 @@ namespace TerrainSystem
                     data.Mesh.Clear();
                     data.Dirty = false;
                     data.SkirtDepth = skirtDepth;
+                    if (data.MeshRenderer != null)
+                    {
+                        data.MeshRenderer.enabled = false;
+                    }
                     return;
                 }
 
@@ -2453,6 +2601,14 @@ namespace TerrainSystem
                 if (!generated)
                 {
                     data.Mesh.Clear();
+                    if (data.MeshRenderer != null)
+                    {
+                        data.MeshRenderer.enabled = false;
+                    }
+                }
+                else if (data.MeshRenderer != null)
+                {
+                    data.MeshRenderer.enabled = true;
                 }
 
                 data.SkirtDepth = meshGenerator.TransitionSkirtDepth;
@@ -3125,6 +3281,8 @@ namespace TerrainSystem
                 chunk.CopyVoxelDataTo(densities);
                 densityBuffer.SetData(densities, 0, 0, voxelCount);
 
+                int expectedDensityVersion = chunk.DensityVersion;
+
                 int gradientCount = (voxelDimensions.x + 3) * (voxelDimensions.y + 3) * (voxelDimensions.z + 3);
                 gradientDensityBuffer = computeBufferPool.GetBuffer(gradientCount, sizeof(float), ComputeBufferType.Structured);
                 using (var gradientNative = new NativeArray<float>(gradientCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
@@ -3194,7 +3352,8 @@ namespace TerrainSystem
                     VoxelDimensions = voxelDimensions,
                     ThreadGroups = threadGroups,
                     VertexCapacity = vertexCapacity,
-                    CubeCount = cubeCount
+                    CubeCount = cubeCount,
+                    DensityVersion = expectedDensityVersion
                 };
 
                 gpuGenerationRequestsInfo[chunkPos] = new GpuGenerationRequestInfo
@@ -4162,6 +4321,10 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
 
             if (settings != null)
             {
+                if (settingsAsset == null && settings is TerrainSettingsAsset asset)
+                {
+                    settingsAsset = asset;
+                }
                 ApplySettings(settings);
             }
         }
@@ -4199,6 +4362,8 @@ private void ModifyTerrainInternal(Vector3 worldPosition, float radius, float st
             frameRateBuffer = settings.FrameRateBuffer;
             adaptationInterval = settings.AdaptationInterval;
             frameTimeSmoothing = settings.FrameTimeSmoothing;
+
+            InvalidateChunkWorldSizeCache();
         }
 
         private int ActiveGpuRequestCount =>
