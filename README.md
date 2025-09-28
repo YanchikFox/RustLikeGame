@@ -131,8 +131,3 @@ Assets/
 - Add new building pieces by creating `ConstructionFactory` assets and derived `Construction` subclasses.
 - Extend the construction FSM by inheriting from `BuildingState` or `StateWithChangeTracking` for new states.
 - Define new items through `Item` scriptable objects and reference them in inventories or cost lists.
-
-## License
-
-No explicit license is included. Add one before distributing the project publicly.
-
