@@ -28,7 +28,7 @@ MonoBehaviour:
   adaptiveChunkBudget: 1
   minChunksPerFrame: 1
   maxAdaptiveChunksPerFrame: 12
-  targetFrameRate: 60
+  targetFrameRate: 144
   frameRateBuffer: 5
   adaptationInterval: 0.5
   frameTimeSmoothing: 0.1
